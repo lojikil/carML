@@ -1,0 +1,24 @@
+# cannonical loop example
+def arrayIota arr f = begin
+    def arrayIota' arr f idx = begin
+        set-array-index! arr f idx
+        arrayIota' arr f (add idx 1)
+    end
+    arrayIota' arr f 0
+end
+
+def arrayIota0 arr f = begin
+    def arrayIota' idx = begin
+        set-array-index! arr f idx
+        arrayIota' (add idx 1)
+    end
+    arrayIota' arr f 0
+end
+
+def foo x = sum x 1
+ 
+var f = array 10
+
+arrayIota f foo
+
+println f

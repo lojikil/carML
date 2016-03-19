@@ -1,0 +1,6 @@
+type Option a = Some a | Nothing
+
+poly List a = Cons a (List a) | Nil
+
+{{ poly Deque a = ... }}
+
