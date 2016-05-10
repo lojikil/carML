@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 
 typedef enum {
     TDEF, TBEGIN, TEND, TEQUAL, TCOREFORM,
@@ -10,42 +11,27 @@ typedef enum {
 
 struct _AST {
     TypeTag tag;
-    union {
-        struct {
-
-        } def;
-        struct {
-
-        } beg;
-        struct {
-
-        } var;
-        struct {
-
-        } ifblock;
-        struct {
-
-        } typeblock;
-        struct {
-
-        } polyblock;
-        struct {
-
-        } recordblock;
-        struct {
-
-        } matchblock;
-        struct {
-
-        } call;
-        struct {
-
-        } coreform;
-        struct {
-
-        } immediate;
-    } object;
+    /* there's going to have to be some
+     * interpretation here, as we're not
+     * breaking down the ASTs into discrete
+     * objects, but rather just grouping them
+     * into a generic a piece as possible.
+     * so, for exapmple, and IF block would
+     * have a lenchildren == 3, no matter what
+     * whereas a BEGIN block lenchildren == N,
+     * where N >= 0. In the real thing, would
+     * probably be best to make this a poly with
+     * each member broken down, or an SRFI-57-style
+     * struct.
+     * in fact... if you have row-polymorphism, there's
+     * no need for SRFI-57 inhereitence, save for to
+     * create convience methods... hmm... :thinking_face:
+     */
+    uint32_t lenchildren;
+    struct _AST **children;
 };
+
+typedef struct _AST AST;
 
 int next(FILE *, char *, int);
 AST *read(FILE *);
@@ -159,6 +145,9 @@ next(FILE *fdin, char *buffer, int buflen) {
             case LDEF2:
                 if(iswhite(cur)) {
                     return TDEF;
+                } else if (cur == ';') {
+                    ungetc(cur, fdin);
+                    return TDEF;
                 } else {
                     state = LIDENT0;
                 }
@@ -189,6 +178,9 @@ next(FILE *fdin, char *buffer, int buflen) {
             case LELSE3:
                 if(iswhite(cur)) {
                     return TELSE;
+                } else if(cur == ';') {
+                    ungetc(cur, fdin);
+                    return TELSE;
                 } else {
                     state = LIDENT0;
                 }
@@ -209,6 +201,9 @@ next(FILE *fdin, char *buffer, int buflen) {
                 break;
             case LVAR2:
                 if(iswhite(cur)) {
+                    return TVAR;
+                } else if(cur == ';') {
+                    ungetc(fdin, fdin);
                     return TVAR;
                 } else {
                     state = LIDENT0;
@@ -240,6 +235,9 @@ next(FILE *fdin, char *buffer, int buflen) {
             case LTHEN2:
                 if(iswhite(cur)) {
                     return TTHEN;
+                } else if(cur == ';'){
+                    ungetc(cur, fdin);
+                    return TTHEN;
                 } else {
                     state = LIDENT0;
                 }
@@ -260,6 +258,9 @@ next(FILE *fdin, char *buffer, int buflen) {
                 break;
             case LTYPE2:
                 if(iswhite(cur)) {
+                    return TTYPE;
+                } else if(cur == ';') {
+                    ungetc(cur, fdin);
                     return TTYPE;
                 } else {
                     state = LIDENT0;
@@ -295,6 +296,9 @@ next(FILE *fdin, char *buffer, int buflen) {
             case LBEGIN4:
                 if(iswhite(cur)) {
                     return TBEGIN;
+                } else if(cur == ';') {
+                    ungetc(cur, fdin);
+                    return TBEGIN;
                 } else {
                     state = LIDENT0;
                 }
@@ -302,11 +306,27 @@ next(FILE *fdin, char *buffer, int buflen) {
             case LEQ0:
                 if(iswhite(cur)) {
                     return TEQ;
+                } else if(cur == ';') {
+                    ungetc(cur, fdin);
+                    return TEQ;
                 } else {
                     state = LIDENT0;
                 }
                 break;
             case LNUM0:
+                cur = fgetc(fdin);
+                while(cur >= '0' and cur <= '9') {
+                    buf[idx++] = cur;
+                }
+
+                if(iswhite(cur)) {
+                    return TINT;
+                } else if(cur == ';') {
+                    ungetc(cur);
+                    return TINT;
+                } else {
+                    state = LIDENT0;
+                }
                 break;
             case LIDENT0:
                 break;
