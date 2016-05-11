@@ -1,12 +1,22 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <strings.h>
+
+typedef enum {
+    LSTART, LDEF0, LDEF1, LDEF2, LE0, LELSE1,
+    LELSE2, LELSE3, LVAR0, LVAR1, LVAR2, LT0,
+    LTHEN0, LTHEN1, LTHEN2, LTYPE0, LTYPE1,
+    LTYPE2, LBEGIN0, LBEGIN1, LBEGIN2, LBEGIN3,
+    LBEGIN4, LEQ0, LNUM0, LIDENT0, LEND0, LEND1,
+    LEND2, LMATCH0, LCOMMENT, LMCOMMENT, LPOLY0
+} LexStates;
 
 typedef enum {
     TDEF, TBEGIN, TEND, TEQUAL, TCOREFORM,
     TIDENT, TCALL, TOPAREN, TCPAREN, TMATCH,
     TIF, TELSE, TTHEN, TTYPE, TPOLY, TVAR,
     TARRAY, TRECORD, TINT, TFLOAT, TSTRING,
-    TCHAR, TBOOL
+    TCHAR, TBOOL, TEQ, TSEMI
 } TypeTag;
 
 struct _AST {
@@ -36,20 +46,28 @@ typedef struct _AST AST;
 int next(FILE *, char *, int);
 AST *read(FILE *);
 int compile(FILE *, FILE *);
-inline int iswhite(int);
+int iswhite(int);
 
 int
 main(int ac, char **al) {
-
+    int ret = 0;
+    char buf[512];
+    printf("here: \n");
+    do {
+        printf(">>> \n");
+        ret = next(stdin, &buf[0], 512);
+        printf("%s %d", buf, ret);
+    } while(!strncmp(buf, "quit", 512));
+    return 0;
 }
 
-inline int
+int
 iswhite(int c){
     return (c == ' ' || c == '\r' || c == '\n' || c == '\v' || c == '\t');
 }
 
 int
-next(FILE *fdin, char *buffer, int buflen) {
+next(FILE *fdin, char *buf, int buflen) {
     /* fetch the _next_ token from input, and tie it
      * to a token type. fill buffer with the current
      * item, so that we can return identifiers or
@@ -67,6 +85,8 @@ next(FILE *fdin, char *buffer, int buflen) {
          * recursive descent parser generator based on a simple specification and
          * generate said table, for LL(k).
          */
+        cur = fgetc(fdin);
+        buf[idx++] = cur;
         switch(state) {
             case 0:
                 while(cur == ' ' || cur == '\r' || cur == '\t' || cur == '\n') {
@@ -203,7 +223,7 @@ next(FILE *fdin, char *buffer, int buflen) {
                 if(iswhite(cur)) {
                     return TVAR;
                 } else if(cur == ';') {
-                    ungetc(fdin, fdin);
+                    ungetc(cur, fdin);
                     return TVAR;
                 } else {
                     state = LIDENT0;
@@ -315,14 +335,14 @@ next(FILE *fdin, char *buffer, int buflen) {
                 break;
             case LNUM0:
                 cur = fgetc(fdin);
-                while(cur >= '0' and cur <= '9') {
+                while(cur >= '0' && cur <= '9') {
                     buf[idx++] = cur;
                 }
 
                 if(iswhite(cur)) {
                     return TINT;
                 } else if(cur == ';') {
-                    ungetc(cur);
+                    ungetc(cur, fdin);
                     return TINT;
                 } else {
                     state = LIDENT0;
@@ -340,6 +360,7 @@ read(FILE *fdin) {
     /* _read_ from `fdin` until a single AST is constructed, or EOF
      * is reached.
      */
+    return NULL;
 }
 
 int
@@ -347,4 +368,5 @@ compile(FILE *fdin, FILE *fdout) {
     /* _compile_ a file from `fdin`, using _read_, and generate some
      * decent C code from it, which is written to `fdout`.
      */
+    return -1;
 }
