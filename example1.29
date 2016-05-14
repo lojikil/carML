@@ -1,6 +1,9 @@
 type Option a = Some a | Nothing
 
+# would be interesting to implement Cons-cells
+# as a generic type here... you'd end up with
+# something... different I think. 
 poly List a = Cons a (List a) | Nil
 
-{{ poly Deque a = ... }}
+# poly Deque a = ... 
 

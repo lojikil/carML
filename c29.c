@@ -11,7 +11,9 @@ typedef enum {
     LTHEN0, LTHEN1, LTHEN2, LTYPE0, LTYPE1,
     LTYPE2, LBEGIN0, LBEGIN1, LBEGIN2, LBEGIN3,
     LBEGIN4, LEQ0, LNUM0, LIDENT0, LEND0, LEND1,
-    LEND2, LMATCH0, LCOMMENT, LMCOMMENT, LPOLY0
+    LEND2, LMATCH0, LCOMMENT, LMCOMMENT, LPOLY0,
+    LPOLY0, LPOLY1, LPOLY2, LPOLY3, LRECORD0,
+    LRECORD1, LRECORD2, LRECORD3, LRECORD4, LRECORD5,
 } LexStates;
 
 typedef enum {
@@ -221,6 +223,30 @@ next(FILE *fdin, char *buf, int buflen) {
                 } else if(cur == ';') {
                     ungetc(cur, fdin);
                     return TELSE;
+                } else {
+                    state = LIDENT0;
+                }
+                break;
+            case LEND0:
+                if(cur == 'n') {
+                    state = LEND1;
+                } else {
+                    state = LIDENT0;
+                }
+                break;
+            case LEND1:
+                if(cur == 'd') {
+                    state = LEND2;
+                } else {
+                    state = LIDENT0;
+                }
+                break;
+            case LEND2:
+                if(iswhite(cur)) {
+                    return TEND;
+                } else if(cur == ';') {
+                    ungetc(cur, fdin);
+                    return TEND;
                 } else {
                     state = LIDENT0;
                 }
