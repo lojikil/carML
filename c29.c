@@ -102,6 +102,7 @@ next(FILE *fdin, char *buf, int buflen) {
          */
         cur = fgetc(fdin);
         buf[idx++] = cur;
+        printf("%d %d\n", idx, state);
         switch(state) {
             case 0:
                 if(iswhite(cur)) {
@@ -369,13 +370,12 @@ next(FILE *fdin, char *buf, int buflen) {
                 }
                 break;
             case LIDENT0:
-                cur = fgetc(fdin);
                 while(isident(cur)) {
-                    buf[idx++] = cur;
                     cur = fgetc(fdin);
+                    buf[idx++] = cur;
                 }
-                buf[idx] = nul;
-                if(iswhite(cur)){
+                buf[idx--] = nul;
+                if(!iswhite(cur)){
                     ungetc(cur, fdin);
                 }
                 return TIDENT;
