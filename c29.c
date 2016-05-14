@@ -2,6 +2,9 @@
 #include <stdint.h>
 #include <strings.h>
 
+#define nil NULL
+#define nul '\0'
+
 typedef enum {
     LSTART, LDEF0, LDEF1, LDEF2, LE0, LELSE1,
     LELSE2, LELSE3, LVAR0, LVAR1, LVAR2, LT0,
@@ -47,6 +50,8 @@ int next(FILE *, char *, int);
 AST *read(FILE *);
 int compile(FILE *, FILE *);
 int iswhite(int);
+int isident(int);
+int isbrace(int);
 
 int
 main(int ac, char **al) {
@@ -54,16 +59,26 @@ main(int ac, char **al) {
     char buf[512];
     printf("here: \n");
     do {
-        printf(">>> \n");
+        printf(">>> ");
         ret = next(stdin, &buf[0], 512);
-        printf("%s %d", buf, ret);
-    } while(!strncmp(buf, "quit", 512));
+        printf("%s %d\n", buf, ret);
+    } while(strncmp(buf, "quit", 512));
     return 0;
 }
 
 int
 iswhite(int c){
     return (c == ' ' || c == '\r' || c == '\n' || c == '\v' || c == '\t');
+}
+
+int
+isbrace(int c) {
+    return (c == '{' || c == '}' || c == '(' || c == ')' || c == '[' || c == ']');
+}
+
+int
+isident(int c){
+    return (!iswhite(c) && c != ';' && c != '"' && c != '\'' && !isbrace(c));
 }
 
 int
@@ -89,8 +104,12 @@ next(FILE *fdin, char *buf, int buflen) {
         buf[idx++] = cur;
         switch(state) {
             case 0:
-                while(cur == ' ' || cur == '\r' || cur == '\t' || cur == '\n') {
-                    cur = fgetc(fdin);
+                if(iswhite(cur)) {
+                    idx--;
+                    while(cur == ' ' || cur == '\r' || cur == '\t' || cur == '\n') {
+                        cur = fgetc(fdin);
+                    }
+                    buf[idx++] = cur;
                 }
                 /* probably _should_ collapse this into a
                  * a HSM instead of the current flat SM...
@@ -337,6 +356,7 @@ next(FILE *fdin, char *buf, int buflen) {
                 cur = fgetc(fdin);
                 while(cur >= '0' && cur <= '9') {
                     buf[idx++] = cur;
+                    cur = fgetc(fdin);
                 }
 
                 if(iswhite(cur)) {
@@ -349,6 +369,16 @@ next(FILE *fdin, char *buf, int buflen) {
                 }
                 break;
             case LIDENT0:
+                cur = fgetc(fdin);
+                while(isident(cur)) {
+                    buf[idx++] = cur;
+                    cur = fgetc(fdin);
+                }
+                buf[idx] = nul;
+                if(iswhite(cur)){
+                    ungetc(cur, fdin);
+                }
+                return TIDENT;
                 break;
         }
     }
