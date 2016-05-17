@@ -14,6 +14,7 @@ typedef enum {
     LEND2, LMATCH0, LCOMMENT, LMCOMMENT, LPOLY0,
     LPOLY1, LPOLY2, LPOLY3, LRECORD0,
     LRECORD1, LRECORD2, LRECORD3, LRECORD4, LRECORD5,
+    LMATCH1, LMATCH2, LMATCH3, LMATCH4, LMATCH5,
 } LexStates;
 
 typedef enum {
@@ -59,7 +60,6 @@ int
 main(int ac, char **al) {
     int ret = 0;
     char buf[512];
-    printf("here: \n");
     do {
         printf(">>> ");
         ret = next(stdin, &buf[0], 512);
@@ -458,6 +458,44 @@ next(FILE *fdin, char *buf, int buflen) {
                     state = LIDENT0;
                 }
                 break;
+            case LMATCH0: 
+                if(cur == 'a') {
+                    state = LMATCH1;
+                } else {
+                    state = LIDENT0;
+                }
+                break;
+            case LMATCH1: 
+                if(cur == 't') {
+                    state = LMATCH2;
+                } else {
+                    state = LIDENT0;
+                }
+                break;
+            case LMATCH2: 
+                if(cur == 'c') {
+                    state = LMATCH3;
+                } else {
+                    state = LIDENT0;
+                }
+                break;
+            case LMATCH3: 
+                if(cur == 'h') {
+                    state = LMATCH4;
+                } else {
+                    state = LIDENT0;
+                }
+                break;
+            case LMATCH4:
+                if(iswhite(cur)) {
+                    return TMATCH;
+                } else if(cur == ';') {
+                    ungetc(cur, fdin);
+                    return TMATCH;
+                } else {
+                    state = LIDENT0;
+                }
+                break;
             case LNUM0:
                 cur = fgetc(fdin);
                 while(cur >= '0' && cur <= '9') {
@@ -493,6 +531,63 @@ read(FILE *fdin) {
     /* _read_ from `fdin` until a single AST is constructed, or EOF
      * is reached.
      */
+    AST *head = nil;
+    int ltype;
+    char buffer[512] = {0};
+
+    ltype = next(fdin, &buffer[0], 512);
+    switch(ltype) {
+        case TDEF:
+             break;
+        case TBEGIN:
+             break;
+        case TEND:
+             break;
+        case TEQUAL:
+             break;
+        case TCOREFORM:
+             break;
+        case TIDENT:
+             break;
+        case TCALL:
+             break;
+        case TOPAREN:
+             break;
+        case TCPAREN:
+             break;
+        case TMATCH:
+             break;
+        case TIF:
+             break;
+        case TELSE:
+             break;
+        case TTHEN:
+             break;
+        case TTYPE:
+             break;
+        case TPOLY:
+             break;
+        case TVAR:
+             break;
+        case TARRAY:
+             break;
+        case TRECORD:
+             break;
+        case TINT:
+             break;
+        case TFLOAT:
+             break;
+        case TSTRING:
+             break;
+        case TCHAR:
+             break;
+        case TBOOL:
+             break;
+        case TEQ:
+             break;
+        case TSEMI:
+             break;
+    }
     return NULL;
 }
 
