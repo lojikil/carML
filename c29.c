@@ -413,51 +413,51 @@ next(FILE *fdin, char *buf, int buflen) {
                     state = LIDENT0;
                 }
                 break;
-                case LRECORD0: 
-                    if(cur == 'e') {
-                        state = LRECORD1;
-                    } else {
-                        state = LIDENT0;
-                    }
-                    break;
-                case LRECORD1: 
-                    if(cur == 'c') {
-                        state = LRECORD2;
-                    } else {
-                        state = LIDENT0;
-                    }
-                    break;
-                case LRECORD2: 
-                    if(cur == 'o') {
-                        state = LRECORD3;
-                    } else {
-                        state = LIDENT0;
-                    }
-                    break;
-                case LRECORD3: 
-                    if(cur == 'r') {
-                        state = LRECORD4;
-                    } else {
-                        state = LIDENT0;
-                    }
-                    break;
-                case LRECORD4: 
-                    if(cur == 'd') {
-                        state = LRECORD5;
-                    } else {
-                        state = LIDENT0;
-                    }
-                    break;
-                case LRECORD5:
-                    if(iswhite(cur)) {
-                        return TRECORD;
-                    } else if(cur == ';') {
-                        ungetc(cur, fdin);
-                        return TRECORD;
-                    } else {
-                        state = LIDENT0;
-                    }
-                    break;
+            case LRECORD0: 
+                if(cur == 'e') {
+                    state = LRECORD1;
+                } else {
+                    state = LIDENT0;
+                }
+                break;
+            case LRECORD1: 
+                if(cur == 'c') {
+                    state = LRECORD2;
+                } else {
+                    state = LIDENT0;
+                }
+                break;
+            case LRECORD2: 
+                if(cur == 'o') {
+                    state = LRECORD3;
+                } else {
+                    state = LIDENT0;
+                }
+                break;
+            case LRECORD3: 
+                if(cur == 'r') {
+                    state = LRECORD4;
+                } else {
+                    state = LIDENT0;
+                }
+                break;
+            case LRECORD4: 
+                if(cur == 'd') {
+                    state = LRECORD5;
+                } else {
+                    state = LIDENT0;
+                }
+                break;
+            case LRECORD5:
+                if(iswhite(cur)) {
+                    return TRECORD;
+                } else if(cur == ';') {
+                    ungetc(cur, fdin);
+                    return TRECORD;
+                } else {
+                    state = LIDENT0;
+                }
+                break;
             case LNUM0:
                 cur = fgetc(fdin);
                 while(cur >= '0' && cur <= '9') {
