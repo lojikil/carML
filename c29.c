@@ -12,7 +12,7 @@ typedef enum {
     LTYPE2, LBEGIN0, LBEGIN1, LBEGIN2, LBEGIN3,
     LBEGIN4, LEQ0, LNUM0, LIDENT0, LEND0, LEND1,
     LEND2, LMATCH0, LCOMMENT, LMCOMMENT, LPOLY0,
-    LPOLY0, LPOLY1, LPOLY2, LPOLY3, LRECORD0,
+    LPOLY1, LPOLY2, LPOLY3, LRECORD0,
     LRECORD1, LRECORD2, LRECORD3, LRECORD4, LRECORD5,
 } LexStates;
 
@@ -140,6 +140,9 @@ next(FILE *fdin, char *buf, int buflen) {
                         break;
                     case ';': // semi-colon is a statement-breaker...
                         return TSEMI;
+                    case 'r':
+                        state = LRECORD0;
+                        break;
                     case 'p': // poly
                         state = LPOLY0;
                         break;
@@ -379,6 +382,82 @@ next(FILE *fdin, char *buf, int buflen) {
                     state = LIDENT0;
                 }
                 break;
+            case LPOLY0: 
+                if(cur == 'o') {
+                    state = LPOLY1;
+                } else {
+                    state = LIDENT0;
+                }
+                break;
+            case LPOLY1: 
+                if(cur == 'l') {
+                    state = LPOLY2;
+                } else {
+                    state = LIDENT0;
+                }
+                break;
+            case LPOLY2: 
+                if(cur == 'y') {
+                    state = LPOLY3;
+                } else {
+                    state = LIDENT0;
+                }
+                break;
+            case LPOLY3:
+                if(iswhite(cur)) {
+                    return TPOLY;
+                } else if(cur == ';') {
+                    ungetc(cur, fdin);
+                    return TPOLY;
+                } else {
+                    state = LIDENT0;
+                }
+                break;
+                case LRECORD0: 
+                    if(cur == 'e') {
+                        state = LRECORD1;
+                    } else {
+                        state = LIDENT0;
+                    }
+                    break;
+                case LRECORD1: 
+                    if(cur == 'c') {
+                        state = LRECORD2;
+                    } else {
+                        state = LIDENT0;
+                    }
+                    break;
+                case LRECORD2: 
+                    if(cur == 'o') {
+                        state = LRECORD3;
+                    } else {
+                        state = LIDENT0;
+                    }
+                    break;
+                case LRECORD3: 
+                    if(cur == 'r') {
+                        state = LRECORD4;
+                    } else {
+                        state = LIDENT0;
+                    }
+                    break;
+                case LRECORD4: 
+                    if(cur == 'd') {
+                        state = LRECORD5;
+                    } else {
+                        state = LIDENT0;
+                    }
+                    break;
+                case LRECORD5:
+                    if(iswhite(cur)) {
+                        return TRECORD;
+                    } else if(cur == ';') {
+                        ungetc(cur, fdin);
+                        return TRECORD;
+                    } else {
+                        state = LIDENT0;
+                    }
+                    break;
             case LNUM0:
                 cur = fgetc(fdin);
                 while(cur >= '0' && cur <= '9') {
