@@ -14,7 +14,7 @@ typedef enum {
     LEND2, LMATCH0, LCOMMENT, LMCOMMENT, LPOLY0,
     LPOLY1, LPOLY2, LPOLY3, LRECORD0,
     LRECORD1, LRECORD2, LRECORD3, LRECORD4, LRECORD5,
-    LMATCH1, LMATCH2, LMATCH3, LMATCH4, LMATCH5,
+    LMATCH1, LMATCH2, LMATCH3, LMATCH4, LMATCH5, LEOF
 } LexStates;
 
 typedef enum {
@@ -22,7 +22,7 @@ typedef enum {
     TIDENT, TCALL, TOPAREN, TCPAREN, TMATCH,
     TIF, TELSE, TTHEN, TTYPE, TPOLY, TVAR,
     TARRAY, TRECORD, TINT, TFLOAT, TSTRING,
-    TCHAR, TBOOL, TEQ, TSEMI
+    TCHAR, TBOOL, TEQ, TSEMI, TEOF
 } TypeTag;
 
 struct _AST {
@@ -49,8 +49,19 @@ struct _AST {
 
 typedef struct _AST AST;
 
+typedef struct _ASTEither {
+    struct {
+        int line;
+        int error;
+        char *message;
+    } left;
+    AST *right;
+} ASTEither;
+
 int next(FILE *, char *, int);
-AST *read(FILE *);
+ASTEither *read(FILE *);
+ASTEither *ASTLeft(int, int, char *);
+ASTEither *ASTRight(AST *);
 int compile(FILE *, FILE *);
 int iswhite(int);
 int isident(int);
@@ -64,8 +75,33 @@ main(int ac, char **al) {
         printf(">>> ");
         ret = next(stdin, &buf[0], 512);
         printf("%s %d\n", buf, ret);
+        if(ret == TEOF) {
+            break;
+        }
     } while(strncmp(buf, "quit", 512));
     return 0;
+}
+
+ASTEither *
+ASTLeft(int line, int error, char *message) {
+    /* CADT would be pretty easy here, but there's little
+     * point in doing what this compiler will do anyway eventually
+     * So I toil away, in the dark, writing out things I know how
+     * to automate, so that a brighter future may be created from
+     * those dark times when we languished in the C.
+     */
+    ASTEither *head = (ASTEither *)hmalloc(sizeof(ASTEither));
+    head->left.line = line;
+    head->left.error = error;
+    head->left.message = hstrdup(message);
+    return head;
+}
+
+ASTEither *
+ASTRight(AST *head) {
+    ASTEither *ret = (ASTEither *)hmalloc(sizeof(ASTEither));
+    ret->right = head;
+    return ret;
 }
 
 int
@@ -103,6 +139,9 @@ next(FILE *fdin, char *buf, int buflen) {
          * generate said table, for LL(k).
          */
         cur = fgetc(fdin);
+        if(feof(fdin)) {
+            return TEOF;
+        }
         buf[idx++] = cur;
         //printf("%d %d\n", idx, state);
         switch(state) {
@@ -526,19 +565,31 @@ next(FILE *fdin, char *buf, int buflen) {
     return rc;
 }
 
-AST *
+ASTEither *
 read(FILE *fdin) {
     /* _read_ from `fdin` until a single AST is constructed, or EOF
      * is reached.
      */
-    AST *head = nil;
-    int ltype;
+    AST *head = nil, *tmp = nil;
+    int ltype = 0, ltmp = 0;
     char buffer[512] = {0};
 
     ltype = next(fdin, &buffer[0], 512);
     switch(ltype) {
         case TDEF:
-             break;
+            ltmp = next(fdin, &buffer[0], 512);
+            if(ltmp != TIDENT) {
+                return ASTLeft("parser error");
+            }
+            tmp = read(fdin);
+            head = (AST *) hmalloc(sizeof(AST));
+            /* the specific form we're looking for here is 
+             * TDEF TIDENT (TIDENT *) TEQUAL TEXPRESSION
+             * that (TIDENT *) is the parameter list to non-nullary
+             * functions. I wonder if there should be a specific 
+             * syntax for side-effecting functions...
+             */
+            break;
         case TBEGIN:
              break;
         case TEND:
