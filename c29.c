@@ -22,7 +22,8 @@ typedef enum {
     TIDENT, TCALL, TOPAREN, TCPAREN, TMATCH,
     TIF, TELSE, TTHEN, TTYPE, TPOLY, TVAR,
     TARRAY, TRECORD, TINT, TFLOAT, TSTRING,
-    TCHAR, TBOOL, TEQ, TSEMI, TEOF
+    TCHAR, TBOOL, TEQ, TSEMI, TEOF, TPARAMLIST,
+    TTDECL
 } TypeTag;
 
 struct _AST {
@@ -43,6 +44,8 @@ struct _AST {
      * no need for SRFI-57 inhereitence, save for to
      * create convience methods... hmm... :thinking_face:
      */
+    char *value;
+    uint32_t lenvalue;
     uint32_t lenchildren;
     struct _AST **children;
 };
@@ -570,25 +573,68 @@ read(FILE *fdin) {
     /* _read_ from `fdin` until a single AST is constructed, or EOF
      * is reached.
      */
-    AST *head = nil, *tmp = nil;
-    int ltype = 0, ltmp = 0;
+    AST *head = nil, *tmp = nil, *vectmp[128], *name = nil;
+    int ltype = 0, ltmp = 0, idx = 0;
     char buffer[512] = {0};
 
     ltype = next(fdin, &buffer[0], 512);
     switch(ltype) {
         case TDEF:
-            ltmp = next(fdin, &buffer[0], 512);
+            ltmp = next(fdin, &buffer[1], 512);
             if(ltmp != TIDENT) {
-                return ASTLeft("parser error");
+                return ASTLeft(0, 0, "parser error");
             }
-            tmp = read(fdin);
+            name = (AST *) hmalloc(sizeof(AST));
             head = (AST *) hmalloc(sizeof(AST));
+
+            name->type = TIDENT;
+            name->value = hstrdup(buffer);
+            name->lenvalue = strnlen(buffer, 512);
+
             /* the specific form we're looking for here is 
              * TDEF TIDENT (TIDENT *) TEQUAL TEXPRESSION
              * that (TIDENT *) is the parameter list to non-nullary
              * functions. I wonder if there should be a specific 
              * syntax for side-effecting functions...
              */
+            tmp = read(fdin);
+            while(tmp->type == TIDENT) {
+                vectmp[idx++] = tmp;
+                tmp = read(fdin);
+            }
+
+            if(tmp->type != TEQ) {
+                return ASTLeft(0, 0, "parser error: a `DEF` parameter list *must* be followed by `=`");
+            }
+
+            /* convert `vectmp` into a TPARAMLIST AST node.
+             */
+
+            AST **params = (AST *) hmalloc(sizeof(AST *) * idx);
+            for(int i = 0; i < idx; i++) {
+                params->children = vectmp[i];
+            }
+
+            params->type = TPARAMLIST;
+            params->lenchildren = idx;
+
+            /* ok, now that we have the parameter list and the syntactic `=` captured,
+             * we read a single expression, which is the body of the procedure we're
+             * defining.
+             */
+            tmp = read(fdin);
+
+            /* Now, we have to build our actual TDEF AST.
+             * a TDEF is technically a list:
+             * - TIDENT that is our name.
+             * - TPARAMLIST that holds our parameter names
+             * - and some TExpression that represents our body
+             */
+            head->children = (AST **)hmalloc(sizeof(AST *) * 3);
+            head->children[0] = name;
+            head->children[1] = params;
+            head->children[2] = tmp;
+            return head;
             break;
         case TBEGIN:
              break;
