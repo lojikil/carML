@@ -54,13 +54,17 @@ eventually add something to "preprocess" source code and have operators (or simp
         end
         arrayIota' arr f 0
     end
-
+    
+    # same as the above, but here we
+    # use the closure in arrayIota' to
+    # capture variables, instead of
+    # explicitly passing them in
     def arrayIota0 arr f = begin
         def arrayIota' idx = begin
             set-array-index! arr f idx
             arrayIota' (add idx 1)
         end
-        arrayIota' arr f 0
+        arrayIota' 0
     end
     
     def foo x = sum x 1
