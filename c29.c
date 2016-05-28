@@ -65,6 +65,7 @@ int next(FILE *, char *, int);
 ASTEither *read(FILE *);
 ASTEither *ASTLeft(int, int, char *);
 ASTEither *ASTRight(AST *);
+void walk(AST *, int);
 int compile(FILE *, FILE *);
 int iswhite(int);
 int isident(int);
@@ -671,21 +672,46 @@ read(FILE *fdin) {
         case TRECORD:
              break;
         case TINT:
-             break;
+             head = (AST *)hmalloc(sizeof(AST));
+             head->type = TINT;
+             head->value = hstrdup(buffer);
+             return head;
         case TFLOAT:
-             break;
+             head = (AST *)hmalloc(sizeof(AST));
+             head->type = TFLOAT;
+             head->value = hstrdup(buffer);
+             return head;
         case TSTRING:
-             break;
+             head = (AST *)hmalloc(sizeof(AST));
+             head->type = TSTRING;
+             head->value = hstrdup(buffer);
+             return head;
         case TCHAR:
-             break;
+             head = (AST *)hmalloc(sizeof(AST));
+             head->type = TCHAR;
+             head->value = hstrdup(buffer);
+             return head;
         case TBOOL:
-             break;
+             head = (AST *)hmalloc(sizeof(AST));
+             head->type = TBOOL;
+             head->value = hstrdup(buffer);
+             return head;
         case TEQ:
+             head = (AST *)hmalloc(sizeof(AST));
+             head->type = TEQ;
+             return head;
              break;
         case TSEMI:
-             break;
+             head = (AST *)hmalloc(sizeof(AST));
+             head->type = TSEMI;
+             return head;
     }
     return NULL;
+}
+
+void
+walk(AST *head, int level) {
+
 }
 
 int
