@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <strings.h>
+#include <gc.h>
+
+#define hmalloc GC_MALLOC
 
 #define nil NULL
 #define nul '\0'
@@ -61,6 +64,7 @@ typedef struct _ASTEither {
     AST *right;
 } ASTEither;
 
+char *hstrdup(const char *);
 int next(FILE *, char *, int);
 ASTEither *read(FILE *);
 ASTEither *ASTLeft(int, int, char *);
@@ -75,6 +79,7 @@ int
 main(int ac, char **al) {
     int ret = 0;
     char buf[512];
+    GC_INIT();
     do {
         printf(">>> ");
         ret = next(stdin, &buf[0], 512);
@@ -720,4 +725,20 @@ compile(FILE *fdin, FILE *fdout) {
      * decent C code from it, which is written to `fdout`.
      */
     return -1;
+}
+
+char *
+hstrdup(const char *s)
+{
+        char *ret = nil; 
+        int l = 0, i = 0; 
+        if(s == nil) 
+            return nil; 
+        l = strlen(s);
+        if((ret = (char *)hmalloc(sizeof(char) * l + 1)) == nil) 
+            return nil; 
+        for(;i < l;i++)
+            ret[i] = s[i];
+        ret[i] = nul; 
+        return ret; 
 }
