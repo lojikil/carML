@@ -55,7 +55,10 @@ struct _AST {
 
 typedef struct _AST AST;
 
+typedef _ASTEITHERTAG { ASTLEFT, ASTRIGHT } ASTEitherTag;
+
 typedef struct _ASTEither {
+    ASTEitherTag tag;
     struct {
         int line;
         int error;
@@ -77,17 +80,27 @@ int isbrace(int);
 
 int
 main(int ac, char **al) {
-    int ret = 0;
-    char buf[512];
+    ASTEither *ret = nil;
+    AST *tmp = nil;
     GC_INIT();
     do {
         printf(">>> ");
-        ret = next(stdin, &buf[0], 512);
-        printf("%s %d\n", buf, ret);
-        if(ret == TEOF) {
-            break;
+        read(fdin);
+        //ret = next(stdin, &buf[0], 512);
+        //printf("%s %d\n", buf, ret);
+        if(ret->tag == ASTLEFT) {
+            printf("parse error: %s", ret->left.message);
+        } else {
+            tmp = ret->right;
+
+            if(tmp->type == TEOF) {
+                break;
+            } else if(tmp->type == TIDENT && strncmp(buf, "quit", 4)) {
+                break;
+            }
+            walk(tmp, 0);
         }
-    } while(strncmp(buf, "quit", 512));
+    } while(1);
     return 0;
 }
 
@@ -579,7 +592,7 @@ read(FILE *fdin) {
     /* _read_ from `fdin` until a single AST is constructed, or EOF
      * is reached.
      */
-    AST *head = nil, *tmp = nil, *vectmp[128], *name = nil;
+    AST *head = nil, *tmp = nil, *vectmp[128];
     int ltype = 0, ltmp = 0, idx = 0;
     char buffer[512] = {0};
 
@@ -590,12 +603,11 @@ read(FILE *fdin) {
             if(ltmp != TIDENT) {
                 return ASTLeft(0, 0, "parser error");
             }
-            name = (AST *) hmalloc(sizeof(AST));
+
             head = (AST *) hmalloc(sizeof(AST));
 
-            name->type = TIDENT;
-            name->value = hstrdup(buffer);
-            name->lenvalue = strnlen(buffer, 512);
+            head->value = hstrdup(buffer);
+            head->lenvalue = strnlen(buffer, 512);
 
             /* the specific form we're looking for here is 
              * TDEF TIDENT (TIDENT *) TEQUAL TEXPRESSION
@@ -616,13 +628,16 @@ read(FILE *fdin) {
             /* convert `vectmp` into a TPARAMLIST AST node.
              */
 
-            AST **params = (AST *) hmalloc(sizeof(AST *) * idx);
-            for(int i = 0; i < idx; i++) {
-                params->children = vectmp[i];
-            }
+            AST *params = nil;
+            if(idx > 0) {    
+                params = (AST *) hmalloc(sizeof(AST) * idx);
+                for(int i = 0; i < idx; i++) {
+                    params->children = vectmp[i];
+                }
 
-            params->type = TPARAMLIST;
-            params->lenchildren = idx;
+                params->type = TPARAMLIST;
+                params->lenchildren = idx;
+            }
 
             /* ok, now that we have the parameter list and the syntactic `=` captured,
              * we read a single expression, which is the body of the procedure we're
@@ -636,10 +651,9 @@ read(FILE *fdin) {
              * - TPARAMLIST that holds our parameter names
              * - and some TExpression that represents our body
              */
-            head->children = (AST **)hmalloc(sizeof(AST *) * 3);
-            head->children[0] = name;
-            head->children[1] = params;
-            head->children[2] = tmp;
+            head->children = (AST **)hmalloc(sizeof(AST *) * 2);
+            head->children[0] = params;
+            head->children[1] = tmp;
             return head;
             break;
         case TBEGIN:
@@ -716,7 +730,42 @@ read(FILE *fdin) {
 
 void
 walk(AST *head, int level) {
+    int idx = 0;
 
+    for(; idx < level; idx++) {
+        printf("    ");
+    }
+
+    switch(head->type) {
+        case TDEF:
+            printf("(define %s", head->value);
+            if(head->children[0] != nil) {
+                walk(head->children[0], level);
+            }
+            walk(head->children[1], level + 1);
+            printf(")\n");
+            break;
+        case TPARAMLIST:
+            printf("(parameter-list ");
+            for(;idx < head->lenchildren; idx++) {
+                walk(head->children[idx], 0); 
+            }
+            printf(") ");
+            break;
+        case TIDENT:
+            printf("(identifier %s)", head->value);
+            break;
+        case TFLOAT:
+            printf("(float %s)", head->value);
+            break;
+        case TINT:
+            printf("(integer %s)", head->value);
+            break;
+        case TSTRING:
+            printf("(string \"%s\")", head->value);
+            break;
+    }
+    return;
 }
 
 int
