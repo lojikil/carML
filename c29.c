@@ -55,7 +55,7 @@ struct _AST {
 
 typedef struct _AST AST;
 
-typedef _ASTEITHERTAG { ASTLEFT, ASTRIGHT } ASTEitherTag;
+typedef enum _ASTEITHERTAG { ASTLEFT, ASTRIGHT } ASTEitherTag;
 
 typedef struct _ASTEither {
     ASTEitherTag tag;
@@ -85,7 +85,7 @@ main(int ac, char **al) {
     GC_INIT();
     do {
         printf(">>> ");
-        read(fdin);
+        ret = read(stdin);
         //ret = next(stdin, &buf[0], 512);
         //printf("%s %d\n", buf, ret);
         if(ret->tag == ASTLEFT) {
@@ -93,12 +93,13 @@ main(int ac, char **al) {
         } else {
             tmp = ret->right;
 
-            if(tmp->type == TEOF) {
+            if(tmp->tag == TEOF) {
                 break;
-            } else if(tmp->type == TIDENT && strncmp(buf, "quit", 4)) {
+            } else if(tmp->tag == TIDENT && !strncmp(tmp->value, "quit", 4)) {
                 break;
             }
             walk(tmp, 0);
+            printf("\n");
         }
     } while(1);
     return 0;
@@ -113,6 +114,7 @@ ASTLeft(int line, int error, char *message) {
      * those dark times when we languished in the C.
      */
     ASTEither *head = (ASTEither *)hmalloc(sizeof(ASTEither));
+    head->tag = ASTLEFT;
     head->left.line = line;
     head->left.error = error;
     head->left.message = hstrdup(message);
@@ -122,6 +124,7 @@ ASTLeft(int line, int error, char *message) {
 ASTEither *
 ASTRight(AST *head) {
     ASTEither *ret = (ASTEither *)hmalloc(sizeof(ASTEither));
+    ret->tag = ASTRIGHT;
     ret->right = head;
     return ret;
 }
@@ -593,6 +596,7 @@ read(FILE *fdin) {
      * is reached.
      */
     AST *head = nil, *tmp = nil, *vectmp[128];
+    ASTEither *sometmp = nil;
     int ltype = 0, ltmp = 0, idx = 0;
     char buffer[512] = {0};
 
@@ -615,13 +619,28 @@ read(FILE *fdin) {
              * functions. I wonder if there should be a specific 
              * syntax for side-effecting functions...
              */
-            tmp = read(fdin);
-            while(tmp->type == TIDENT) {
-                vectmp[idx++] = tmp;
-                tmp = read(fdin);
+
+            sometmp = read(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else {
+                tmp = sometmp->right;
             }
 
-            if(tmp->type != TEQ) {
+            while(tmp->tag == TIDENT) {
+                sometmp = read(fdin);
+
+                if(sometmp->tag == ASTLEFT) {
+                    return sometmp;
+                } else {
+                    tmp = sometmp->right;
+                }
+
+                vectmp[idx++] = tmp;
+            }
+
+            if(tmp->tag != TEQ) {
                 return ASTLeft(0, 0, "parser error: a `DEF` parameter list *must* be followed by `=`");
             }
 
@@ -632,10 +651,10 @@ read(FILE *fdin) {
             if(idx > 0) {    
                 params = (AST *) hmalloc(sizeof(AST) * idx);
                 for(int i = 0; i < idx; i++) {
-                    params->children = vectmp[i];
+                    params->children[i] = vectmp[i];
                 }
 
-                params->type = TPARAMLIST;
+                params->tag = TPARAMLIST;
                 params->lenchildren = idx;
             }
 
@@ -643,7 +662,13 @@ read(FILE *fdin) {
              * we read a single expression, which is the body of the procedure we're
              * defining.
              */
-            tmp = read(fdin);
+            sometmp = read(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else {
+                tmp = sometmp->right;
+            }
 
             /* Now, we have to build our actual TDEF AST.
              * a TDEF is technically a list:
@@ -654,8 +679,7 @@ read(FILE *fdin) {
             head->children = (AST **)hmalloc(sizeof(AST *) * 2);
             head->children[0] = params;
             head->children[1] = tmp;
-            return head;
-            break;
+            return ASTRight(head);
         case TBEGIN:
              break;
         case TEND:
@@ -665,7 +689,10 @@ read(FILE *fdin) {
         case TCOREFORM:
              break;
         case TIDENT:
-             break;
+             head = (AST *)hmalloc(sizeof(AST));
+             head->value = hstrdup(buffer);
+             head->tag = TIDENT;
+             return ASTRight(head);
         case TCALL:
              break;
         case TOPAREN:
@@ -692,40 +719,40 @@ read(FILE *fdin) {
              break;
         case TINT:
              head = (AST *)hmalloc(sizeof(AST));
-             head->type = TINT;
+             head->tag = TINT;
              head->value = hstrdup(buffer);
-             return head;
+             return ASTRight(head);
         case TFLOAT:
              head = (AST *)hmalloc(sizeof(AST));
-             head->type = TFLOAT;
+             head->tag = TFLOAT;
              head->value = hstrdup(buffer);
-             return head;
+             return ASTRight(head);
         case TSTRING:
              head = (AST *)hmalloc(sizeof(AST));
-             head->type = TSTRING;
+             head->tag = TSTRING;
              head->value = hstrdup(buffer);
-             return head;
+             return ASTRight(head);
         case TCHAR:
              head = (AST *)hmalloc(sizeof(AST));
-             head->type = TCHAR;
+             head->tag = TCHAR;
              head->value = hstrdup(buffer);
-             return head;
+             return ASTRight(head);
         case TBOOL:
              head = (AST *)hmalloc(sizeof(AST));
-             head->type = TBOOL;
+             head->tag = TBOOL;
              head->value = hstrdup(buffer);
-             return head;
+             return ASTRight(head);
         case TEQ:
              head = (AST *)hmalloc(sizeof(AST));
-             head->type = TEQ;
-             return head;
+             head->tag = TEQ;
+             return ASTRight(head);
              break;
         case TSEMI:
              head = (AST *)hmalloc(sizeof(AST));
-             head->type = TSEMI;
-             return head;
+             head->tag = TSEMI;
+             return ASTRight(head);
     }
-    return NULL;
+    return nil; 
 }
 
 void
@@ -736,7 +763,7 @@ walk(AST *head, int level) {
         printf("    ");
     }
 
-    switch(head->type) {
+    switch(head->tag) {
         case TDEF:
             printf("(define %s", head->value);
             if(head->children[0] != nil) {
