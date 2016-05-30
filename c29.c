@@ -603,6 +603,10 @@ read(FILE *fdin) {
 
     ltype = next(fdin, &buffer[0], 512);
     switch(ltype) {
+        case TEOF:
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TEOF;
+            return ASTRight(head);
         case TDEF:
             ltmp = next(fdin, &buffer[1], 512);
             if(ltmp != TIDENT) {
@@ -686,11 +690,35 @@ read(FILE *fdin) {
             head->children[1] = tmp;
             return ASTRight(head);
         case TBEGIN:
-             break;
+            while(1) {
+                sometmp = read(fdin);
+
+                if(sometmp->tag == ASTLEFT) {
+                    return sometmp;
+                } 
+                
+                tmp = sometmp->right;
+
+                if(tmp->tag == TEND) {
+                    break;
+                }
+                vectmp[idx++] = tmp;
+            }
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TBEGIN;
+            head->children = (AST **)hmalloc(sizeof(AST *) * idx);
+            for(int i; i < idx; i++){ 
+                head->children[i] = vectmp[i];
+            }
+            return ASTRight(head);
         case TEND:
-             break;
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TEND;
+            return ASTRight(head);
         case TEQUAL:
-             break;
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TEQUAL;
+            return ASTRight(head);
         case TCOREFORM:
              break;
         case TIDENT:
