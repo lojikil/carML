@@ -4,6 +4,7 @@
 #include <gc.h>
 
 #define hmalloc GC_MALLOC
+#define debugln printf("dying here on line %d?\n", __LINE__);
 
 #define nil NULL
 #define nul '\0'
@@ -629,6 +630,7 @@ read(FILE *fdin) {
             }
 
             while(tmp->tag == TIDENT) {
+                vectmp[idx++] = tmp;
                 sometmp = read(fdin);
 
                 if(sometmp->tag == ASTLEFT) {
@@ -637,7 +639,6 @@ read(FILE *fdin) {
                     tmp = sometmp->right;
                 }
 
-                vectmp[idx++] = tmp;
             }
 
             if(tmp->tag != TEQ) {
@@ -649,13 +650,17 @@ read(FILE *fdin) {
 
             AST *params = nil;
             if(idx > 0) {    
-                params = (AST *) hmalloc(sizeof(AST) * idx);
+                debugln;
+                params = (AST *) hmalloc(sizeof(AST));
+                params->children = (AST **) hmalloc(sizeof(AST *) * idx);
                 for(int i = 0; i < idx; i++) {
                     params->children[i] = vectmp[i];
                 }
+                debugln;
 
                 params->tag = TPARAMLIST;
                 params->lenchildren = idx;
+                debugln;
             }
 
             /* ok, now that we have the parameter list and the syntactic `=` captured,
