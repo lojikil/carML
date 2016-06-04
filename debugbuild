@@ -1,0 +1,1 @@
+cc -g -o c29 c29.c -L ~/homebrew/lib/ -I ~/homebrew/include/ -lgc
