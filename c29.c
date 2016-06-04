@@ -164,6 +164,23 @@ next(FILE *fdin, char *buf, int buflen) {
          * recursive descent parser generator based on a simple specification and
          * generate said table, for LL(k).
          */
+        /* XXX: this currently introduces a bug.
+         * because the states for the various
+         * keywords are broken out, when they hit
+         * something that _isn't_ part of the
+         * keyword, they end up adding it, even
+         * tho it should break the ident. So, 
+         * for example, "t e" should be two
+         * identifiers, but because it's part
+         * of the "then or type" case, it ends
+         * up being *one*. could add a hack to
+         * the LIDENT case to check this, or
+         * reorganize the states below to be
+         * better (such as via a translation
+         * table). Probably will add the hack
+         * to the C-version, and fix it
+         * properly in the 29 version.
+         */
         cur = fgetc(fdin);
         if(feof(fdin)) {
             return TEOF;
@@ -171,7 +188,7 @@ next(FILE *fdin, char *buf, int buflen) {
         buf[idx++] = cur;
         //printf("%d %d\n", idx, state);
         switch(state) {
-            case 0:
+            case LSTART:
                 if(iswhite(cur)) {
                     idx--;
                     while(cur == ' ' || cur == '\r' || cur == '\t' || cur == '\n') {
@@ -578,6 +595,7 @@ next(FILE *fdin, char *buf, int buflen) {
                 }
                 break;
             case LIDENT0:
+                /* XXX: hairy code away */
                 while(isident(cur)) {
                     cur = fgetc(fdin);
                     buf[idx++] = cur;
@@ -691,23 +709,29 @@ read(FILE *fdin) {
             return ASTRight(head);
         case TBEGIN:
             while(1) {
+                debugln;
                 sometmp = read(fdin);
-
+                debugln;
                 if(sometmp->tag == ASTLEFT) {
                     return sometmp;
                 } 
-                
+                debugln; 
                 tmp = sometmp->right;
-
+                debugln;
                 if(tmp->tag == TEND) {
+                    debugln;
                     break;
                 }
+                debugln;
                 vectmp[idx++] = tmp;
+                printf("tmp == nil? %s\n", tmp == nil ? "yes" : "no");
             }
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = TBEGIN;
             head->children = (AST **)hmalloc(sizeof(AST *) * idx);
-            for(int i; i < idx; i++){ 
+            head->lenchildren = idx;
+            for(int i = 0; i < idx; i++){ 
+                printf("vectmp[i] == nil? %s\n", vectmp[i] == nil ? "yes" : "no");
                 head->children[i] = vectmp[i];
             }
             return ASTRight(head);
@@ -795,7 +819,10 @@ walk(AST *head, int level) {
     for(; idx < level; idx++) {
         printf("    ");
     }
-
+    if(head == nil) {
+        printf("(nil)\n");
+        return;
+    }
     switch(head->tag) {
         case TDEF:
             printf("(define %s", head->value);
@@ -823,6 +850,19 @@ walk(AST *head, int level) {
             break;
         case TSTRING:
             printf("(string \"%s\")", head->value);
+            break;
+        case TBEGIN:
+            printf("(begin %d\n", head->lenchildren);
+            for(; idx < head->lenchildren; idx++){
+                walk(head->children[idx], level + 1);
+                printf("\n");
+            }
+            printf(")\n");
+            break;
+        case TEND:
+            break;
+        default:
+            printf("(tag %d)\n", head->tag);
             break;
     }
     return;
