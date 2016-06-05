@@ -626,7 +626,7 @@ read(FILE *fdin) {
             head->tag = TEOF;
             return ASTRight(head);
         case TDEF:
-            ltmp = next(fdin, &buffer[1], 512);
+            ltmp = next(fdin, &buffer[0], 512);
             if(ltmp != TIDENT) {
                 return ASTLeft(0, 0, "parser error");
             }
@@ -672,17 +672,17 @@ read(FILE *fdin) {
 
             AST *params = nil;
             if(idx > 0) {    
-                debugln;
+                //debugln;
                 params = (AST *) hmalloc(sizeof(AST));
                 params->children = (AST **) hmalloc(sizeof(AST *) * idx);
                 for(int i = 0; i < idx; i++) {
                     params->children[i] = vectmp[i];
                 }
-                debugln;
+                //debugln;
 
                 params->tag = TPARAMLIST;
                 params->lenchildren = idx;
-                debugln;
+                //debugln;
             }
 
             /* ok, now that we have the parameter list and the syntactic `=` captured,
@@ -709,29 +709,29 @@ read(FILE *fdin) {
             return ASTRight(head);
         case TBEGIN:
             while(1) {
-                debugln;
+                //debugln;
                 sometmp = read(fdin);
-                debugln;
+                //debugln;
                 if(sometmp->tag == ASTLEFT) {
                     return sometmp;
                 } 
-                debugln; 
+                //debugln; 
                 tmp = sometmp->right;
-                debugln;
+                //debugln;
                 if(tmp->tag == TEND) {
-                    debugln;
+                    //debugln;
                     break;
                 }
-                debugln;
+                //debugln;
                 vectmp[idx++] = tmp;
-                printf("tmp == nil? %s\n", tmp == nil ? "yes" : "no");
+                //printf("tmp == nil? %s\n", tmp == nil ? "yes" : "no");
             }
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = TBEGIN;
             head->children = (AST **)hmalloc(sizeof(AST *) * idx);
             head->lenchildren = idx;
             for(int i = 0; i < idx; i++){ 
-                printf("vectmp[i] == nil? %s\n", vectmp[i] == nil ? "yes" : "no");
+                //printf("vectmp[i] == nil? %s\n", vectmp[i] == nil ? "yes" : "no");
                 head->children[i] = vectmp[i];
             }
             return ASTRight(head);
@@ -825,10 +825,11 @@ walk(AST *head, int level) {
     }
     switch(head->tag) {
         case TDEF:
-            printf("(define %s", head->value);
+            printf("(define %s ", head->value);
             if(head->children[0] != nil) {
                 walk(head->children[0], level);
             }
+            printf("\n");
             walk(head->children[1], level + 1);
             printf(")\n");
             break;
@@ -853,7 +854,7 @@ walk(AST *head, int level) {
             break;
         case TBEGIN:
             printf("(begin %d\n", head->lenchildren);
-            for(; idx < head->lenchildren; idx++){
+            for(idx = 0; idx < head->lenchildren; idx++){
                 walk(head->children[idx], level + 1);
                 printf("\n");
             }
