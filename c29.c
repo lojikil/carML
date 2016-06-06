@@ -18,7 +18,8 @@ typedef enum {
     LEND2, LMATCH0, LCOMMENT, LMCOMMENT, LPOLY0,
     LPOLY1, LPOLY2, LPOLY3, LRECORD0,
     LRECORD1, LRECORD2, LRECORD3, LRECORD4, LRECORD5,
-    LMATCH1, LMATCH2, LMATCH3, LMATCH4, LMATCH5, LEOF
+    LMATCH1, LMATCH2, LMATCH3, LMATCH4, LMATCH5, LEOF,
+    LWHEN0, LWHEN1, LWHEN2, LWHEN3, LNEWL, LDO0, LDO1
 } LexStates;
 
 typedef enum {
@@ -27,7 +28,7 @@ typedef enum {
     TIF, TELSE, TTHEN, TTYPE, TPOLY, TVAR,
     TARRAY, TRECORD, TINT, TFLOAT, TSTRING,
     TCHAR, TBOOL, TEQ, TSEMI, TEOF, TPARAMLIST,
-    TTDECL
+    TTDECL, TWHEN, TNEWL, TDO
 } TypeTag;
 
 struct _AST {
@@ -236,6 +237,12 @@ next(FILE *fdin, char *buf, int buflen) {
                         break;
                     case 'm': // match
                         state = LMATCH0;
+                        break;
+                    case 'w': // when
+                        state = LWHEN0;
+                        break;
+                    case 'd':
+                        state = LDO0;
                         break;
                     case '0':
                     case '1':
@@ -577,6 +584,54 @@ next(FILE *fdin, char *buf, int buflen) {
                 } else {
                     state = LIDENT0;
                 }
+                break;
+            case LWHEN0: 
+                if(cur == 'h') {
+                    state = LWHEN1;
+                } else {
+                    state = LIDENT0;
+                }
+                break;
+            case LWHEN1: 
+                if(cur == 'e') {
+                    state = LWHEN2;
+                } else {
+                    state = LIDENT0;
+                }
+                break;
+            case LWHEN2: 
+                if(cur == 'n') {
+                    state = LWHEN3;
+                } else {
+                    state = LIDENT0;
+                }
+                break;
+            case LWHEN3:
+                if(iswhite(cur)) {
+                    return TWHEN;
+                } else if(cur == ';') {
+                    ungetc(cur, fdin);
+                    return TWHEN;
+                } else {
+                    state = LIDENT0;
+                }
+                break;
+            case LDO0: 
+                if(cur == 'o') {
+                    state = LDO1;
+                } else {
+                    state = LIDENT0;
+                }
+                break;
+            case LDO1:
+                if(iswhite(cur)) {
+                    return TDO;
+                } else if(cur == ';') {
+                    ungetc(cur, fdin);
+                    return TDO;
+                } else {
+                    state = LIDENT0;
+                } 
                 break;
             case LNUM0:
                 cur = fgetc(fdin);
