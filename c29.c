@@ -616,7 +616,7 @@ read(FILE *fdin) {
      */
     AST *head = nil, *tmp = nil, *vectmp[128];
     ASTEither *sometmp = nil;
-    int ltype = 0, ltmp = 0, idx = 0;
+    int ltype = 0, ltmp = 0, idx = 0, flag = 0;
     char buffer[512] = {0};
 
     ltype = next(fdin, &buffer[0], 512);
@@ -721,6 +721,18 @@ read(FILE *fdin) {
                 if(tmp->tag == TEND) {
                     //debugln;
                     break;
+                } else if(tmp->tag == TIDENT) {
+                    /* NOTE: general strategy for emitting a CALL
+                     * read values into vectmp, but mark the start
+                     * of the TCALL (flag == 0), and when we hit
+                     * a TSEMI (';') or TNEWL ('\n'), collapse
+                     * them into a single TCALL AST node. This works
+                     * in a similar vein for "()" code, but there
+                     * we just read until a closing parenthesis is
+                     * met (TSEMI should be a parse error there?
+                     */
+                } else if(tmp->tag == TSEMI || tmp->tag == TNEWL) {
+
                 }
                 //debugln;
                 vectmp[idx++] = tmp;
@@ -744,70 +756,75 @@ read(FILE *fdin) {
             head->tag = TEQUAL;
             return ASTRight(head);
         case TCOREFORM:
-             break;
+            break;
         case TIDENT:
-             head = (AST *)hmalloc(sizeof(AST));
-             head->value = hstrdup(buffer);
-             head->tag = TIDENT;
-             return ASTRight(head);
+            head = (AST *)hmalloc(sizeof(AST));
+            head->value = hstrdup(buffer);
+            head->tag = TIDENT;
+            return ASTRight(head);
         case TCALL:
-             break;
+            break;
         case TOPAREN:
-             break;
+            break;
         case TCPAREN:
-             break;
+            break;
         case TMATCH:
-             break;
+            break;
         case TIF:
-             break;
-        case TELSE:
-             break;
+            break;
         case TTHEN:
-             break;
+            break;
+        case TELSE:
+            break;
+        case TWHEN:
+            break;
         case TTYPE:
-             break;
+            break;
         case TPOLY:
-             break;
+            break;
         case TVAR:
-             break;
+            break;
         case TARRAY:
-             break;
+            break;
         case TRECORD:
-             break;
+            break;
         case TINT:
-             head = (AST *)hmalloc(sizeof(AST));
-             head->tag = TINT;
-             head->value = hstrdup(buffer);
-             return ASTRight(head);
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TINT;
+            head->value = hstrdup(buffer);
+            return ASTRight(head);
         case TFLOAT:
-             head = (AST *)hmalloc(sizeof(AST));
-             head->tag = TFLOAT;
-             head->value = hstrdup(buffer);
-             return ASTRight(head);
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TFLOAT;
+            head->value = hstrdup(buffer);
+            return ASTRight(head);
         case TSTRING:
-             head = (AST *)hmalloc(sizeof(AST));
-             head->tag = TSTRING;
-             head->value = hstrdup(buffer);
-             return ASTRight(head);
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TSTRING;
+            head->value = hstrdup(buffer);
+            return ASTRight(head);
         case TCHAR:
-             head = (AST *)hmalloc(sizeof(AST));
-             head->tag = TCHAR;
-             head->value = hstrdup(buffer);
-             return ASTRight(head);
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TCHAR;
+            head->value = hstrdup(buffer);
+            return ASTRight(head);
         case TBOOL:
-             head = (AST *)hmalloc(sizeof(AST));
-             head->tag = TBOOL;
-             head->value = hstrdup(buffer);
-             return ASTRight(head);
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TBOOL;
+            head->value = hstrdup(buffer);
+            return ASTRight(head);
         case TEQ:
-             head = (AST *)hmalloc(sizeof(AST));
-             head->tag = TEQ;
-             return ASTRight(head);
-             break;
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TEQ;
+            return ASTRight(head);
+        case TNEWL:
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TNEWL;
+            return ASTRight(head);
         case TSEMI:
-             head = (AST *)hmalloc(sizeof(AST));
-             head->tag = TSEMI;
-             return ASTRight(head);
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TSEMI;
+            return ASTRight(head);
     }
     return nil; 
 }
