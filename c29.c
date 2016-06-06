@@ -786,8 +786,30 @@ read(FILE *fdin) {
                      * we just read until a closing parenthesis is
                      * met (TSEMI should be a parse error there?
                      */
+                    if(flag == 0) {
+                        /* set the TCALL flag, for collapsing later */ 
+                        flag = idx;
+                    }
                 } else if(tmp->tag == TSEMI || tmp->tag == TNEWL) {
-
+                    /* collapse the call into a TCALL
+                     * this has some _slight_ problems, since it 
+                     * uses the same stack as the TBEGIN itself,
+                     * so as we add items to the body, there will
+                     * be less left over for intermediate calls...
+                     * could add another stack, or could just do it
+                     * this way to see how much of a problem it actually
+                     * is...
+                     */
+                    SExp *tcall = (AST *)hmalloc(sizeof(AST));
+                    tcall->tag = TCALL;
+                    tcall->lenchildren = idx - flag;
+                    tcall->children = (AST **)hmalloc(sizeof(AST *) * tcall->lenchildren);
+                    for(int i = 0; i < tcall->lenchildren; i++) {
+                        tcall->children[i] = vectmp[flag + i];
+                    }
+                    idx = flag + 1;
+                    flag = 0;
+                    tmp = tcall;
                 }
                 //debugln;
                 vectmp[idx++] = tmp;
