@@ -19,7 +19,8 @@ typedef enum {
     LPOLY1, LPOLY2, LPOLY3, LRECORD0,
     LRECORD1, LRECORD2, LRECORD3, LRECORD4, LRECORD5,
     LMATCH1, LMATCH2, LMATCH3, LMATCH4, LMATCH5, LEOF,
-    LWHEN0, LWHEN1, LWHEN2, LWHEN3, LNEWL, LDO0, LDO1
+    LWHEN0, LWHEN1, LWHEN2, LWHEN3, LNEWL, LDO0, LDO1,
+    LD0
 } LexStates;
 
 typedef enum {
@@ -204,7 +205,7 @@ next(FILE *fdin, char *buf, int buflen) {
                  */
                 switch(cur) {
                     case 'd': // definition
-                        state = LDEF0;
+                        state = LD0;
                         break;
                     case 'e': // else or end
                         state = LE0;
@@ -240,9 +241,6 @@ next(FILE *fdin, char *buf, int buflen) {
                         break;
                     case 'w': // when
                         state = LWHEN0;
-                        break;
-                    case 'd':
-                        state = LDO0;
                         break;
                     case '0':
                     case '1':
@@ -800,14 +798,14 @@ read(FILE *fdin) {
                      * this way to see how much of a problem it actually
                      * is...
                      */
-                    SExp *tcall = (AST *)hmalloc(sizeof(AST));
+                    AST *tcall = (AST *)hmalloc(sizeof(AST));
                     tcall->tag = TCALL;
                     tcall->lenchildren = idx - flag;
                     tcall->children = (AST **)hmalloc(sizeof(AST *) * tcall->lenchildren);
                     for(int i = 0; i < tcall->lenchildren; i++) {
                         tcall->children[i] = vectmp[flag + i];
                     }
-                    idx = flag + 1;
+                    idx = flag;
                     flag = 0;
                     tmp = tcall;
                 }
