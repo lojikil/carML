@@ -260,6 +260,15 @@ next(FILE *fdin, char *buf, int buflen) {
                         break;
                 }
                 break;
+            case LD0:
+                if(cur == 'e') {
+                    state = LDEF1;
+                } else if(cur == 'o') {
+                    state = LDO1;
+                } else {
+                    state = LIDENT0;
+                }
+                break;
             case LDEF0:
                 if(cur == 'e') {
                     state = LDEF1;
@@ -669,7 +678,7 @@ read(FILE *fdin) {
      */
     AST *head = nil, *tmp = nil, *vectmp[128];
     ASTEither *sometmp = nil;
-    int ltype = 0, ltmp = 0, idx = 0, flag = 0;
+    int ltype = 0, ltmp = 0, idx = 0, flag = -1;
     char buffer[512] = {0};
 
     ltype = next(fdin, &buffer[0], 512);
@@ -784,11 +793,11 @@ read(FILE *fdin) {
                      * we just read until a closing parenthesis is
                      * met (TSEMI should be a parse error there?
                      */
-                    if(flag == 0) {
+                    if(flag == -1) {
                         /* set the TCALL flag, for collapsing later */ 
                         flag = idx;
                     }
-                } else if(tmp->tag == TSEMI || tmp->tag == TNEWL) {
+                } else if(tmp->tag == TSEMI || tmp->tag == TNEWL || tmp->tag == TEND) {
                     /* collapse the call into a TCALL
                      * this has some _slight_ problems, since it 
                      * uses the same stack as the TBEGIN itself,
@@ -801,12 +810,20 @@ read(FILE *fdin) {
                     AST *tcall = (AST *)hmalloc(sizeof(AST));
                     tcall->tag = TCALL;
                     tcall->lenchildren = idx - flag;
+                    //printf("idx == %d, flag == %d\n", idx, flag);
                     tcall->children = (AST **)hmalloc(sizeof(AST *) * tcall->lenchildren);
+                    //printf("len == %d\n", tcall->lenchildren);
                     for(int i = 0; i < tcall->lenchildren; i++) {
+                        //printf("i == %d\n", i);
+                        AST* ttmp = vectmp[flag + i];
+                        /*walk(ttmp, 0);
+                        printf("\n");*/
                         tcall->children[i] = vectmp[flag + i];
+                        /*walk(tcall->children[i], 0);
+                        printf("\n");*/
                     }
                     idx = flag;
-                    flag = 0;
+                    flag = -1;
                     tmp = tcall;
                 }
                 //debugln;
@@ -931,6 +948,13 @@ walk(AST *head, int level) {
                 walk(head->children[idx], 0); 
             }
             printf(") ");
+            break;
+        case TCALL:
+            printf("(call ");
+            for(int i = 0; i < head->lenchildren; i++) {
+                walk(head->children[i], 0);
+            }
+            printf(")");
             break;
         case TIDENT:
             printf("(identifier %s)", head->value);
