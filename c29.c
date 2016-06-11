@@ -16,7 +16,7 @@ typedef enum {
     LTYPE2, LBEGIN0, LBEGIN1, LBEGIN2, LBEGIN3,
     LBEGIN4, LEQ0, LNUM0, LIDENT0, LEND0, LEND1,
     LEND2, LMATCH0, LCOMMENT, LMCOMMENT, LPOLY0,
-    LPOLY1, LPOLY2, LPOLY3, LRECORD0,
+    LPOLY1, LPOLY2, LPOLY3, LRECORD0, LIF0, LIF1,
     LRECORD1, LRECORD2, LRECORD3, LRECORD4, LRECORD5,
     LMATCH1, LMATCH2, LMATCH3, LMATCH4, LMATCH5, LEOF,
     LWHEN0, LWHEN1, LWHEN2, LWHEN3, LNEWL, LDO0, LDO1,
@@ -228,6 +228,9 @@ next(FILE *fdin, char *buf, int buflen) {
                         return TOPAREN;
                     case ')':
                         return TCPAREN;
+                    case 'i':
+                        state = LIF0;
+                        break;
                     case 'r':
                         state = LRECORD0;
                         break;
@@ -383,6 +386,24 @@ next(FILE *fdin, char *buf, int buflen) {
                     state = LTHEN0;
                 } else if(cur == 'y') {
                     state = LTYPE0;
+                } else {
+                    state = LIDENT0;
+                }
+                break;
+            case LIF0: 
+                if(cur == 'f') {
+                    state = LIF1;
+                } else {
+                    state = LIDENT0;
+                }
+                break;
+
+            case LIF1:
+                if(iswhite(cur)) {
+                    return TIF;
+                } else if(cur == ';') {
+                    ungetc(cur, fdin);
+                    return TIF;
                 } else {
                     state = LIDENT0;
                 }
@@ -770,8 +791,67 @@ read(FILE *fdin) {
              * - and some TExpression that represents our body
              */
             head->children = (AST **)hmalloc(sizeof(AST *) * 2);
+            head->lenchildren = 2;
             head->children[0] = params;
             head->children[1] = tmp;
+            return ASTRight(head);
+        case TIF:
+            /* this code is surprisingly gross.
+             * look to clean this up a bit.
+             */
+            debugln;
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TIF;
+            head->children = (AST **)hmalloc(sizeof(AST *) * 3);
+            head->lenchildren = 3;
+
+            sometmp = read(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            }
+
+            head->children[0] = sometmp->right;
+
+            sometmp = read(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            }
+
+            tmp = sometmp->right;
+
+            if(tmp->tag != TTHEN) {
+                return ASTLeft(0, 0, "parse error: missing THEN keyword after IF conditional: if conditional then expression else expression");
+            }
+
+            sometmp = read(fdin);
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            }
+
+            head->children[1] = sometmp->right;
+
+            sometmp = read(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            }
+
+            tmp = sometmp->right;
+
+            if(tmp->tag != TELSE) {
+                return ASTLeft(0, 0, "parse error: missing ELSE keyword after THEN value: if conditional then expression else expression");
+            }
+
+            sometmp = read(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            }
+
+            head->children[2] = sometmp->right;
+
             return ASTRight(head);
         case TBEGIN:
             while(1) {
@@ -907,12 +987,16 @@ read(FILE *fdin) {
             return ASTRight(head);
         case TMATCH:
             break;
-        case TIF:
-            break;
         case TTHEN:
-            break;
+            head = (AST *)hmalloc(sizeof(AST));
+            head->value = hstrdup(buffer);
+            head->tag = TTHEN;
+            return ASTRight(head);
         case TELSE:
-            break;
+            head = (AST *)hmalloc(sizeof(AST));
+            head->value = hstrdup(buffer);
+            head->tag = TELSE;
+            return ASTRight(head);
         case TWHEN:
             break;
         case TTYPE:
@@ -999,6 +1083,15 @@ walk(AST *head, int level) {
             for(int i = 0; i < head->lenchildren; i++) {
                 walk(head->children[i], 0);
             }
+            printf(")");
+            break;
+        case TIF:
+            printf("(if ");
+            walk(head->children[0], 0);
+            printf("\n");
+            walk(head->children[1], level + 1);
+            printf("\n");
+            walk(head->children[2], level + 1);
             printf(")");
             break;
         case TIDENT:
