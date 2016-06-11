@@ -49,8 +49,8 @@ eventually add something to "preprocess" source code and have operators (or simp
     # cannonical loop example
     def arrayIota arr f = begin
         def arrayIota' arr f idx = begin
-            set-array-index! arr f idx
-            arrayIota' arr f (add idx 1)
+            set-array-index! arr f idx;
+            arrayIota' arr f (add idx 1);
         end
         arrayIota' arr f 0
     end
@@ -61,16 +61,21 @@ eventually add something to "preprocess" source code and have operators (or simp
     # explicitly passing them in
     def arrayIota0 arr f = begin
         def arrayIota' idx = begin
-            set-array-index! arr f idx
-            arrayIota' (add idx 1)
+            set-array-index! arr f idx;
+            arrayIota' (add idx 1);
         end
-        arrayIota' 0
+        arrayIota' 0;
     end
-    
-    def foo x = sum x 1
+
+    # eventually, `def` forms should work
+    # like `begin` forms
+    def foo x = (add x 1)
      
-    var f = array 10
+    var f = (array 10)
     
-    arrayIota f foo
+    arrayIota f foo;
     
-    println f
+    println f;
+
+    # add:
+    # lambda, ref, make
