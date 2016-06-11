@@ -969,6 +969,10 @@ read(FILE *fdin) {
                 tmp = sometmp->right;
                 if(tmp->tag == TCPAREN){
                     break;
+                } else if(tmp->tag == TSEMI) {
+                    return ASTLeft(0, 0, "illegal semicolon within parenthetical call");
+                } else if(tmp->tag == TNEWL) {
+                    continue;
                 } else {
                     vectmp[idx++] = tmp;        
                 }
