@@ -29,7 +29,7 @@ typedef enum {
     TIF, TELSE, TTHEN, TTYPE, TPOLY, TVAR,
     TARRAY, TRECORD, TINT, TFLOAT, TSTRING,
     TCHAR, TBOOL, TEQ, TSEMI, TEOF, TPARAMLIST,
-    TTDECL, TWHEN, TNEWL, TDO
+    TTDECL, TWHEN, TNEWL, TDO, TUNIT
 } TypeTag;
 
 struct _AST {
@@ -224,6 +224,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         break;
                     case ';': // semi-colon is a statement-breaker...
                         return TSEMI;
+                    case '(':
+                        return TOPAREN;
+                    case ')':
+                        return TCPAREN;
                     case 'r':
                         state = LRECORD0;
                         break;
@@ -857,9 +861,50 @@ read(FILE *fdin) {
         case TCALL:
             break;
         case TOPAREN:
-            break;
+            sometmp = read(fdin);
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            }
+
+            tmp = sometmp->right;
+
+            if(tmp->tag == TCPAREN) {
+                tmp = (AST *)hmalloc(sizeof(AST));
+                tmp->tag = TUNIT;
+                return ASTRight(tmp);
+            } else if(tmp->tag != TIDENT) {
+                return ASTLeft(0, 0, "cannot call non-identifier object");
+            }
+
+            vectmp[idx++] = tmp;
+
+            while(1) {
+                sometmp = read(fdin);
+                if(sometmp->tag == ASTLEFT) {
+                    return sometmp;
+                }
+
+                tmp = sometmp->right;
+                if(tmp->tag == TCPAREN){
+                    break;
+                } else {
+                    vectmp[idx++] = tmp;        
+                }
+            }
+
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TCALL;
+            head->lenchildren = idx;
+            head->children = (AST **)hmalloc(sizeof(AST *) * idx);
+            for(int i = 0; i < idx; i++) {
+                head->children[i] = vectmp[i];
+            }
+            return ASTRight(head);
         case TCPAREN:
-            break;
+            head = (AST *)hmalloc(sizeof(AST));
+            head->value = hstrdup(buffer);
+            head->tag = TCPAREN;
+            return ASTRight(head);
         case TMATCH:
             break;
         case TIF:
@@ -977,6 +1022,9 @@ walk(AST *head, int level) {
             printf(")\n");
             break;
         case TEND:
+            break;
+        case TUNIT:
+            printf("()");
             break;
         default:
             printf("(tag %d)\n", head->tag);
