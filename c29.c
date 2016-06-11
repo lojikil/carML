@@ -92,7 +92,7 @@ main(int ac, char **al) {
         //ret = next(stdin, &buf[0], 512);
         //printf("%s %d\n", buf, ret);
         if(ret->tag == ASTLEFT) {
-            printf("parse error: %s", ret->left.message);
+            printf("parse error: %s\n", ret->left.message);
         } else {
             tmp = ret->right;
 
@@ -799,7 +799,7 @@ read(FILE *fdin) {
             /* this code is surprisingly gross.
              * look to clean this up a bit.
              */
-            debugln;
+
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = TIF;
             head->children = (AST **)hmalloc(sizeof(AST *) * 3);
@@ -822,7 +822,7 @@ read(FILE *fdin) {
             tmp = sometmp->right;
 
             if(tmp->tag != TTHEN) {
-                return ASTLeft(0, 0, "parse error: missing THEN keyword after IF conditional: if conditional then expression else expression");
+                return ASTLeft(0, 0, "missing THEN keyword after IF conditional: if conditional then expression else expression");
             }
 
             sometmp = read(fdin);
@@ -841,7 +841,7 @@ read(FILE *fdin) {
             tmp = sometmp->right;
 
             if(tmp->tag != TELSE) {
-                return ASTLeft(0, 0, "parse error: missing ELSE keyword after THEN value: if conditional then expression else expression");
+                return ASTLeft(0, 0, "missing ELSE keyword after THEN value: if conditional then expression else expression");
             }
 
             sometmp = read(fdin);
