@@ -193,7 +193,7 @@ next(FILE *fdin, char *buf, int buflen) {
             case LSTART:
                 if(iswhite(cur)) {
                     idx--;
-                    while(cur == ' ' || cur == '\r' || cur == '\t' || cur == '\n') {
+                    while(cur == ' ' || cur == '\r' || cur == '\t') {
                         cur = fgetc(fdin);
                     }
                     buf[idx++] = cur;
@@ -224,6 +224,8 @@ next(FILE *fdin, char *buf, int buflen) {
                         break;
                     case ';': // semi-colon is a statement-breaker...
                         return TSEMI;
+                    case '\n':
+                        return TNEWL;
                     case '(':
                         return TOPAREN;
                     case ')':
