@@ -9,6 +9,14 @@
 #define nil NULL
 #define nul '\0'
 
+/* Lexical analysis states.
+ * basically, the tokenizer is a 
+ * statemachine, and this enum represents
+ * all the state machine states. Because
+ * we use a decision tree (encoded in an SM)
+ * for parsing out keywords, there are lots
+ * of state productions here.
+ */
 typedef enum {
     LSTART, LDEF0, LDEF1, LDEF2, LE0, LELSE1,
     LELSE2, LELSE3, LVAR0, LVAR1, LVAR2, LT0,
@@ -20,9 +28,18 @@ typedef enum {
     LRECORD1, LRECORD2, LRECORD3, LRECORD4, LRECORD5,
     LMATCH1, LMATCH2, LMATCH3, LMATCH4, LMATCH5, LEOF,
     LWHEN0, LWHEN1, LWHEN2, LWHEN3, LNEWL, LDO0, LDO1,
-    LD0
+    LD0, LTRUE0, LTRUE1, LTRUE3, LTRUE4, LFALSE0,
+    LFALSE1, LFALSE2, LFALSE3, LFALSE4, LFALSE5
 } LexStates;
 
+
+/* AST tag enum.
+ * basically, this is all the AST types, and is
+ * used both for determining the type of AST
+ * that is represented within the tree, as well as
+ * returned from the tokenizer to say what type
+ * of object it thinks is in buffer
+ */
 typedef enum {
     TDEF, TBEGIN, TEND, TEQUAL, TCOREFORM,
     TIDENT, TCALL, TOPAREN, TCPAREN, TMATCH,
@@ -58,6 +75,12 @@ struct _AST {
 
 typedef struct _AST AST;
 
+/* Represent the return type of Readers as
+ * `data EitherAST = Right (AST) | Left Int Int String`.
+ * this allows us to return Either an error in the form
+ * of a line number, error number, and message, *or* an
+ * actual AST form.
+ */
 typedef enum _ASTEITHERTAG { ASTLEFT, ASTRIGHT } ASTEitherTag;
 
 typedef struct _ASTEither {
@@ -274,6 +297,10 @@ next(FILE *fdin, char *buf, int buflen) {
                     state = LDEF1;
                 } else if(cur == 'o') {
                     state = LDO1;
+                } else if(!isident(cur)) {
+                    ungetc(cur, fdin);
+                    buf[idx - 1] = '\0';
+                    return TIDENT;
                 } else {
                     state = LIDENT0;
                 }
