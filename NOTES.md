@@ -75,3 +75,32 @@ end
 ```
 
 - keywords: `lambda`, `declare`, `ref`, `int`, `string`, `char`, `bool`, &c.
+
+# Parser bugs:
+
+- `begin` form does not properly break on TNEWL:
+
+_This might actually be a lexer bug too... testing with TSEMI & TEND work as expected :| _
+
+```
+$ ./c29
+>>> def foo x = begin
+    println x  
+    sum (div x 100 ) 10
+end
+(define foo (parameter-list (identifier x)) 
+     (begin 4
+          (call (identifier println)(identifier x))
+          (identifier sum)
+          (call (identifier div)(identifier x)(integer 100))
+          (integer 10)))
+
+>>> def foo x = begin
+    println x ;
+    sum (div x 100 ) 10 ;
+end
+(define foo (parameter-list (identifier x)) 
+    (begin 2
+        (call (identifier println)(identifier x))
+        (call (identifier sum)(call (identifier div)(identifier x)(integer 100))(integer 10))))
+```

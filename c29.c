@@ -946,7 +946,7 @@ read(FILE *fdin) {
                         /* set the TCALL flag, for collapsing later */ 
                         flag = idx;
                     }
-                } else if(tmp->tag == TSEMI || tmp->tag == TNEWL || tmp->tag == TEND) {
+                } else if(flag != -1 && (tmp->tag == TSEMI || tmp->tag == TNEWL || tmp->tag == TEND)) {
                     /* collapse the call into a TCALL
                      * this has some _slight_ problems, since it 
                      * uses the same stack as the TBEGIN itself,
@@ -974,6 +974,8 @@ read(FILE *fdin) {
                     idx = flag;
                     flag = -1;
                     tmp = tcall;
+                } else if(tmp->tag == TNEWL) {
+                    continue;
                 }
                 //debugln;
                 vectmp[idx++] = tmp;
