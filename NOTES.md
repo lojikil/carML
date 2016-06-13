@@ -74,3 +74,4 @@ end
 >>> 
 ```
 
+- keywords: `lambda`, `declare`, `ref`, `int`, `string`, `char`, `bool`, &c.
