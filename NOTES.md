@@ -1,4 +1,4 @@
-* Lexer bugs:
+# Lexer bugs:
 
 - doesn't appear to see the semi-colon in here:
 
