@@ -262,6 +262,42 @@ next(FILE *fdin, char *buf, int buflen) {
                     case 'p': // poly
                         state = LPOLY0;
                         break;
+                    case '"': // string literal
+                        cur = fgetc(fdin);
+                        idx--;
+                        while(cur != '"') {
+                            if(cur == '\\') {
+                                cur = fgetc(fdin);
+                                switch(cur) {
+                                    case 'n':
+                                        buf[idx++] = '\n';
+                                        break;
+                                    case 'r':
+                                        buf[idx++] = '\r';
+                                        break;
+                                    case 't':
+                                        buf[idx++] = '\t';
+                                        break;
+                                    case 'v':
+                                        buf[idx++] = '\v';
+                                        break;
+                                    case '0':
+                                        buf[idx++] = '\0';
+                                        break;
+                                    case '"':
+                                        buf[idx++] = '"';
+                                        break;
+                                    default:
+                                        buf[idx++] = cur;
+                                        break;
+                                }
+                            } else {
+                                buf[idx++] = cur;
+                            }
+                            cur = fgetc(fdin);
+                        }
+                        buf[idx] = '\0';
+                        return TSTRING;
                     case '#': // line comment
                         state = LCOMMENT;
                         break;
