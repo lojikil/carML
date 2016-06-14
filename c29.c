@@ -1213,7 +1213,31 @@ walk(AST *head, int level) {
             printf("(identifier %s)", head->value);
             break;
         case TCHAR:
-            printf("(character #\\%s)", head->value);
+            printf("(character #\\");
+            switch(head->value[0]) {
+                case '\b':
+                    printf("backspace");
+                    break;
+                case '\n':
+                    printf("newline");
+                    break;
+                case '\r':
+                    printf("carriage");
+                    break;
+                case '\v':
+                    printf("vtab");
+                    break;
+                case '\t':
+                    printf("tab");
+                    break;
+                case '\0':
+                    printf("nul");
+                    break;
+                default:
+                    printf("%s", head->value);
+                    break;
+            }
+            printf(")");
             break;
         case TFLOAT:
             printf("(float %s)", head->value);
