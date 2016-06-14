@@ -108,27 +108,49 @@ int
 main(int ac, char **al) {
     ASTEither *ret = nil;
     AST *tmp = nil;
+    FILE *fdin = nil;
     GC_INIT();
-    do {
-        printf(">>> ");
-        ret = read(stdin);
-        //ret = next(stdin, &buf[0], 512);
-        //printf("%s %d\n", buf, ret);
-        if(ret->tag == ASTLEFT) {
-            printf("parse error: %s\n", ret->left.message);
-        } else {
-            tmp = ret->right;
 
-            if(tmp->tag == TEOF) {
+    if(ac > 1) {
+        if((fdin = fopen(al[1], "r")) == nil) {
+            printf("cannot open file \"%s\"\n", al[1]);
+            return 1;
+        }
+        do {
+            ret = read(fdin);
+            if(ret->tag == ASTLEFT) {
+                printf("parse error: %s\n", ret->left.message);
                 break;
-            } else if(tmp->tag == TIDENT && !strncmp(tmp->value, "quit", 4)) {
-                break;
-            } else if(tmp->tag != TNEWL) {
+            }
+
+            tmp = ret->right;
+            if(tmp->tag != TNEWL && tmp->tag != TEOF) {
                 walk(tmp, 0);
             }
-            printf("\n");
-        }
-    } while(1);
+        } while(tmp->tag != TEOF);
+        fclose(fdin);
+    } else {
+        do {
+            printf(">>> ");
+            ret = read(stdin);
+            //ret = next(stdin, &buf[0], 512);
+            //printf("%s %d\n", buf, ret);
+            if(ret->tag == ASTLEFT) {
+                printf("parse error: %s\n", ret->left.message);
+            } else {
+                tmp = ret->right;
+
+                if(tmp->tag == TEOF) {
+                    break;
+                } else if(tmp->tag == TIDENT && !strncmp(tmp->value, "quit", 4)) {
+                    break;
+                } else if(tmp->tag != TNEWL) {
+                    walk(tmp, 0);
+                }
+                printf("\n");
+            }
+        } while(1);
+    }
     return 0;
 }
 
@@ -338,7 +360,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         buf[idx] = '\0';
                         return TCHAR;
                     case '#': // line comment
-                        state = LCOMMENT;
+                        while(cur != '\n') {
+                            cur = fgetc(fdin);
+                        }
+                        state = LSTART;
                         break;
                     case '{': // multi-line comment
                         state = LMCOMMENT;
@@ -1187,6 +1212,9 @@ walk(AST *head, int level) {
             printf("(parameter-list ");
             for(;idx < head->lenchildren; idx++) {
                 walk(head->children[idx], 0); 
+                if(idx < (head->lenchildren - 1)){
+                    printf(" ");
+                }
             }
             printf(") ");
             break;
