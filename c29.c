@@ -46,7 +46,7 @@ typedef enum {
     TIF, TELSE, TTHEN, TTYPE, TPOLY, TVAR,
     TARRAY, TRECORD, TINT, TFLOAT, TSTRING,
     TCHAR, TBOOL, TEQ, TSEMI, TEOF, TPARAMLIST,
-    TTDECL, TWHEN, TNEWL, TDO, TUNIT
+    TTDECL, TWHEN, TNEWL, TDO, TUNIT, TERROR
 } TypeTag;
 
 struct _AST {
@@ -123,8 +123,9 @@ main(int ac, char **al) {
                 break;
             } else if(tmp->tag == TIDENT && !strncmp(tmp->value, "quit", 4)) {
                 break;
+            } else if(tmp->tag != TNEWL) {
+                walk(tmp, 0);
             }
-            walk(tmp, 0);
             printf("\n");
         }
     } while(1);
@@ -298,6 +299,44 @@ next(FILE *fdin, char *buf, int buflen) {
                         }
                         buf[idx] = '\0';
                         return TSTRING;
+                    case '\'':
+                        idx--;
+                        cur = fgetc(fdin);
+                        if(cur == '\\') {
+                            cur = fgetc(fdin);
+                            switch(cur) {
+                                case 'n':
+                                    buf[idx++] = '\n';
+                                    break;
+                                case 'r':
+                                    buf[idx++] = '\r';
+                                    break;
+                                case 't':
+                                    buf[idx++] = '\t';
+                                    break;
+                                case 'v':
+                                    buf[idx++] = '\v';
+                                    break;
+                                case '0':
+                                    buf[idx++] = '\0';
+                                    break;
+                                case '"':
+                                    buf[idx++] = '"';
+                                    break;
+                                default:
+                                    buf[idx++] = cur;
+                                    break;
+                            }
+                        } else {
+                            buf[idx++] = cur;
+                        }
+                        cur = fgetc(fdin);
+                        if(cur != '\'') {
+                            strncpy(buf, "missing character terminator", 30);
+                            return TERROR;
+                        }
+                        buf[idx] = '\0';
+                        return TCHAR;
                     case '#': // line comment
                         state = LCOMMENT;
                         break;
@@ -773,6 +812,8 @@ read(FILE *fdin) {
 
     ltype = next(fdin, &buffer[0], 512);
     switch(ltype) {
+        case TERROR:
+            return ASTLeft(0, 0, hstrdup(&buffer[0]));
         case TEOF:
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = TEOF;
@@ -1170,6 +1211,9 @@ walk(AST *head, int level) {
             break;
         case TIDENT:
             printf("(identifier %s)", head->value);
+            break;
+        case TCHAR:
+            printf("(character #\\%s)", head->value);
             break;
         case TFLOAT:
             printf("(float %s)", head->value);
