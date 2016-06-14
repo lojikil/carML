@@ -1153,6 +1153,9 @@ walk(AST *head, int level) {
             printf("(call ");
             for(int i = 0; i < head->lenchildren; i++) {
                 walk(head->children[i], 0);
+                if(i < (head->lenchildren - 1)) {
+                    printf(" ");
+                }
             }
             printf(")");
             break;
@@ -1178,10 +1181,12 @@ walk(AST *head, int level) {
             printf("(string \"%s\")", head->value);
             break;
         case TBEGIN:
-            printf("(begin %d\n", head->lenchildren);
+            printf("(begin\n");
             for(idx = 0; idx < head->lenchildren; idx++){
                 walk(head->children[idx], level + 1);
-                printf("\n");
+                if(idx < (head->lenchildren - 1)) {
+                    printf("\n");
+                }
             }
             printf(")\n");
             break;
