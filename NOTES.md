@@ -74,7 +74,21 @@ end
 >>> 
 ```
 
-- keywords: `lambda`, `declare`, `ref`, `int`, `string`, `char`, `bool`, &c.
+# keywords
+
+-`lambda`
+- `declare`
+- `ref`
+- `int`
+- `string`
+- `char`
+- `bool`
+- `array`
+- `float`
+- `match`
+- `with`
+- `use`
+- `module`
 
 # Parser bugs:
 
