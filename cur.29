@@ -8,3 +8,5 @@ def bar x y z = begin
     println z ;
     sum (sum x y ) z ;
 end
+
+def baz x y z = if ( >= x y ) then z else x
