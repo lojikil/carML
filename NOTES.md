@@ -76,7 +76,7 @@ end
 
 # keywords
 
--`lambda`
+- `lambda`
 - `declare`
 - `ref`
 - `int`
@@ -89,6 +89,9 @@ end
 - `with`
 - `use`
 - `module`
+- `case`
+- `of`
+- `define-alien`, `letrec`, `val-alien`
 
 # Parser bugs:
 
