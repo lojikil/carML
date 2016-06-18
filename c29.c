@@ -19,7 +19,7 @@
  */
 typedef enum {
     LSTART, LDEF0, LDEF1, LDEF2, LE0, LELSE1,
-    LELSE2, LELSE3, LVAR0, LVAR1, LVAR2, LT0,
+    LELSE2, LELSE3, LVAL0, LVAL1, LVAL2, LT0,
     LTHEN0, LTHEN1, LTHEN2, LTYPE0, LTYPE1,
     LTYPE2, LBEGIN0, LBEGIN1, LBEGIN2, LBEGIN3,
     LBEGIN4, LEQ0, LNUM0, LIDENT0, LEND0, LEND1,
@@ -49,7 +49,7 @@ typedef enum {
 typedef enum {
     TDEF, TBEGIN, TEND, TEQUAL, TCOREFORM,
     TIDENT, TCALL, TOPAREN, TCPAREN, TMATCH,
-    TIF, TELSE, TTHEN, TTYPE, TPOLY, TVAR,
+    TIF, TELSE, TTHEN, TTYPE, TPOLY, TVAL,
     TARRAY, TRECORD, TINT, TFLOAT, TSTRING,
     TCHAR, TBOOL, TEQ, TSEMI, TEOF, TPARAMLIST,
     TTDECL, TWHEN, TNEWL, TDO, TUNIT, TERROR, 
@@ -264,8 +264,8 @@ next(FILE *fdin, char *buf, int buflen) {
                     case 'e': // else or end
                         state = LE0;
                         break;
-                    case 'v': // var
-                        state = LVAR0;
+                    case 'v': // val
+                        state = LVAL0;
                         break;
                     case 't': // then or type
                         state = LT0;
@@ -494,26 +494,26 @@ next(FILE *fdin, char *buf, int buflen) {
                     state = LIDENT0;
                 }
                 break;
-            case LVAR0:
+            case LVAL0:
                 if(cur == 'a') {
-                    state = LVAR1;
+                    state = LVAL1;
                 } else {
                     state = LIDENT0;
                 }
                 break;
-            case LVAR1:
-                if(cur == 'r') {
-                    state = LVAR2;
+            case LVAL1:
+                if(cur == 'l') {
+                    state = LVAL2;
                 } else {
                     state = LIDENT0;
                 }
                 break;
-            case LVAR2:
+            case LVAL2:
                 if(iswhite(cur)) {
-                    return TVAR;
+                    return TVAL;
                 } else if(cur == ';') {
                     ungetc(cur, fdin);
-                    return TVAR;
+                    return TVAL;
                 } else {
                     state = LIDENT0;
                 }
@@ -1143,12 +1143,89 @@ read(FILE *fdin) {
             head->tag = TELSE;
             return ASTRight(head);
         case TWHEN:
-            break;
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TWHEN;
+            head->children = (AST **)hmalloc(sizeof(AST *) * 2);
+            head->lenchildren = 2;
+
+            sometmp = read(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else {
+                head->children[0] = sometmp->right;
+            }
+
+            sometmp = read(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else {
+                tmp = sometmp->right;
+            }
+
+            if(tmp->tag != TDO) {
+                return ASTLeft(0, 0, "missing `do` statement from `when`: when CONDITION do EXPRESSION");
+            }
+
+            sometmp = read(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else {
+                head->children[1] = sometmp->right;
+            }
+
+            return ASTRight(head);
+        case TDO:
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TDO;
+            return ASTRight(head);
         case TTYPE:
             break;
         case TPOLY:
             break;
-        case TVAR:
+        case TVAL:
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TVAL;
+            head->children = (AST **)hmalloc(sizeof(AST *) * 2);
+            head->lenchildren = 2;
+            
+            sometmp = read(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else {
+                tmp = sometmp->right;
+            }
+
+            if(tmp->tag != TIDENT) {
+                return ASTLeft(0, 0, "val's name *must* be an identifier: `val IDENTIFIER = EXPRESSION`");
+            } else {
+                head->children[0] = tmp;
+            }
+
+            sometmp = read(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else {
+                tmp = sometmp->right;
+            }
+
+            if(tmp->tag != TEQ) {
+                return ASTLeft(0, 0, "val's identifiers *must* be followed by an `=`: `val IDENTIFIER = EXPRESSION`");
+            }
+
+            sometmp = read(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else {
+                head->children[1] = sometmp->right;
+            }
+
+            return ASTRight(head);
             break;
         case TARRAY:
             break;
@@ -1192,7 +1269,7 @@ read(FILE *fdin) {
             head->tag = TSEMI;
             return ASTRight(head);
     }
-    return nil; 
+    return ASTLeft(0, 0, "unable to parse statement"); 
 }
 
 void
@@ -1215,6 +1292,20 @@ walk(AST *head, int level) {
             printf("\n");
             walk(head->children[1], level + 1);
             printf(")\n");
+            break;
+        case TVAL:
+            printf("(define-value ");
+            walk(head->children[0], 0);
+            printf(" ");
+            walk(head->children[1], 0);
+            printf(")");
+            break;
+        case TWHEN:
+            printf("(when ");
+            walk(head->children[0], 0);
+            printf("\n");
+            walk(head->children[1], level + 1);
+            printf(")");
             break;
         case TPARAMLIST:
             printf("(parameter-list ");

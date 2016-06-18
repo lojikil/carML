@@ -11,4 +11,6 @@ end
 
 def baz x y z = if ( >= x y ) then z else x
 
+def bar x y = when x do y
+
 "simple string for doc note?"
