@@ -134,6 +134,7 @@ main(int ac, char **al) {
             tmp = ret->right;
             if(tmp->tag != TNEWL && tmp->tag != TEOF) {
                 walk(tmp, 0);
+                printf("\n");
             }
         } while(tmp->tag != TEOF);
         fclose(fdin);
@@ -1291,7 +1292,7 @@ walk(AST *head, int level) {
             }
             printf("\n");
             walk(head->children[1], level + 1);
-            printf(")\n");
+            printf(")");
             break;
         case TVAL:
             printf("(define-value ");
@@ -1339,6 +1340,14 @@ walk(AST *head, int level) {
         case TIDENT:
             printf("(identifier %s)", head->value);
             break;
+        case TBOOL:
+            printf("(bool ");
+            if(head->value[0] == 0) {
+                printf("true)"); 
+            } else {
+                printf("false)");
+            }
+            break;
         case TCHAR:
             printf("(character #\\");
             switch(head->value[0]) {
@@ -1383,7 +1392,7 @@ walk(AST *head, int level) {
                     printf("\n");
                 }
             }
-            printf(")\n");
+            printf(")");
             break;
         case TEND:
             break;
@@ -1391,7 +1400,7 @@ walk(AST *head, int level) {
             printf("()");
             break;
         default:
-            printf("(tag %d)\n", head->tag);
+            printf("(tag %d)", head->tag);
             break;
     }
     return;

@@ -9,8 +9,19 @@ def bar x y z = begin
     sum (sum x y ) z ;
 end
 
+# same as the above, but with
+# implicit call termination via
+# newlines
+
+def blah x y z = begin
+    println x
+    println y
+    println z
+    sum ( sum x y ) z 
+end
+
 def baz x y z = if ( >= x y ) then z else x
 
-def bar x y = when x do y
+def bar0 x y = when x do y
 
-"simple string for doc note?"
+val foo = "simple string for doc note?"
