@@ -16,8 +16,10 @@ def arrayIota0 arr f = begin
 end
 
 def foo x = sum x 1
- 
-var f = array 10
+
+# how do we determine the
+# actual array type here?
+val f = array 10
 
 arrayIota f foo
 
