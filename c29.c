@@ -34,12 +34,13 @@ typedef enum {
     LLET0, LLET1, LLET2, LLETREC0, LLETREC1, LLETREC2,
     LLETREC3, LLETREC4, LLETREC5, LLETREC6, LL0, LCHAR0,
     LCHAR1, LCHAR2, LCHAR3, LSTRT0, LSTRT1, LSTRT2, LSTRT3,
-    LSTRT4, LSTRT5, LSTRT6, LINT0, LINT1, LINT2, LFLOAT0,
-    LFLOAT1, LFLOAT2, LFLOAT3, LFLOAT4, LFLOAT5, LINT3,
+    LSTRT4, LSTRT5, LSTRT6, LINTT0, LINTT1, LINTT2, LFLOATT0,
+    LFLOATT1, LFLOATT2, LFLOATT3, LFLOATT4, LFLOATT5, LINTT3,
     LARRAY0, LARRAY1, LARRAY2, LARRAY3, LARRAY4, LARRAY5,
     LB0, LI0, LUSE0, LF0, LC0, LR0, LW0, LOF0, LOF1,
     LDEQ0, LDEQ1, LDEQ2, LDEQ3, LDEC0, LDEC1, LDEC2, LDEC3,
-    LDE0, LBOOL0, LBOOL1, LBOOL2
+    LDE0, LBOOL0, LBOOL1, LBOOL2, LREF0, LELSE0, LRE0, LTRUE2,
+    LWITH0, LWITH1, LWITH2, LDEC4, LUSE1, LUSE2
 
 } LexStates;
 
@@ -58,7 +59,9 @@ typedef enum {
     TCHAR, TBOOL, TEQ, TSEMI, TEOF, TPARAMLIST,
     TTDECL, TWHEN, TNEWL, TDO, TUNIT, TERROR, 
     TLETREC, TLET, TFN, TCASE, TSTRT, TCHART,
-    TINTT, TFLOATT, TCOMMENT
+    TINTT, TFLOATT, TCOMMENT, TREF, TDEQUET,
+    TBOOLT, TWITH, TOF, TDECLARE, TFALSE,
+    TTRUE, TUSE
 } TypeTag;
 
 struct _AST {
@@ -373,7 +376,19 @@ next(FILE *fdin, char *buf, int buflen) {
             /* should be identifiers down here... */
             default:
                 while(1) {
+                    if(feof(fdin)) {
+                        return TEOF;
+                    }
                     buf[idx++] = cur;
+                    /* the vast majority of the code below is
+                     * generated... that still doesn't mean it's
+                     * very good. There is a _ton_ of reproduced
+                     * code in between different states, and it
+                     * would be easy to generate a state machine
+                     * table that handles the transition in a more
+                     * compact way. This will be the next rev of
+                     * this subsystem here.
+                     */
                     switch(substate) {
                         case LSTART:
                             switch(cur) {
@@ -441,6 +456,63 @@ next(FILE *fdin, char *buf, int buflen) {
                                 substate = LIDENT0;
                             }
                             break;
+                        case LBEGIN0: 
+                            if(cur == 'g') {
+                                substate = LBEGIN1;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LBEGIN1: 
+                            if(cur == 'i') {
+                                substate = LBEGIN2;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LBEGIN2: 
+                            if(cur == 'n') {
+                                substate = LBEGIN3;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LBEGIN3:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TBEGIN;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LBOOL0: 
+                            if(cur == 'o') {
+                                substate = LBOOL1;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LBOOL1: 
+                            if(cur == 'l') {
+                                substate = LBOOL2;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LBOOL2:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TBOOLT;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
                         case LC0:
                             if(cur == 'h') {
                                 substate = LCHAR0;
@@ -459,6 +531,17 @@ next(FILE *fdin, char *buf, int buflen) {
                                 substate = LIDENT0;
                             }
                             break;
+                        case LDO0:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TDO;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
                         case LDE0:
                             if(cur == 'f') {
                                 substate = LDEF0;
@@ -470,13 +553,214 @@ next(FILE *fdin, char *buf, int buflen) {
                                 substate = LIDENT0;
                             }
                             break;
+                        case LDEQ0:
+                            if(cur == 'u') {
+                                substate = LDEQ1;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LDEQ1:
+                            if(cur == 'e') {
+                                substate = LDEQ2;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LDEQ2:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            } else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                buf[idx] = '\0';
+                                return TDEQUET;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LDEC0: 
+                            if(cur == 'l') {
+                                substate = LDEC1;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LDEC1: 
+                            if(cur == 'a') {
+                                substate = LDEC2;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LDEC2: 
+                            if(cur == 'r') {
+                                substate = LDEC3;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LDEC3: 
+                            if(cur == 'e') {
+                                substate = LDEC4;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LDEC4:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TDECLARE;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
                         case LDEF0:
                             if(isident(cur)) {
                                 substate = LIDENT0;
-                            } else if(iswhite(cur) || cur == 'n' || isbrace(cur)) {
+                            } else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
                                 ungetc(cur, fdin);
                                 buf[idx] = '\0';
                                 return TDEF;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LE0:
+                            if(cur == 'l') {
+                               substate = LELSE0;
+                            } else if(cur == 'n') {
+                               substate = LEND0;
+                            } else substate = LIDENT0;
+                            break;
+                        case LELSE0: 
+                            if(cur == 's') {
+                                substate = LELSE1;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LELSE1: 
+                            if(cur == 'e') {
+                                substate = LELSE2;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LELSE2:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TELSE;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LEND0: 
+                            if(cur == 'd') {
+                                substate = LEND1;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LEND1:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TEND;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LF0:
+                            if(cur == 'n') {
+                                substate = LFN0;
+                            } else if (cur == 'l') {
+                                substate = LFLOATT0;
+                            } else if (cur == 'a') {
+                                substate = LFALSE0;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LFALSE0: 
+                            if(cur == 'l') {
+                                substate = LFALSE1;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LFALSE1: 
+                            if(cur == 's') {
+                                substate = LFALSE2;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LFALSE2: 
+                            if(cur == 'e') {
+                                substate = LFALSE3;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LFALSE3:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TFALSE;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LFLOATT0: 
+                            if(cur == 'o') {
+                                substate = LFLOATT1;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LFLOATT1: 
+                            if(cur == 'a') {
+                                substate = LFLOATT2;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LFLOATT2: 
+                            if(cur == 't') {
+                                substate = LFLOATT3;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LFLOATT3:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TFLOATT;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LFN0:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TFN;
                             } else {
                                 strncpy(buf, "malformed identifier", 512);
                                 return TERROR;
@@ -488,6 +772,252 @@ next(FILE *fdin, char *buf, int buflen) {
                             } else {
                                 substate = LIDENT0;
                             } 
+                            break;
+                        case LI0:
+                            if(cur == 'f') {
+                                substate = LIF0;
+                            } else if(cur == 'n') {
+                                substate = LINTT0;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LINTT0: 
+                            if(cur == 't') {
+                                substate = LINTT1;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LINTT1:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TINTT;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LIF0:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TIF;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LL0:
+                            if(cur == 'e') {
+                                substate = LLET1;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LLET0: 
+                            if(cur == 'e') {
+                                substate = LLET1;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LLET1: 
+                            if(cur == 't') {
+                                substate = LLET2;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LLET2:
+                            if(cur == 'r') {
+                                substate = LLETREC0;
+                            } else if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TLET;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LLETREC0: 
+                            if(cur == 'e') {
+                                substate = LLETREC1;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LLETREC1: 
+                            if(cur == 'c') {
+                                substate = LLETREC2;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LLETREC2:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TLETREC;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LR0:
+                            if(cur == 'e') {
+                                substate = LRE0;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LRE0:
+                            if(cur == 'c') {
+                                substate = LRECORD0;
+                            } else if(cur == 'f') {
+                                substate = LREF0;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LRECORD0: 
+                            if(cur == 'o') {
+                                substate = LRECORD1;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LRECORD1: 
+                            if(cur == 'r') {
+                                substate = LRECORD2;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LRECORD2: 
+                            if(cur == 'd') {
+                                substate = LRECORD3;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LRECORD3:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TRECORD;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LREF0:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TREF;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LT0:
+                            if(cur == 'h') {
+                                //debugln;
+                                substate = LTHEN0;
+                            } else if(cur == 'y') {
+                                substate = LTYPE0;
+                            } else if(cur == 'r') {
+                                substate = LTRUE0;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LTHEN0: 
+                            if(cur == 'e') {
+                                //debugln;
+                                substate = LTHEN1;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LTHEN1: 
+                            if(cur == 'n') {
+                                //debugln;
+                                substate = LTHEN2;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LTHEN2:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                //debugln;
+                                ungetc(cur, fdin);
+                                return TTHEN;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LTYPE0: 
+                            if(cur == 'p') {
+                                substate = LTYPE1;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LTYPE1: 
+                            if(cur == 'e') {
+                                substate = LTYPE2;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LTYPE2:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TTYPE;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LTRUE0: 
+                            if(cur == 'u') {
+                                substate = LTRUE1;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LTRUE1: 
+                            if(cur == 'e') {
+                                substate = LTRUE2;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LTRUE2:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TTRUE;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
                             break;
                         case LARRAY1:
                             if(cur == 'r') {
@@ -522,8 +1052,262 @@ next(FILE *fdin, char *buf, int buflen) {
                                 return TERROR;
                             }
                             break;
+                        case LW0:
+                            if(cur == 'h') {
+                                substate = LWHEN0;
+                            } else if(cur == 'i') {
+                                substate = LWITH0;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LWHEN0: 
+                            if(cur == 'e') {
+                                substate = LWHEN1;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LWHEN1: 
+                            if(cur == 'n') {
+                                substate = LWHEN2;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LWHEN2:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TWHEN;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LWITH0: 
+                            if(cur == 't') {
+                                substate = LWITH1;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LWITH1: 
+                            if(cur == 'h') {
+                                substate = LWITH2;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LWITH2:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TWITH;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LOF0: 
+                            if(cur == 'f') {
+                                substate = LOF1;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LOF1:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TOF;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LPOLY0: 
+                            if(cur == 'o') {
+                                substate = LPOLY1;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LPOLY1: 
+                            if(cur == 'l') {
+                                substate = LPOLY2;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LPOLY2: 
+                            if(cur == 'y') {
+                                substate = LPOLY3;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LPOLY3:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TPOLY;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LUSE0: 
+                            if(cur == 's') {
+                                substate = LUSE1;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LUSE1: 
+                            if(cur == 'e') {
+                                substate = LUSE2;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LUSE2:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TUSE;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LVAL0: 
+                            //debugln;
+                            if(cur == 'a') {
+                                substate = LVAL1;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LVAL1: 
+                            if(cur == 'l') {
+                                substate = LVAL2;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LVAL2:
+                            if(isident(cur)) {
+                                //debugln;
+                                substate = LIDENT0;
+                            } else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                //debugln;
+                                ungetc(cur, fdin);
+                                return TVAL;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LSTRT0: 
+                            if(cur == 't') {
+                                substate = LSTRT1;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LSTRT1: 
+                            if(cur == 'r') {
+                                substate = LSTRT2;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LSTRT2: 
+                            if(cur == 'i') {
+                                substate = LSTRT3;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LSTRT3: 
+                            if(cur == 'n') {
+                                substate = LSTRT4;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LSTRT4: 
+                            if(cur == 'g') {
+                                substate = LSTRT5;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LSTRT5:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TSTRT;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LMATCH0: 
+                            if(cur == 'a') {
+                                substate = LMATCH1;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LMATCH1: 
+                            if(cur == 't') {
+                                substate = LMATCH2;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LMATCH2: 
+                            if(cur == 'c') {
+                                substate = LMATCH3;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LMATCH3: 
+                            if(cur == 'h') {
+                                substate = LMATCH4;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LMATCH4:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TMATCH;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
                         case LIDENT0:
-                            if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                            //printf("cur == %c\n", cur);
+                            if(idx > 0 && (iswhite(buf[idx - 1]) || buf[idx - 1] == '\n' || isbrace(buf[idx - 1]))) {
+                                //debugln;
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                //printf("idx: %d, buffer: %s\n", idx - 1, buf);
+                                return TIDENT;
+                            } else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
                                 ungetc(cur, fdin);
                                 buf[idx - 1] = '\0';
                                 return TIDENT;
@@ -551,6 +1335,9 @@ read(FILE *fdin) {
 
     ltype = next(fdin, &buffer[0], 512);
     switch(ltype) {
+        case TCOMMENT:
+            sometmp = read(fdin);
+            return sometmp;
         case TERROR:
             return ASTLeft(0, 0, hstrdup(&buffer[0]));
         case TEOF:
