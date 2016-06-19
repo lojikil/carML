@@ -1,12 +1,12 @@
 # this file represents what c29 is _currently_ able to compile
 
-def foo x = ( sum x x )
+def foo x = (sum x x)
 
 def bar x y z = begin
-    println x ;
-    println y ;
-    println z ;
-    sum (sum x y ) z ;
+    println x;
+    println y;
+    println z;
+    sum (sum x y) z;
 end
 
 # same as the above, but with
@@ -17,10 +17,10 @@ def blah x y z = begin
     println x
     println y
     println z
-    sum ( sum x y ) z 
+    sum (sum x y) z 
 end
 
-def baz x y z = if ( >= x y ) then z else x
+def baz x y z = if (>= x y) then z else x
 
 def bar0 x y = when x do y
 

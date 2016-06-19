@@ -205,7 +205,7 @@ iswhite(int c){
 
 int
 isbrace(int c) {
-    return (c == '{' || c == '}' || c == '(' || c == ')' || c == '[' || c == ']');
+    return (c == '{' || c == '}' || c == '(' || c == ')' || c == '[' || c == ']' || c == ';');
 }
 
 int
@@ -382,11 +382,12 @@ next(FILE *fdin, char *buf, int buflen) {
 
                     buf[idx++] = cur;
 
-                    if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                    /*
+                    if(substate == LIDENT0 && (iswhite(cur) || cur == '\n' || isbrace(cur))) {
                         ungetc(cur, fdin);
                         buf[idx - 1] = '\0';
                         return TIDENT;
-                    }
+                    } */
 
                     /* the vast majority of the code below is
                      * generated... that still doesn't mean it's
