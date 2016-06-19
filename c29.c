@@ -35,9 +35,13 @@ typedef enum {
     LLETREC3, LLETREC4, LLETREC5, LLETREC6, LL0, LCHAR0,
     LCHAR1, LCHAR2, LCHAR3, LSTRT0, LSTRT1, LSTRT2, LSTRT3,
     LSTRT4, LSTRT5, LSTRT6, LINT0, LINT1, LINT2, LFLOAT0,
-    LFLOAT1, LFLOAT2, LFLOAT3, LFLOAT4, LFLOAT5, LINT3
-} LexStates;
+    LFLOAT1, LFLOAT2, LFLOAT3, LFLOAT4, LFLOAT5, LINT3,
+    LARRAY0, LARRAY1, LARRAY2, LARRAY3, LARRAY4, LARRAY5,
+    LB0, LI0, LUSE0, LF0, LC0, LR0, LW0, LOF0, LOF1,
+    LDEQ0, LDEQ1, LDEQ2, LDEQ3, LDEC0, LDEC1, LDEC2, LDEC3,
+    LDE0, LBOOL0, LBOOL1, LBOOL2
 
+} LexStates;
 
 /* AST tag enum.
  * basically, this is all the AST types, and is
@@ -54,7 +58,7 @@ typedef enum {
     TCHAR, TBOOL, TEQ, TSEMI, TEOF, TPARAMLIST,
     TTDECL, TWHEN, TNEWL, TDO, TUNIT, TERROR, 
     TLETREC, TLET, TFN, TCASE, TSTRT, TCHART,
-    TINTT, TFLOATT
+    TINTT, TFLOATT, TCOMMENT
 } TypeTag;
 
 struct _AST {
@@ -189,7 +193,11 @@ ASTRight(AST *head) {
 
 int
 iswhite(int c){
-    return (c == ' ' || c == '\r' || c == '\n' || c == '\v' || c == '\t');
+    /* newline (\n) is *not* whitespace per se, but a token.
+     * this is so that we can inform the parser of when we
+     * have hit a new line in things like a begin form.
+     */
+    return (c == ' ' || c == '\r' || c == '\v' || c == '\t');
 }
 
 int
@@ -199,7 +207,7 @@ isbrace(int c) {
 
 int
 isident(int c){
-    return (!iswhite(c) && c != ';' && c != '"' && c != '\'' && !isbrace(c));
+    return (!iswhite(c) && c != '\n' &&  c != ';' && c != '"' && c != '\'' && !isbrace(c));
 }
 
 int
@@ -209,629 +217,326 @@ next(FILE *fdin, char *buf, int buflen) {
      * item, so that we can return identifiers or
      * numbers.
      */
-    int state = 0, rc = 0, cur = 0, idx = 0;
-    while(1) {
-        if(idx >= buflen) {
-            break;
-        }
-        /* NOTE: this would work _really_ well as a state transition table;
-         * most of this code would melt away into simple table lookups, based
-         * on the current state and the current input. I might eventually rewrite
-         * this as a simple state-transition table. Would also be fun to write a 
-         * recursive descent parser generator based on a simple specification and
-         * generate said table, for LL(k).
-         */
-        /* XXX: this currently introduces a bug.
-         * because the states for the various
-         * keywords are broken out, when they hit
-         * something that _isn't_ part of the
-         * keyword, they end up adding it, even
-         * tho it should break the ident. So, 
-         * for example, "t e" should be two
-         * identifiers, but because it's part
-         * of the "then or type" case, it ends
-         * up being *one*. could add a hack to
-         * the LIDENT case to check this, or
-         * reorganize the states below to be
-         * better (such as via a translation
-         * table). Probably will add the hack
-         * to the C-version, and fix it
-         * properly in the 29 version.
-         */
-        cur = fgetc(fdin);
-        if(feof(fdin)) {
-            return TEOF;
-        }
-        buf[idx++] = cur;
-        //printf("%d %d\n", idx, state);
-        switch(state) {
-            case LSTART:
-                if(iswhite(cur)) {
-                    idx--;
-                    while(cur == ' ' || cur == '\r' || cur == '\t') {
-                        cur = fgetc(fdin);
-                    }
-                    buf[idx++] = cur;
-                }
-                /* probably _should_ collapse this into a
-                 * a HSM instead of the current flat SM...
-                 * that would definitely shrink the code 
-                 * quite a bit too...
-                 */
-                switch(cur) {
-                    case 'd': // definition
-                        state = LD0;
-                        break;
-                    case 'e': // else or end
-                        state = LE0;
-                        break;
-                    case 'v': // val
-                        state = LVAL0;
-                        break;
-                    case 't': // then or type
-                        state = LT0;
-                        break;
-                    case 'b': // begin
-                        state = LBEGIN0;
-                        break;
-                    case '=': // equal
-                        state = LEQ0;
-                        break;
-                    case ';': // semi-colon is a statement-breaker...
-                        return TSEMI;
-                    case '\n':
-                        return TNEWL;
-                    case '(':
-                        return TOPAREN;
-                    case ')':
-                        return TCPAREN;
-                    case 'i':
-                        state = LIF0;
-                        break;
-                    case 'r':
-                        state = LRECORD0;
-                        break;
-                    case 'p': // poly
-                        state = LPOLY0;
-                        break;
-                    case '"': // string literal
-                        cur = fgetc(fdin);
-                        idx--;
-                        while(cur != '"') {
-                            if(cur == '\\') {
-                                cur = fgetc(fdin);
-                                switch(cur) {
-                                    case 'n':
-                                        buf[idx++] = '\n';
-                                        break;
-                                    case 'r':
-                                        buf[idx++] = '\r';
-                                        break;
-                                    case 't':
-                                        buf[idx++] = '\t';
-                                        break;
-                                    case 'v':
-                                        buf[idx++] = '\v';
-                                        break;
-                                    case '0':
-                                        buf[idx++] = '\0';
-                                        break;
-                                    case '"':
-                                        buf[idx++] = '"';
-                                        break;
-                                    default:
-                                        buf[idx++] = cur;
-                                        break;
-                                }
-                            } else {
-                                buf[idx++] = cur;
-                            }
-                            cur = fgetc(fdin);
-                        }
-                        buf[idx] = '\0';
-                        return TSTRING;
-                    case '\'':
-                        idx--;
-                        cur = fgetc(fdin);
-                        if(cur == '\\') {
-                            cur = fgetc(fdin);
-                            switch(cur) {
-                                case 'n':
-                                    buf[idx++] = '\n';
-                                    break;
-                                case 'r':
-                                    buf[idx++] = '\r';
-                                    break;
-                                case 't':
-                                    buf[idx++] = '\t';
-                                    break;
-                                case 'v':
-                                    buf[idx++] = '\v';
-                                    break;
-                                case '0':
-                                    buf[idx++] = '\0';
-                                    break;
-                                case '"':
-                                    buf[idx++] = '"';
-                                    break;
-                                default:
-                                    buf[idx++] = cur;
-                                    break;
-                            }
-                        } else {
-                            buf[idx++] = cur;
-                        }
-                        cur = fgetc(fdin);
-                        if(cur != '\'') {
-                            strncpy(buf, "missing character terminator", 30);
-                            return TERROR;
-                        }
-                        buf[idx] = '\0';
-                        return TCHAR;
-                    case '#': // line comment
-                        while(cur != '\n') {
-                            cur = fgetc(fdin);
-                        }
-                        state = LSTART;
-                        break;
-                    case '{': // multi-line comment
-                        state = LMCOMMENT;
-                        break;
-                    case 'm': // match
-                        state = LMATCH0;
-                        break;
-                    case 'w': // when
-                        state = LWHEN0;
-                        break;
-                    case '0':
-                    case '1':
-                    case '2':
-                    case '3':
-                    case '4':
-                    case '5':
-                    case '6':
-                    case '7':
-                    case '8':
-                    case '9':
-                    case '.': // I dislike the idea of '.NNN' floats, but...
-                        state = LNUM0;
-                        break;
-                    default:
-                        state = LIDENT0;
-                        break;
-                }
-                break;
-            case LD0:
-                if(cur == 'e') {
-                    state = LDEF1;
-                } else if(cur == 'o') {
-                    state = LDO1;
-                } else if(!isident(cur)) {
-                    ungetc(cur, fdin);
-                    buf[idx - 1] = '\0';
-                    return TIDENT;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LDEF0:
-                if(cur == 'e') {
-                    state = LDEF1;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LDEF1:
-                if(cur == 'f') {
-                    state = LDEF2;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LDEF2:
-                if(iswhite(cur)) {
-                    return TDEF;
-                } else if (cur == ';') {
-                    ungetc(cur, fdin);
-                    return TDEF;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LE0:
-                if(cur == 'l') {
-                    state = LELSE1;
-                } else if(cur == 'n') {
-                    state = LEND1;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LELSE1:
-                if(cur == 's') {
-                    state = LELSE2;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LELSE2:
-                if(cur == 'e') {
-                    state = LELSE3;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LELSE3:
-                if(iswhite(cur)) {
-                    return TELSE;
-                } else if(cur == ';') {
-                    ungetc(cur, fdin);
-                    return TELSE;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LEND0:
-                if(cur == 'n') {
-                    state = LEND1;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LEND1:
-                if(cur == 'd') {
-                    state = LEND2;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LEND2:
-                if(iswhite(cur)) {
-                    return TEND;
-                } else if(cur == ';') {
-                    ungetc(cur, fdin);
-                    return TEND;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LVAL0:
-                if(cur == 'a') {
-                    state = LVAL1;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LVAL1:
-                if(cur == 'l') {
-                    state = LVAL2;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LVAL2:
-                if(iswhite(cur)) {
-                    return TVAL;
-                } else if(cur == ';') {
-                    ungetc(cur, fdin);
-                    return TVAL;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LT0:
-                if(cur == 'h') {
-                    state = LTHEN0;
-                } else if(cur == 'y') {
-                    state = LTYPE0;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LIF0: 
-                if(cur == 'f') {
-                    state = LIF1;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
+    int state = 0, rc = 0, cur = 0, idx = 0, substate = 0;
+    cur = fgetc(fdin);
 
-            case LIF1:
-                if(iswhite(cur)) {
-                    return TIF;
-                } else if(cur == ';') {
-                    ungetc(cur, fdin);
-                    return TIF;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LTHEN0:
-                if(cur == 'e') {
-                    state = LTHEN1;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LTHEN1:
-                if(cur == 'n') {
-                    state = LTHEN2;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LTHEN2:
-                if(iswhite(cur)) {
-                    return TTHEN;
-                } else if(cur == ';'){
-                    ungetc(cur, fdin);
-                    return TTHEN;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LTYPE0:
-                if(cur == 'p'){
-                    state = LTYPE1;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LTYPE1:
-                if(cur == 'e') {
-                    state = LTYPE2;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LTYPE2:
-                if(iswhite(cur)) {
-                    return TTYPE;
-                } else if(cur == ';') {
-                    ungetc(cur, fdin);
-                    return TTYPE;
-                } else {
-                    state = LIDENT0;
-                }
-            case LBEGIN0:
-                if(cur == 'e'){
-                    state = LBEGIN1;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LBEGIN1:
-                if(cur == 'g'){
-                    state = LBEGIN2;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LBEGIN2:
-                if(cur == 'i') {
-                    state = LBEGIN3;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LBEGIN3:
-                if(cur == 'n') {
-                    state = LBEGIN4;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LBEGIN4:
-                if(iswhite(cur)) {
-                    return TBEGIN;
-                } else if(cur == ';') {
-                    ungetc(cur, fdin);
-                    return TBEGIN;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LEQ0:
-                if(iswhite(cur)) {
-                    return TEQ;
-                } else if(cur == ';') {
-                    ungetc(cur, fdin);
-                    return TEQ;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LPOLY0: 
-                if(cur == 'o') {
-                    state = LPOLY1;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LPOLY1: 
-                if(cur == 'l') {
-                    state = LPOLY2;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LPOLY2: 
-                if(cur == 'y') {
-                    state = LPOLY3;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LPOLY3:
-                if(iswhite(cur)) {
-                    return TPOLY;
-                } else if(cur == ';') {
-                    ungetc(cur, fdin);
-                    return TPOLY;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LRECORD0: 
-                if(cur == 'e') {
-                    state = LRECORD1;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LRECORD1: 
-                if(cur == 'c') {
-                    state = LRECORD2;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LRECORD2: 
-                if(cur == 'o') {
-                    state = LRECORD3;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LRECORD3: 
-                if(cur == 'r') {
-                    state = LRECORD4;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LRECORD4: 
-                if(cur == 'd') {
-                    state = LRECORD5;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LRECORD5:
-                if(iswhite(cur)) {
-                    return TRECORD;
-                } else if(cur == ';') {
-                    ungetc(cur, fdin);
-                    return TRECORD;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LMATCH0: 
-                if(cur == 'a') {
-                    state = LMATCH1;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LMATCH1: 
-                if(cur == 't') {
-                    state = LMATCH2;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LMATCH2: 
-                if(cur == 'c') {
-                    state = LMATCH3;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LMATCH3: 
-                if(cur == 'h') {
-                    state = LMATCH4;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LMATCH4:
-                if(iswhite(cur)) {
-                    return TMATCH;
-                } else if(cur == ';') {
-                    ungetc(cur, fdin);
-                    return TMATCH;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LWHEN0: 
-                if(cur == 'h') {
-                    state = LWHEN1;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LWHEN1: 
-                if(cur == 'e') {
-                    state = LWHEN2;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LWHEN2: 
-                if(cur == 'n') {
-                    state = LWHEN3;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LWHEN3:
-                if(iswhite(cur)) {
-                    return TWHEN;
-                } else if(cur == ';') {
-                    ungetc(cur, fdin);
-                    return TWHEN;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LDO0: 
-                if(cur == 'o') {
-                    state = LDO1;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LDO1:
-                if(iswhite(cur)) {
-                    return TDO;
-                } else if(cur == ';') {
-                    ungetc(cur, fdin);
-                    return TDO;
-                } else {
-                    state = LIDENT0;
-                } 
-                break;
-            case LNUM0:
-                cur = fgetc(fdin);
-                while(cur >= '0' && cur <= '9') {
-                    buf[idx++] = cur;
-                    cur = fgetc(fdin);
-                }
-
-                if(iswhite(cur)) {
-                    return TINT;
-                } else if(cur == ';') {
-                    ungetc(cur, fdin);
-                    return TINT;
-                } else {
-                    state = LIDENT0;
-                }
-                break;
-            case LIDENT0:
-                /* XXX: hairy code away */
-                while(isident(cur)) {
-                    cur = fgetc(fdin);
-                    buf[idx++] = cur;
-                }
-                buf[idx - 1] = nul;
-                ungetc(cur, fdin);
-                return TIDENT;
-                break;
+    /* we don't really care about whitespace other than
+     * #\n, so ignore anything that is whitespace here.
+     */
+    if(iswhite(cur)) {
+        while(iswhite(cur)) {
+            cur = fgetc(fdin);
         }
     }
-    return rc;
+    /* honestly, I'm just doing this because
+     * it's less ugly than a label + goto's 
+     * below. Could just use calculated goto's
+     * but that would tie me into gcc entirely...
+     * well, clang too BUT STILL.
+     */
+    while(1) {
+        switch(cur) {
+            case '\n':
+                return TNEWL;
+            case '(':
+                return TOPAREN;
+            case ')':
+                return TCPAREN;
+            case '=':
+                return TEQ;
+            case ';':
+                return TSEMI;
+            case '#':
+                cur = fgetc(fdin);
+                while(cur != '\n' && idx < 512) {
+                    buf[idx++] = cur;
+                    cur = fgetc(fdin);
+                }
+                return TCOMMENT;
+            case '"':
+                cur = fgetc(fdin);
+                while(cur != '"') {
+                    if(cur == '\\') {
+                        cur = fgetc(fdin);
+                        switch(cur) {
+                            case 'n':
+                                buf[idx++] = '\n';
+                                break;
+                            case 'r':
+                                buf[idx++] = '\r';
+                                break;
+                            case 't':
+                                buf[idx++] = '\t';
+                                break;
+                            case 'v':
+                                buf[idx++] = '\v';
+                                break;
+                            case '0':
+                                buf[idx++] = '\0';
+                                break;
+                            case '"':
+                                buf[idx++] = '"';
+                                break;
+                            default:
+                                buf[idx++] = cur;
+                                break;
+                        }
+                    } else {
+                        buf[idx++] = cur;
+                    }
+                    cur = fgetc(fdin);
+                }
+                buf[idx] = '\0';
+                return TSTRING;
+            case '\'':
+                cur = fgetc(fdin);
+                if(cur == '\\') {
+                    cur = fgetc(fdin);
+                    switch(cur) {
+                        case 'n':
+                            buf[idx++] = '\n';
+                            break;
+                        case 'r':
+                            buf[idx++] = '\r';
+                            break;
+                        case 't':
+                            buf[idx++] = '\t';
+                            break;
+                        case 'v':
+                            buf[idx++] = '\v';
+                            break;
+                        case '0':
+                            buf[idx++] = '\0';
+                            break;
+                        case '"':
+                            buf[idx++] = '"';
+                            break;
+                        default:
+                            buf[idx++] = cur;
+                            break;
+                    }
+                } else {
+                    buf[idx++] = cur;
+                }
+                cur = fgetc(fdin);
+                if(cur != '\'') {
+                    strncpy(buf, "missing character terminator", 30);
+                    return TERROR;
+                }
+                buf[idx] = '\0';
+                return TCHAR;
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+                substate = TINT;
+                while(1) {
+                    switch(substate) {
+                        case TINT:
+                            if((cur >= '0' && cur <= '9')) {
+                                buf[idx++] = cur;
+                            } else if(cur == '.') {
+                                substate = TFLOAT;
+                            } else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                buf[idx] = '\0';
+                                return TINT;
+                            } else { 
+                                strncpy(buf, "incorrectly formatted integer", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case TFLOAT:
+                            if((cur >= '0' && cur <= '9')) {
+                                buf[idx++] = cur;
+                            } else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                buf[idx] = '\0';
+                                return TINT;
+                            } else { 
+                                strncpy(buf, "incorrectly formatted floating point numeral", 512);
+                                return TERROR;
+                            }
+                            break;
+                        default:
+                            strncpy(buf, "incorrectly formatted numeral", 29);
+                            return TERROR;
+                    }
+                    cur = fgetc(fdin);
+                }
+            /* should be identifiers down here... */
+            default:
+                while(1) {
+                    buf[idx++] = cur;
+                    switch(substate) {
+                        case LSTART:
+                            switch(cur) {
+                                case 'a':
+                                    substate = LARRAY0;
+                                    break;
+                                case 'b':
+                                    substate = LB0;
+                                    break;
+                                case 'c':
+                                    substate = LC0;
+                                    break;
+                                case 'd':
+                                    substate = LD0;
+                                    break;
+                                case 'e':
+                                    substate = LE0;
+                                    break;
+                                case 'f':
+                                    substate = LF0;
+                                    break;
+                                case 'i':
+                                    substate = LI0;
+                                    break;
+                                case 'l':
+                                    substate = LL0;
+                                    break;
+                                case 'm':
+                                    substate = LMATCH0;
+                                case 'o':
+                                    substate = LOF0;
+                                    break;
+                                case 'p':
+                                    substate = LPOLY0;
+                                    break;
+                                case 'r':
+                                    substate = LR0;
+                                    break;
+                                case 's':
+                                    substate = LSTRT0;
+                                    break;
+                                case 't':
+                                    substate = LT0;
+                                    break;
+                                case 'u':
+                                    substate = LUSE0;
+                                    break;
+                                case 'v':
+                                    substate = LVAL0;
+                                    break;
+                                case 'w':
+                                    substate = LW0;
+                                    break;
+                                default:
+                                    substate = LIDENT0;
+                                    break;
+                            }
+                            break;
+                        case LB0:
+                            if(cur == 'e') {
+                                substate = LBEGIN0;
+                            } else if(cur == 'o') {
+                                substate = LBOOL0;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LC0:
+                            if(cur == 'h') {
+                                substate = LCHAR0;
+                            } else if(cur == 'a') {
+                                substate = LCASE0;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LD0:
+                            if(cur == 'o') {
+                                substate = LDO0;
+                            } else if(cur == 'e') {
+                                substate = LDE0;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LDE0:
+                            if(cur == 'f') {
+                                substate = LDEF0;
+                            } else if(cur == 'q') {
+                                substate = LDEQ0;
+                            } else if(cur == 'c') {
+                                substate = LDEC0;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LDEF0:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            } else if(iswhite(cur) || cur == 'n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                buf[idx] = '\0';
+                                return TDEF;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LARRAY0:
+                            if(cur == 'r') {
+                                substate = LARRAY1;
+                            } else {
+                                substate = LIDENT0;
+                            } 
+                            break;
+                        case LARRAY1:
+                            if(cur == 'r') {
+                                substate = LARRAY2;
+                            } else {
+                                substate= LIDENT0;
+                            }
+                            break;
+                        case LARRAY2:
+                            if(cur == 'a') {
+                                substate = LARRAY3;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LARRAY3:
+                            if(cur == 'y') {
+                                substate = LARRAY4;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LARRAY4:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            } else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                buf[idx] = '\0';
+                                return TARRAY;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LIDENT0:
+                            if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else if(!isident(cur)) {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                    }
+                    cur = fgetc(fdin);
+                }
+        }
+    }
 }
 
 ASTEither *
