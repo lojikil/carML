@@ -379,7 +379,15 @@ next(FILE *fdin, char *buf, int buflen) {
                     if(feof(fdin)) {
                         return TEOF;
                     }
+
                     buf[idx++] = cur;
+
+                    if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                        ungetc(cur, fdin);
+                        buf[idx - 1] = '\0';
+                        return TIDENT;
+                    }
+
                     /* the vast majority of the code below is
                      * generated... that still doesn't mean it's
                      * very good. There is a _ton_ of reproduced

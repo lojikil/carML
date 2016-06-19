@@ -1,13 +1,6 @@
 # Lexer bugs:
 
-- single-character idents fail:
-
-```
-t
-b
-(identifier t
- b)
-```
+None currently.
 
 # keywords
 
