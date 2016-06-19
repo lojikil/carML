@@ -1,6 +1,6 @@
 # Lexer bugs:
 
-None currently.
+- Single character identifiers that start with a keyword letter a broken ("b\nb" is seen as one identifier)
 
 # keywords
 
