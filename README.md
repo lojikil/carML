@@ -48,9 +48,11 @@ eventually add something to "preprocess" source code and have operators (or simp
 
     # cannonical loop example
     def arrayIota arr f = begin
-        def arrayIota' arr f idx = begin
-            set-array-index! arr f idx;
-            arrayIota' arr f (add idx 1);
+        def arrayIota' arr fun idx = begin
+            if (< idx (array-length arr)) then {
+                set-array-index! arr (fun idx) idx
+                arrayIota' arr fun (add idx 1)
+            } else ()
         end
         arrayIota' arr f 0
     end
@@ -59,19 +61,32 @@ eventually add something to "preprocess" source code and have operators (or simp
     # use the closure in arrayIota' to
     # capture variables, instead of
     # explicitly passing them in
-    def arrayIota0 arr f = begin
+    declare arrayIota0 array of Num (Num -> Num) -> ()
+    def arrayIota0 arr fun = begin
         def arrayIota' idx = begin
-            set-array-index! arr f idx;
-            arrayIota' (add idx 1);
+            if (< idx (array-length arr)) then {
+                set-array-index! arr (fun idx) idx;
+                arrayIota' (add idx 1);
+            } else ()
         end
         arrayIota' 0;
     end
+
+    # same as the above, but using `foreachIndex`
+    @arrayIota1 array of Num (Num -> Num) -> ()
+    def arrayIota1 arr fun = {
+        foreachIndex fn x = (set-array-index! arr (fun x) x) arr
+    }
+
+    # same as the above, but without the `{}` block
+    @arrayIota2 array of Num (Num -> Num) -> ()
+    def arrayIota2 arr fun = (foreachIndex fn x = (set-array-index! arr (fun x) x) arr)
 
     # eventually, `def` forms should work
     # like `begin` forms
     def foo x = (add x 1)
      
-    var f = (array 10)
+    val f = (array 10)
     
     arrayIota f foo;
     
