@@ -245,6 +245,10 @@ next(FILE *fdin, char *buf, int buflen) {
                 return TOPAREN;
             case ')':
                 return TCPAREN;
+            case '{':
+                return TBEGIN;
+            case '}':
+                return TEND;
             case '=':
                 return TEQ;
             case ';':
@@ -1364,7 +1368,7 @@ read(FILE *fdin) {
              * head->children[0] = parameter-list params
              * head->children[1] = return type;
              */
-            return head;
+            return ASTRight(head);
         case TDEF:
             ltmp = next(fdin, &buffer[0], 512);
             if(ltmp != TIDENT) {

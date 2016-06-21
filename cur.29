@@ -36,6 +36,16 @@ def blah x y z = begin
     sum (sum x y) z 
 end
 
+# same as the above, but with
+# {} instead of begin/end
+# declare blaz Num Num Num -> Num
+def blaz x y z = {
+    println x
+    println y
+    println z
+    sum (sum x y) z
+}
+
 #declare baz int int int -> int
 def baz x y z = if (>= x y) then z else x
 
