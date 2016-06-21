@@ -1353,6 +1353,18 @@ read(FILE *fdin) {
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = TEOF;
             return ASTRight(head);
+        case TDECLARE:
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TDECLARE;
+            head->lenchildren = 2;
+            head->children = (AST **)hmalloc(sizeof(AST *) * 2);
+
+            /* the structure of a declaration:
+             * head->value: ident name being declared
+             * head->children[0] = parameter-list params
+             * head->children[1] = return type;
+             */
+            return head;
         case TDEF:
             ltmp = next(fdin, &buffer[0], 512);
             if(ltmp != TIDENT) {

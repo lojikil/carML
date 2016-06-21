@@ -1,7 +1,23 @@
 # this file represents what c29 is _currently_ able to compile
 
+# `declare` needn't be written right next to the 
+# value being declared about... 
+# I also like `@` as shorthand for `declare`...
+# 
+# declare blah Num -> Num
+# def blah x = (sum x x)
+#
+# @blaz Num -> Num
+# def blaz x = (sum x x)
+# 
+# Further thoughts:
+# - function parameters? @blah Num (Num -> Num) -> Num
+# - type variables? @blah Num vec of 'a -> 'a
+
+# declare foo Num -> Num
 def foo x = (sum x x)
 
+# declare bar Num Num Num -> Num
 def bar x y z = begin
     println x;
     println y;
@@ -12,7 +28,7 @@ end
 # same as the above, but with
 # implicit call termination via
 # newlines
-
+# declare blah Num Num Num -> Num
 def blah x y z = begin
     println x
     println y
@@ -20,8 +36,10 @@ def blah x y z = begin
     sum (sum x y) z 
 end
 
+#declare baz int int int -> int
 def baz x y z = if (>= x y) then z else x
 
+#declare baz bool any -> unit
 def bar0 x y = when x do y
 
 val foo = "simple string for doc note?"

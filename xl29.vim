@@ -10,6 +10,7 @@ if exists("b:current_syntax")
 endif
 
 syn keyword basicLanguageKeywords val def let letrec in when if then else
+syn keyword basicLanguageKeywords do match case with of use record type poly
 syn keyword xl29BlockCmd begin end 
 
 " Integer with - + or nothing in front
@@ -32,7 +33,7 @@ syn region xl29DescBlock start="begin" end="end" fold transparent
 syn keyword xl29Todo contained TODO FIXME XXX NOTE
 syn match xl29Comment "#.*$" contains=xl29Todo
 
-syn keyword xl29Type int char float string bool
+syn keyword xl29Type int char float string bool deque
 syn keyword xl29Ops add sum array println print ref div mod divide modulo sub subtract
 
 let b:current_syntax = "xl29"
