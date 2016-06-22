@@ -1368,6 +1368,48 @@ read(FILE *fdin) {
              * head->children[0] = parameter-list params
              * head->children[1] = return type;
              */
+
+            ltmp = next(fdin, &buffer[0], 512);
+            if(ltmp != TIDENT) {
+                return ASTLeft(0, 0, "parser error");
+            }
+
+            head->value = hstrdup(buffer);
+
+            do {
+                ltmp = next(fdin, &buffer[0], 512);
+                if(ltmp == TEOF || ltmp == TERROR) {
+                    break;
+                }
+
+                /* we need to read in a list of types
+                 * and process them accordingly. The
+                 * issue arrises from collection types:
+                 * how do we (easily) process types like
+                 * `dequeue of array of (Num -> Num)`?
+                 * My thought here is to create a stack
+                 * of types, and then collapse them into
+                 * one type when we finish seeing the
+                 * `of` form. So:
+                 * `array of array of Num` becomes
+                 * the stack:
+                 * [array array Num]
+                 * which we then collapse.
+                 * `@foo array of array of Num Num -> Num`
+                 * we make a stack of `array of array of Num`
+                 * and then stop processing when we see the
+                 * next `Num`, since that is not part of
+                 * the type. Have to have some intelligence
+                 * here as well, since `of` can only be
+                 * applied to collexions.
+                 */
+                /*
+                switch(ltmp) {
+                    case TARRAY:
+                        tmp = 
+                }*/
+            } while(ltmp != TNEWL);
+
             return ASTRight(head);
         case TDEF:
             ltmp = next(fdin, &buffer[0], 512);
