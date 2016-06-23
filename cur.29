@@ -53,3 +53,5 @@ def baz x y z = if (>= x y) then z else x
 def bar0 x y = when x do y
 
 val foo = "simple string for doc note?"
+
+let refc = 340 in (sum refc refc)
