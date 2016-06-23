@@ -41,7 +41,6 @@ typedef enum {
     LDEQ0, LDEQ1, LDEQ2, LDEQ3, LDEC0, LDEC1, LDEC2, LDEC3,
     LDE0, LBOOL0, LBOOL1, LBOOL2, LREF0, LELSE0, LRE0, LTRUE2,
     LWITH0, LWITH1, LWITH2, LDEC4, LUSE1, LUSE2
-
 } LexStates;
 
 /* AST tag enum.
@@ -61,7 +60,7 @@ typedef enum {
     TLETREC, TLET, TFN, TCASE, TSTRT, TCHART,
     TINTT, TFLOATT, TCOMMENT, TREF, TDEQUET,
     TBOOLT, TWITH, TOF, TDECLARE, TFALSE,
-    TTRUE, TUSE
+    TTRUE, TUSE, TIN
 } TypeTag;
 
 struct _AST {
@@ -798,6 +797,9 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LINTT0: 
                             if(cur == 't') {
                                 substate = LINTT1;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TIN;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1345,10 +1347,15 @@ read(FILE *fdin) {
     ASTEither *sometmp = nil;
     int ltype = 0, ltmp = 0, idx = 0, flag = -1;
     char buffer[512] = {0};
+    char name[8] = {0};
+    char errbuf[512] = {0};
 
     ltype = next(fdin, &buffer[0], 512);
     switch(ltype) {
         case TCOMMENT:
+            /* do we want return this, so that we can
+             * return documentation, &c.?
+             */
             sometmp = read(fdin);
             return sometmp;
         case TERROR:
@@ -1356,6 +1363,89 @@ read(FILE *fdin) {
         case TEOF:
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = TEOF;
+            return ASTRight(head);
+        case TLET:
+        case TLETREC:
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = ltype;
+
+            /* setup:
+             * - head->value = name binding
+             * - head->children[0] = value
+             * - head->chidlren[1] = body
+             */
+
+            head->lenchildren = 2;
+            head->children = (AST **)hmalloc(sizeof(AST *) * 2);
+
+            if(ltype == TLET) {
+                strncpy(name, "let", 3);
+            } else {
+                strncpy(name, "letrec", 6);
+            }
+
+            sometmp = read(fdin);
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else {
+                tmp = sometmp->right;
+            }
+
+            if(tmp->tag != TIDENT) {
+                snprintf(&errbuf[0], 512, "%s's binding *must* be an IDENT: `%s IDENT = EXPRESION in EXPRESSION`", name, name);
+                return ASTLeft(0, 0, hstrdup(&errbuf[0]));
+            }
+
+            head->value = hstrdup(tmp->value);
+
+            sometmp = read(fdin);
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else {
+                tmp = sometmp->right;
+            }
+
+            /* this really should check if the 
+             * tmp is a ':' (type specifier) or
+             * '='... for now tho, just take the
+             * shortcut here.
+             */
+            if(tmp->tag != TEQ) {
+                snprintf(&errbuf[0], 512, "%s's IDENT must be followed by an `=`: `%s IDENT = EXPRESSION in EXPRESSION`", name, name);
+                return ASTLeft(0, 0, hstrdup(&errbuf[0]));
+            }
+
+            sometmp = read(fdin);
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else {
+                head->children[0] = sometmp->right;
+            }
+
+            sometmp = read(fdin);
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else {
+                tmp = sometmp->right;
+            }
+
+            /* really should check if this is an
+             * `and`, such that we can have multiple 
+             * bindings...
+             */
+            if(tmp->tag != TIN) {
+                snprintf(&errbuf[0], 512,
+                         "%s's EXPR  must be followed by an `in`: `%s IDENT = EXPRESSION in EXPRESSION`",
+                         name, name);
+                return ASTLeft(0, 0, hstrdup(&errbuf[0]));
+            }
+
+            sometmp = read(fdin);
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else {
+                head->children[1] = sometmp->right;
+            }
             return ASTRight(head);
         case TDECLARE:
             head = (AST *)hmalloc(sizeof(AST));
@@ -1628,6 +1718,10 @@ read(FILE *fdin) {
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = TEND;
             return ASTRight(head);
+        case TIN:
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TIN;
+            return ASTRight(head);
         case TEQUAL:
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = TEQUAL;
@@ -1858,6 +1952,21 @@ walk(AST *head, int level) {
             walk(head->children[0], 0);
             printf(" ");
             walk(head->children[1], 0);
+            printf(")");
+            break;
+        case TLET:
+        case TLETREC:
+            if(head->tag == TLET) {
+                printf("(let ");
+            } else {
+                printf("(letrec ");
+            }
+
+            printf("%s ", head->value);
+
+            walk(head->children[0], 0);
+            printf("\n");
+            walk(head->children[1], level + 1);
             printf(")");
             break;
         case TWHEN:
