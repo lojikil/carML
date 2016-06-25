@@ -94,3 +94,7 @@ eventually add something to "preprocess" source code and have operators (or simp
 
     # add:
     # lambda, ref, make
+
+# License
+
+See `LICENSE` for details (ISC license).
