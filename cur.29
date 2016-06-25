@@ -52,6 +52,12 @@ def baz x y z = if (>= x y) then z else x
 #declare baz bool any -> unit
 def bar0 x y = when x do y
 
+# constant
+def x = 32
+
 val foo = "simple string for doc note?"
 
 let refc = 340 in (sum refc refc)
+
+# lambda definition of a value...
+val yar = fn x = (sum x 32)
