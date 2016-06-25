@@ -60,7 +60,7 @@ typedef enum {
     TLETREC, TLET, TFN, TCASE, TSTRT, TCHART,
     TINTT, TFLOATT, TCOMMENT, TREF, TDEQUET,
     TBOOLT, TWITH, TOF, TDECLARE, TFALSE,
-    TTRUE, TUSE, TIN
+    TTRUE, TUSE, TIN, TCOLON
 } TypeTag;
 
 struct _AST {
@@ -252,6 +252,10 @@ next(FILE *fdin, char *buf, int buflen) {
                 return TEQ;
             case ';':
                 return TSEMI;
+            case ':':
+                return TCOLON;
+            case '@':
+                return TDECLARE;
             case '#':
                 cur = fgetc(fdin);
                 while(cur != '\n' && idx < 512) {
@@ -1392,7 +1396,10 @@ read(FILE *fdin) {
             }
 
             if(tmp->tag != TIDENT) {
-                snprintf(&errbuf[0], 512, "%s's binding *must* be an IDENT: `%s IDENT = EXPRESION in EXPRESSION`", name, name);
+                snprintf(&errbuf[0],
+                         512,
+                         "%s's binding *must* be an IDENT: `%s IDENT = EXPRESION in EXPRESSION`",
+                         name, name);
                 return ASTLeft(0, 0, hstrdup(&errbuf[0]));
             }
 
@@ -1411,7 +1418,9 @@ read(FILE *fdin) {
              * shortcut here.
              */
             if(tmp->tag != TEQ) {
-                snprintf(&errbuf[0], 512, "%s's IDENT must be followed by an `=`: `%s IDENT = EXPRESSION in EXPRESSION`", name, name);
+                snprintf(&errbuf[0], 512,
+                         "%s's IDENT must be followed by an `=`: `%s IDENT = EXPRESSION in EXPRESSION`",
+                         name, name);
                 return ASTLeft(0, 0, hstrdup(&errbuf[0]));
             }
 
@@ -1446,6 +1455,7 @@ read(FILE *fdin) {
             } else {
                 head->children[1] = sometmp->right;
             }
+
             return ASTRight(head);
         case TDECLARE:
             head = (AST *)hmalloc(sizeof(AST));
@@ -1917,6 +1927,10 @@ read(FILE *fdin) {
         case TNEWL:
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = TNEWL;
+            return ASTRight(head);
+        case TCOLON:
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TCOLON;
             return ASTRight(head);
         case TSEMI:
             head = (AST *)hmalloc(sizeof(AST));
