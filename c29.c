@@ -1511,16 +1511,20 @@ read(FILE *fdin) {
             } while(ltmp != TNEWL);
 
             return ASTRight(head);
+        case TFN:
         case TDEF:
-            ltmp = next(fdin, &buffer[0], 512);
-            if(ltmp != TIDENT) {
-                return ASTLeft(0, 0, "parser error");
+            head = (AST *) hmalloc(sizeof(AST));
+            head->tag = ltype;
+
+            if(ltype == TDEF){
+                ltmp = next(fdin, &buffer[0], 512);
+                if(ltmp != TIDENT) {
+                    return ASTLeft(0, 0, "parser error");
+                }
+                head->value = hstrdup(buffer);
+                head->lenvalue = strnlen(buffer, 512);
             }
 
-            head = (AST *) hmalloc(sizeof(AST));
-
-            head->value = hstrdup(buffer);
-            head->lenvalue = strnlen(buffer, 512);
 
             /* the specific form we're looking for here is 
              * TDEF TIDENT (TIDENT *) TEQUAL TEXPRESSION
@@ -1952,8 +1956,13 @@ walk(AST *head, int level) {
         return;
     }
     switch(head->tag) {
+        case TFN:
         case TDEF:
-            printf("(define %s ", head->value);
+            if(head->tag == TFN) {
+                printf("(fn ");
+            } else {
+                printf("(define %s ", head->value);
+            }
             if(head->children[0] != nil) {
                 walk(head->children[0], level);
             }
