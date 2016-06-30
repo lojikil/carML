@@ -1863,26 +1863,20 @@ read(FILE *fdin) {
 
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
-            } else {
-                tmp = sometmp->right;
-            }
-
-            if(tmp->tag != TIDENT) {
+            } else if(sometmp->right->tag != TIDENT) {
                 return ASTLeft(0, 0, "val's name *must* be an identifier: `val IDENTIFIER = EXPRESSION`");
             } else {
-                head->children[0] = tmp;
+                head->children[0] = sometmp->right;
             }
 
             sometmp = read(fdin);
 
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
+            } else if(sometmp->right->tag != TEQ){
+                return ASTLeft(0, 0, "val's identifiers *must* be followed by an `=`: `val IDENTIFIER = EXPRESSION`");
             } else {
                 tmp = sometmp->right;
-            }
-
-            if(tmp->tag != TEQ) {
-                return ASTLeft(0, 0, "val's identifiers *must* be followed by an `=`: `val IDENTIFIER = EXPRESSION`");
             }
 
             sometmp = read(fdin);
@@ -1898,6 +1892,61 @@ read(FILE *fdin) {
         case TARRAY:
             break;
         case TRECORD:
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TRECORD;
+            
+            sometmp = read(fdin);
+            /* I like this 3-case block-style
+             * I think *this* should be the
+             * "expect" function, but it's
+             * close enough to have this pattern
+             * throughout...
+             */
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else if(sometmp->right->tag != TIDENT) {
+                return ASTLeft(0, 0, "record's name *must* be an identifier: `record IDENTIFIER = record-definition`");
+            } else {
+                tmp = sometmp->right;
+            }
+
+            sometmp = read(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else if(sometmp->right->tag != TEQ) {
+                return ASTLeft(0, 0, "record's name *must* be followed by an `=`: `record IDENTIFIER = record-defition`");
+            } else {
+                tmp = sometmp->right;
+            }
+
+            /* so now we are at the point where
+             * we have read the _name_ of the 
+             * record, and we have read the 
+             * `=`, so now we need to read 
+             * the definition of the record.
+             * I have some thought that we may
+             * want to allow a record definition
+             * to be <ident (: type)> | { <ident (: type)> + }
+             * but I also don't know if there
+             * will be a huge number of
+             * use-cases for single-member
+             * records...
+             */
+
+            ltmp = next(fdin, &buffer[0], 512);
+
+            if(ltmp != TBEGIN) {
+                return ASTLeft(0, 0, "record-defitintion *must* begin with BEGIN");
+            }
+
+            /* here, we just need to read:
+             * 1. an ident.
+             * 2. either a `:` or #\n
+             * 3. if `:`, we then need to read a type.
+             */
+
+            return ASTRight(head);
             break;
         case TINT:
             head = (AST *)hmalloc(sizeof(AST));
@@ -2074,6 +2123,8 @@ walk(AST *head, int level) {
             break;
         case TSTRING:
             printf("(string \"%s\")", head->value);
+            break;
+        case TRECORD:
             break;
         case TBEGIN:
             printf("(begin\n");

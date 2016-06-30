@@ -98,3 +98,7 @@ eventually add something to "preprocess" source code and have operators (or simp
 # License
 
 See `LICENSE` for details (ISC license).
+
+# Name
+
+Thinking about renaming this to be [Melomys](https://en.wikipedia.org/wiki/Melomys)...
