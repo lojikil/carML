@@ -1946,6 +1946,35 @@ read(FILE *fdin) {
              * 3. if `:`, we then need to read a type.
              */
 
+            while(tmp->tag != TEND) {
+                sometmp = read(fdin);
+                
+                if(sometmp.tag == ASTLEFT) {
+                    return sometmp;
+                } else if(sometmp->right.tag != TIDENT && sometmp->right.tag != TEND) {
+                    return ASTLeft(0, 0, "a `record`'s members *must* be identifiers: `name (: type)`"); 
+                } else if(sometmp->right.tag == TEND) {
+                    break;
+                } else {
+                    tmp = sometmp->right;
+                }
+                vectmp[idx++] = tmp;
+
+                sometmp = read(fdin);
+                if(sometmp.tag == ASTLEFT) {
+
+                } else if(sometmp->right.tag == TCOLON) {
+
+                } else if(sometmp->right.tag == TNEWL) {
+
+                } else {
+                    /* we didn't see a `:` or a #\n, so that's
+                     * an error.
+                     */
+                }
+
+            }
+
             return ASTRight(head);
             break;
         case TINT:
