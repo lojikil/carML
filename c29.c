@@ -117,6 +117,9 @@ int compile(FILE *, FILE *);
 int iswhite(int);
 int isident(int);
 int isbrace(int);
+int istypeast(int);
+int issimpletypeast(int);
+int iscomplextypeast(int);
 
 int
 main(int ac, char **al) {
@@ -210,6 +213,55 @@ isbrace(int c) {
 int
 isident(int c){
     return (!iswhite(c) && c != '\n' &&  c != ';' && c != '"' && c != '\'' && !isbrace(c));
+}
+
+int
+istypeast(int tag) {
+    /* have to have some method
+     * of checking user types here...
+     * perhaps we should just use 
+     * idents?
+     */
+    switch(tag) {
+        case TARRAY:
+        case TINTT:
+        case TCHART:
+        case TDEQUET:
+        case TFLOATT:
+        case TSTRT:
+        case TIDENT: // user types :|
+        case TBOOLT:
+            return 1;
+        default:
+            return 0;
+    }
+}
+
+int
+issimpletypeast(int tag) {
+    switch(tag) {
+        case TINTT:
+        case TCHART:
+        case TFLOATT:
+        case TSTRT:
+        case TIDENT: // user types :|
+        case TBOOLT:
+            return 1;
+        default:
+            return 0;
+    }
+}
+
+int
+iscomplextypeast(int tag) {
+    switch(tag) {
+        case TARRAY:
+        case TDEQUET:
+        case TIDENT: // user types :|
+            return 1;
+        default:
+            return 0;
+    }
 }
 
 int
@@ -1949,11 +2001,11 @@ read(FILE *fdin) {
             while(tmp->tag != TEND) {
                 sometmp = read(fdin);
                 
-                if(sometmp.tag == ASTLEFT) {
+                if(sometmp->tag == ASTLEFT) {
                     return sometmp;
-                } else if(sometmp->right.tag != TIDENT && sometmp->right.tag != TEND) {
+                } else if(sometmp->right->tag != TIDENT && sometmp->right->tag != TEND) {
                     return ASTLeft(0, 0, "a `record`'s members *must* be identifiers: `name (: type)`"); 
-                } else if(sometmp->right.tag == TEND) {
+                } else if(sometmp->right->tag == TEND) {
                     break;
                 } else {
                     tmp = sometmp->right;
@@ -1961,16 +2013,27 @@ read(FILE *fdin) {
                 vectmp[idx++] = tmp;
 
                 sometmp = read(fdin);
-                if(sometmp.tag == ASTLEFT) {
+                if(sometmp->tag == ASTLEFT) {
+                    return sometmp;
+                } else if(sometmp->right->tag == TCOLON) {
+                    sometmp = read(fdin);
+                    if(sometmp->tag == ASTLEFT) {
+                        return sometmp;
+                    } if(!istypeast(sometmp->right->tag)) {
+                        return ASTLeft(0, 0, "a `:` form *must* be followed by a type definition...");
+                    } else if(issimpletypeast(sometmp->right->tag)) {
 
-                } else if(sometmp->right.tag == TCOLON) {
-
-                } else if(sometmp->right.tag == TNEWL) {
+                    } else {
+                        /* complex type...
+                         */
+                    }
+                } else if(sometmp->right->tag == TNEWL) {
 
                 } else {
                     /* we didn't see a `:` or a #\n, so that's
                      * an error.
                      */
+                    return ASTLeft(0, 0, "malformed record definition.");
                 }
 
             }
