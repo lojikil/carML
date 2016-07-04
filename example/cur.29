@@ -61,3 +61,10 @@ let refc = 340 in (sum refc refc)
 
 # lambda definition of a value...
 val yar = fn x = (sum x 32)
+
+# simple record definition
+record foo = {
+    blah : int
+    bar : int
+    baz
+}

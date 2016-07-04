@@ -60,7 +60,7 @@ typedef enum {
     TLETREC, TLET, TFN, TCASE, TSTRT, TCHART,
     TINTT, TFLOATT, TCOMMENT, TREF, TDEQUET,
     TBOOLT, TWITH, TOF, TDECLARE, TFALSE,
-    TTRUE, TUSE, TIN, TCOLON
+    TTRUE, TUSE, TIN, TCOLON, TRECDEF,
 } TypeTag;
 
 struct _AST {
@@ -1960,6 +1960,7 @@ read(FILE *fdin) {
                 return ASTLeft(0, 0, "record's name *must* be an identifier: `record IDENTIFIER = record-definition`");
             } else {
                 tmp = sometmp->right;
+                head->value = tmp->value;
             }
 
             sometmp = read(fdin);
@@ -2003,7 +2004,10 @@ read(FILE *fdin) {
                 
                 if(sometmp->tag == ASTLEFT) {
                     return sometmp;
+                } else if(sometmp->right->tag == TNEWL) {
+                    continue;
                 } else if(sometmp->right->tag != TIDENT && sometmp->right->tag != TEND) {
+                    printf("%d", sometmp->right->tag);
                     return ASTLeft(0, 0, "a `record`'s members *must* be identifiers: `name (: type)`"); 
                 } else if(sometmp->right->tag == TEND) {
                     break;
@@ -2022,13 +2026,34 @@ read(FILE *fdin) {
                     } if(!istypeast(sometmp->right->tag)) {
                         return ASTLeft(0, 0, "a `:` form *must* be followed by a type definition...");
                     } else if(issimpletypeast(sometmp->right->tag)) {
-
+                        vectmp[idx] = sometmp->right;
+                        sometmp = read(fdin);
+                        if(sometmp->tag == ASTLEFT) {
+                            return sometmp;
+                        } else if(sometmp->right->tag != TNEWL && sometmp->right->tag != TSEMI) {
+                            return ASTLeft(0, 0, "a simple type *must* be followed by a new line or semi-colon...");
+                        }
+                        /* we have determined a `val <name> : <simple-type>` form
+                         * here, so store them in the record's definition.
+                         */
+                        tmp = (AST *)hmalloc(sizeof(AST));
+                        tmp->tag = TRECDEF;
+                        tmp->lenchildren = 2;
+                        tmp->children = (AST **)hmalloc(sizeof(AST *) * 2);
+                        tmp->children[0] = vectmp[idx - 1];
+                        tmp->children[1] = vectmp[idx];
+                        vectmp[idx - 1] = tmp;
                     } else {
                         /* complex type...
                          */
                     }
                 } else if(sometmp->right->tag == TNEWL) {
-
+                    tmp = (AST *)hmalloc(sizeof(AST));
+                    tmp->tag = TRECDEF;
+                    tmp->lenchildren = 1;
+                    tmp->children = (AST **)hmalloc(sizeof(AST *));
+                    tmp->children[0] = vectmp[idx - 1];
+                    vectmp[idx - 1] = tmp;
                 } else {
                     /* we didn't see a `:` or a #\n, so that's
                      * an error.
@@ -2037,7 +2062,15 @@ read(FILE *fdin) {
                 }
 
             }
-
+            /* so, we've constructed a list of record members.
+             * now, we just need to actually _make_ the record
+             * structure.
+             */
+            head->lenchildren = idx;
+            head->children = (AST **)hmalloc(sizeof(AST *) * idx);
+            for(int i = 0; i < idx; i++){
+                head->children[i] = vectmp[i];
+            }
             return ASTRight(head);
             break;
         case TINT:
@@ -2072,6 +2105,10 @@ read(FILE *fdin) {
         case TNEWL:
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = TNEWL;
+            return ASTRight(head);
+        case TINTT:
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TINTT;
             return ASTRight(head);
         case TCOLON:
             head = (AST *)hmalloc(sizeof(AST));
@@ -2213,10 +2250,39 @@ walk(AST *head, int level) {
         case TINT:
             printf("(integer %s)", head->value);
             break;
+        case TINTT:
+            printf("(type integer)");
+            break;
+        case TFLOATT:
+            printf("(type float)");
+            break;
+        case TCHART:
+            printf("(type char)");
+            break;
+        case TSTRT:
+            printf("(type string)");
+            break;
         case TSTRING:
             printf("(string \"%s\")", head->value);
             break;
         case TRECORD:
+            printf("(define-record %s\n", head->value);
+            for(int i = 0; i < head->lenchildren; i++) {
+                walk(head->children[i], level + 1);
+                if(i < (head->lenchildren - 1)) {
+                    printf("\n");
+                }
+            }
+            printf(")");
+            break;
+        case TRECDEF:
+            printf("(record-member ");
+            walk(head->children[0], 0);
+            if(head->lenchildren == 2) {
+                printf(" ");
+                walk(head->children[1], 0);
+            }
+            printf(")");
             break;
         case TBEGIN:
             printf("(begin\n");
