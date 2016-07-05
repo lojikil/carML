@@ -1908,8 +1908,6 @@ read(FILE *fdin) {
         case TVAL:
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = TVAL;
-            head->children = (AST **)hmalloc(sizeof(AST *) * 2);
-            head->lenchildren = 2;
             
             sometmp = read(fdin);
 
@@ -1918,17 +1916,25 @@ read(FILE *fdin) {
             } else if(sometmp->right->tag != TIDENT) {
                 return ASTLeft(0, 0, "val's name *must* be an identifier: `val IDENTIFIER = EXPRESSION`");
             } else {
-                head->children[0] = sometmp->right;
+                head->value = sometmp->right->value;
             }
 
             sometmp = read(fdin);
 
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
-            } else if(sometmp->right->tag != TEQ){
+            } else if(sometmp->right->tag != TEQ && sometmp->right->tag != TCOLON){
                 return ASTLeft(0, 0, "val's identifiers *must* be followed by an `=`: `val IDENTIFIER = EXPRESSION`");
+            } else if(sometmp->right->tag == TCOLON) {
+                /* ok, the user is specifying a type here
+                 * we have to consume the type, and then
+                 * store it.
+                 */
+                head->lenchildren = 2;
+                head->children = (AST **)hmalloc(sizeof(AST *) * 2);
             } else {
-                tmp = sometmp->right;
+                head->lenchildren = 1;
+                head->children = (AST **)hmalloc(sizeof(AST *));
             }
 
             sometmp = read(fdin);
@@ -1936,7 +1942,7 @@ read(FILE *fdin) {
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
             } else {
-                head->children[1] = sometmp->right;
+                head->children[0] = sometmp->right;
             }
 
             return ASTRight(head);
@@ -2149,10 +2155,12 @@ walk(AST *head, int level) {
             printf(")");
             break;
         case TVAL:
-            printf("(define-value ");
+            printf("(define-value %s ", head->value);
             walk(head->children[0], 0);
-            printf(" ");
-            walk(head->children[1], 0);
+            if(head->lenchildren == 2) {
+                printf(" ");
+                walk(head->children[1], 0);
+            }
             printf(")");
             break;
         case TLET:
