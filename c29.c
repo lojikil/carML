@@ -51,16 +51,16 @@ typedef enum {
  * of object it thinks is in buffer
  */
 typedef enum {
-    TDEF, TBEGIN, TEND, TEQUAL, TCOREFORM,
-    TIDENT, TCALL, TOPAREN, TCPAREN, TMATCH,
-    TIF, TELSE, TTHEN, TTYPE, TPOLY, TVAL,
-    TARRAY, TRECORD, TINT, TFLOAT, TSTRING,
-    TCHAR, TBOOL, TEQ, TSEMI, TEOF, TPARAMLIST,
-    TTDECL, TWHEN, TNEWL, TDO, TUNIT, TERROR, 
-    TLETREC, TLET, TFN, TCASE, TSTRT, TCHART,
-    TINTT, TFLOATT, TCOMMENT, TREF, TDEQUET,
-    TBOOLT, TWITH, TOF, TDECLARE, TFALSE,
-    TTRUE, TUSE, TIN, TCOLON, TRECDEF,
+    TDEF, TBEGIN, TEND, TEQUAL, TCOREFORM, // 4
+    TIDENT, TCALL, TOPAREN, TCPAREN, TMATCH, // 9
+    TIF, TELSE, TTHEN, TTYPE, TPOLY, TVAL, // 15
+    TARRAY, TRECORD, TINT, TFLOAT, TSTRING, // 20
+    TCHAR, TBOOL, TEQ, TSEMI, TEOF, TPARAMLIST, // 25
+    TTDECL, TWHEN, TNEWL, TDO, TUNIT, TERROR,  // 31
+    TLETREC, TLET, TFN, TCASE, TSTRT, TCHART, // 37
+    TINTT, TFLOATT, TCOMMENT, TREF, TDEQUET, // 41
+    TBOOLT, TWITH, TOF, TDECLARE, TFALSE, // 47
+    TTRUE, TUSE, TIN, TCOLON, TRECDEF, // 52
 } TypeTag;
 
 struct _AST {
@@ -1924,6 +1924,7 @@ read(FILE *fdin) {
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
             } else if(sometmp->right->tag != TEQ && sometmp->right->tag != TCOLON){
+                printf("%d\n", sometmp->right->tag);
                 return ASTLeft(0, 0, "val's identifiers *must* be followed by an `=`: `val IDENTIFIER = EXPRESSION`");
             } else if(sometmp->right->tag == TCOLON) {
                 /* ok, the user is specifying a type here
@@ -1932,6 +1933,28 @@ read(FILE *fdin) {
                  */
                 head->lenchildren = 2;
                 head->children = (AST **)hmalloc(sizeof(AST *) * 2);
+                
+                sometmp = read(fdin);
+
+                if(sometmp->tag == ASTLEFT) {
+                    return sometmp;
+                } else if(!istypeast(sometmp->right->tag)) {
+                    return ASTLeft(0, 0, "a `:` form *must* be followed by a type definition...");
+                } else if(issimpletypeast(sometmp->right->tag)) {
+                    head->children[1] = sometmp->right;
+                } else {
+                    /* complex type...
+                     */
+                }
+
+                sometmp = read(fdin);
+
+                if(sometmp->tag == ASTLEFT) {
+                    return sometmp;
+                } else if(sometmp->right->tag != TEQ) {
+                    return ASTLeft(0, 0, "a `val` type definition *must* be followed by an `=`...");
+                }
+
             } else {
                 head->lenchildren = 1;
                 head->children = (AST **)hmalloc(sizeof(AST *));
