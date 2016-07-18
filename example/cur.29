@@ -68,3 +68,5 @@ record foo = {
     bar : int
     baz
 }
+
+val xx : int = 45

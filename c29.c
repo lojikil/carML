@@ -1945,6 +1945,44 @@ read(FILE *fdin) {
                 } else {
                     /* complex type...
                      */
+                    flag = idx;
+                    /* we hit a complex type,
+                     * now we're looking for 
+                     * either `of` or `=`.
+                     */
+                    typestate = 1; 
+                    while(tmp->tag != TEQ) {
+                        sometmp = read(fdin);
+
+                        if(sometmp->tag == ASTLEFT) {
+                            return sometmp;
+                        }
+
+                        switch(typestate) {
+                            case 0: // awaiting a type
+                                if(!istypeast(sometmp->right->tag)) {
+                                    return ASTLeft(0, 0, "expected type in `:` form");
+                                } else if(simpletype(sometmp->right->tag)) {
+
+                                } else {
+
+                                }
+                            case 1: // awaiting either TOF or an end
+                                if(sometmp->right->tag == TOF) {
+                                    typestate = 0;
+                                } else if(sometmp->right->tag == TEQ) {
+                                    typestate = 2;
+                                } else {
+                                    return ASTLeft(0, 0, "expected either an `of` or a `=`");
+                                }
+                            case 2:
+                                break
+                        }
+                        if(typestate == 2) {
+                            break;
+                        }
+                        vectmp[idx++] = sometmp->right;
+                    }
                 }
 
                 sometmp = read(fdin);
