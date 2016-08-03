@@ -1,6 +1,6 @@
-# Overview
+# Overview of carML
 
-_XL/29_ is an eXperimental Language that is meant to take ideas from PowerLogo & Yeti, mixed in with my experiences of working
+_carML_ (pronounce "caramel"), previously called _XL/29_ (eXperimental Language No. 29), is meant to take ideas from PowerLogo & Yeti, mixed in with my experiences of working
 with [Digamma](http://lojikil.com/p/digamma/). It's meant to be:
 
 - tiny
@@ -14,6 +14,12 @@ with [Digamma](http://lojikil.com/p/digamma/). It's meant to be:
 
 This is at least the 3rd time (and probably 5th) time that I've attempted such a thing, so don't mind me at all. This *is* the first time
 I've experimented publically with my PLT designs tho.
+
+# Name
+
+I've experimented with multiple names; HotelML (named for "The HotelML" in NJ) & Melomys (a specious of mouse) were two contenders. However,
+my [partner](https://twitter.com/foiltheplot) and I were in NYC, where we grabbed coffee from Starbucks. She's a big fan of caramel 
+macchiattos, which Starbucks labels as "carml mac", and thus I've named it after her.
 
 # Syntax
 
@@ -73,6 +79,8 @@ eventually add something to "preprocess" source code and have operators (or simp
     end
 
     # same as the above, but using `foreachIndex`
+    # note, there is no _real_ reason to use begin
+    # form here, but it makes it a bit more pretty.
     @arrayIota1 array of Num (Num -> Num) -> ()
     def arrayIota1 arr fun = {
         foreachIndex fn x = (set-array-index! arr (fun x) x) arr
@@ -81,6 +89,16 @@ eventually add something to "preprocess" source code and have operators (or simp
     # same as the above, but without the `{}` block
     @arrayIota2 array of Num (Num -> Num) -> ()
     def arrayIota2 arr fun = (foreachIndex fn x = (set-array-index! arr (fun x) x) arr)
+
+    # same as the above, but using `letrec`
+    @arrayIota3 array of Num (Num -> Num) -> ()
+    def arrayIota3 arr fun = {
+        letrec internalIota = fn idx = {
+            set-array-index! arr (fun idx) x
+            internalIota (sum idx 1)
+        } in
+        internalIota 0
+    }
 
     # eventually, `def` forms should work
     # like `begin` forms

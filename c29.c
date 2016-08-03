@@ -1401,7 +1401,7 @@ read(FILE *fdin) {
      */
     AST *head = nil, *tmp = nil, *vectmp[128];
     ASTEither *sometmp = nil;
-    int ltype = 0, ltmp = 0, idx = 0, flag = -1;
+    int ltype = 0, ltmp = 0, idx = 0, flag = -1, typestate = 0;
     char buffer[512] = {0};
     char name[8] = {0};
     char errbuf[512] = {0};
@@ -1962,8 +1962,8 @@ read(FILE *fdin) {
                             case 0: // awaiting a type
                                 if(!istypeast(sometmp->right->tag)) {
                                     return ASTLeft(0, 0, "expected type in `:` form");
-                                } else if(simpletype(sometmp->right->tag)) {
-
+                                } else if(issimpletypeast(sometmp->right->tag)) {
+                                    
                                 } else {
 
                                 }
@@ -1976,7 +1976,7 @@ read(FILE *fdin) {
                                     return ASTLeft(0, 0, "expected either an `of` or a `=`");
                                 }
                             case 2:
-                                break
+                                break;
                         }
                         if(typestate == 2) {
                             break;
