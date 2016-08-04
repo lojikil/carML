@@ -59,11 +59,21 @@ val foo = "simple string for doc note?"
 
 let refc = 340 in (sum refc refc)
 
+# nested let
+let x = 54 in let y = 67 in let z = 75 in (sum x (sum y z))
+
+# ^^^ this is getting a TNEWL here and only adding that.
+# should have a mode in `#read` that states if TNEWL
+# should be semantically valid or not. This would be useful
+# to selectively ignore it...
+
 # simple `letrec` example
 # this is _not_ being parsed correctly...
 # ok, there cannot be a TNEWL after the 
 # TIN, and it must be wrapped in a TCALL...
 # parsing is hard, let's go shopping!
+# `letrec loop x = {...} in ...` syntactic
+# sugar will go a long way here... 
 letrec loop = fn x = {
     println x
     if (< x 10) then (loop (sum x 1)) else ()
