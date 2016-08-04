@@ -80,3 +80,9 @@ record foo = {
 }
 
 val xx : int = 45
+
+# typed vector:
+val yy : array of int = [1,2,3,4,5]
+
+# should have the same type as the above:
+val zz = [1,2,3,4,5]

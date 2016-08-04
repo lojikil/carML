@@ -1963,34 +1963,39 @@ read(FILE *fdin) {
                                 if(!istypeast(sometmp->right->tag)) {
                                     return ASTLeft(0, 0, "expected type in `:` form");
                                 } else if(issimpletypeast(sometmp->right->tag)) {
-                                    
+                                    vectmp[idx++] = sometmp->right;
+                                    typestate = 2;
                                 } else {
-
+                                    typestate = 1;
                                 }
                             case 1: // awaiting either TOF or an end
                                 if(sometmp->right->tag == TOF) {
                                     typestate = 0;
                                 } else if(sometmp->right->tag == TEQ) {
-                                    typestate = 2;
+                                    typestate = 3;
                                 } else {
                                     return ASTLeft(0, 0, "expected either an `of` or a `=`");
                                 }
                             case 2:
                                 break;
                         }
-                        if(typestate == 2) {
+                        if(typestate == 2 || typestate == 3) {
                             break;
                         }
                         vectmp[idx++] = sometmp->right;
                     }
                 }
+               
+                // need to collapse the types from vectmp here...
+                if(typestate == 3) {
 
-                sometmp = read(fdin);
+                    sometmp = read(fdin);
 
-                if(sometmp->tag == ASTLEFT) {
-                    return sometmp;
-                } else if(sometmp->right->tag != TEQ) {
-                    return ASTLeft(0, 0, "a `val` type definition *must* be followed by an `=`...");
+                    if(sometmp->tag == ASTLEFT) {
+                        return sometmp;
+                    } else if(sometmp->right->tag != TEQ) {
+                        return ASTLeft(0, 0, "a `val` type definition *must* be followed by an `=`...");
+                    }
                 }
 
             } else {
