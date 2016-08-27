@@ -1950,6 +1950,7 @@ read(FILE *fdin) {
                      * now we're looking for 
                      * either `of` or `=`.
                      */
+                    vectmp[idx++] = tmp;
                     typestate = 1; 
                     while(tmp->tag != TEQ) {
                         sometmp = read(fdin);
@@ -1963,11 +1964,12 @@ read(FILE *fdin) {
                                 if(!istypeast(sometmp->right->tag)) {
                                     return ASTLeft(0, 0, "expected type in `:` form");
                                 } else if(issimpletypeast(sometmp->right->tag)) {
-                                    vectmp[idx++] = sometmp->right;
                                     typestate = 2;
                                 } else {
                                     typestate = 1;
                                 }
+                                vectmp[idx++] = sometmp->right;
+                                break;
                             case 1: // awaiting either TOF or an end
                                 if(sometmp->right->tag == TOF) {
                                     typestate = 0;
@@ -1976,18 +1978,29 @@ read(FILE *fdin) {
                                 } else {
                                     return ASTLeft(0, 0, "expected either an `of` or a `=`");
                                 }
+                                break;
                             case 2:
+                            case 3:
                                 break;
                         }
                         if(typestate == 2 || typestate == 3) {
                             break;
                         }
-                        vectmp[idx++] = sometmp->right;
                     }
+                    /* collapse the above type states here... */
+                    tmp = (AST *) hmalloc(sizeof(AST));
+                    tmp->tag = TCOMPLEXTYPE;
+                    tmp->lenchildren = idx - flag;
+                    tmp->children = (AST **) hmalloc(sizeof(AST *) * tmp->lenchildren);
+                    for(int cidx = 0, tidx = flag, tlen = tmp->lenchildren; cidx < tlen; cidx++, tidx++) {
+                        tmp->children[cidx] = vectmp[tidx];
+                    }
+                    vectmp[flag] = tmp;
+                    idx = flag;
+                    flag = 0;
                 }
                
-                // need to collapse the types from vectmp here...
-                if(typestate == 3) {
+                if(typestate != 3) {
 
                     sometmp = read(fdin);
 
