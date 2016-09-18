@@ -61,6 +61,7 @@ typedef enum {
     TINTT, TFLOATT, TCOMMENT, TREF, TDEQUET, // 41
     TBOOLT, TWITH, TOF, TDECLARE, TFALSE, // 47
     TTRUE, TUSE, TIN, TCOLON, TRECDEF, // 52
+    TCOMPLEXTYPE, // 53
 } TypeTag;
 
 struct _AST {
@@ -109,7 +110,7 @@ typedef struct _ASTEither {
 
 char *hstrdup(const char *);
 int next(FILE *, char *, int);
-ASTEither *read(FILE *);
+ASTEither *readexpression(FILE *);
 ASTEither *ASTLeft(int, int, char *);
 ASTEither *ASTRight(AST *);
 void walk(AST *, int);
@@ -134,7 +135,7 @@ main(int ac, char **al) {
             return 1;
         }
         do {
-            ret = read(fdin);
+            ret = readexpression(fdin);
             if(ret->tag == ASTLEFT) {
                 printf("parse error: %s\n", ret->left.message);
                 break;
@@ -150,7 +151,7 @@ main(int ac, char **al) {
     } else {
         do {
             printf(">>> ");
-            ret = read(stdin);
+            ret = readexpression(stdin);
             //ret = next(stdin, &buf[0], 512);
             //printf("%s %d\n", buf, ret);
             if(ret->tag == ASTLEFT) {
@@ -1395,7 +1396,7 @@ next(FILE *fdin, char *buf, int buflen) {
 }
 
 ASTEither *
-read(FILE *fdin) {
+readexpression(FILE *fdin) {
     /* _read_ from `fdin` until a single AST is constructed, or EOF
      * is reached.
      */
@@ -1412,7 +1413,7 @@ read(FILE *fdin) {
             /* do we want return this, so that we can
              * return documentation, &c.?
              */
-            sometmp = read(fdin);
+            sometmp = readexpression(fdin);
             return sometmp;
         case TERROR:
             return ASTLeft(0, 0, hstrdup(&buffer[0]));
@@ -1440,7 +1441,7 @@ read(FILE *fdin) {
                 strncpy(name, "letrec", 6);
             }
 
-            sometmp = read(fdin);
+            sometmp = readexpression(fdin);
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
             } else {
@@ -1457,7 +1458,7 @@ read(FILE *fdin) {
 
             head->value = hstrdup(tmp->value);
 
-            sometmp = read(fdin);
+            sometmp = readexpression(fdin);
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
             } else {
@@ -1476,14 +1477,14 @@ read(FILE *fdin) {
                 return ASTLeft(0, 0, hstrdup(&errbuf[0]));
             }
 
-            sometmp = read(fdin);
+            sometmp = readexpression(fdin);
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
             } else {
                 head->children[0] = sometmp->right;
             }
 
-            sometmp = read(fdin);
+            sometmp = readexpression(fdin);
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
             } else {
@@ -1501,7 +1502,7 @@ read(FILE *fdin) {
                 return ASTLeft(0, 0, hstrdup(&errbuf[0]));
             }
 
-            sometmp = read(fdin);
+            sometmp = readexpression(fdin);
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
             } else {
@@ -1585,7 +1586,7 @@ read(FILE *fdin) {
              * syntax for side-effecting functions...
              */
 
-            sometmp = read(fdin);
+            sometmp = readexpression(fdin);
 
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
@@ -1595,7 +1596,7 @@ read(FILE *fdin) {
 
             while(tmp->tag == TIDENT) {
                 vectmp[idx++] = tmp;
-                sometmp = read(fdin);
+                sometmp = readexpression(fdin);
 
                 if(sometmp->tag == ASTLEFT) {
                     return sometmp;
@@ -1631,7 +1632,7 @@ read(FILE *fdin) {
              * we read a single expression, which is the body of the procedure we're
              * defining.
              */
-            sometmp = read(fdin);
+            sometmp = readexpression(fdin);
 
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
@@ -1660,7 +1661,7 @@ read(FILE *fdin) {
             head->children = (AST **)hmalloc(sizeof(AST *) * 3);
             head->lenchildren = 3;
 
-            sometmp = read(fdin);
+            sometmp = readexpression(fdin);
 
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
@@ -1668,7 +1669,7 @@ read(FILE *fdin) {
 
             head->children[0] = sometmp->right;
 
-            sometmp = read(fdin);
+            sometmp = readexpression(fdin);
 
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
@@ -1680,14 +1681,14 @@ read(FILE *fdin) {
                 return ASTLeft(0, 0, "missing THEN keyword after IF conditional: if conditional then expression else expression");
             }
 
-            sometmp = read(fdin);
+            sometmp = readexpression(fdin);
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
             }
 
             head->children[1] = sometmp->right;
 
-            sometmp = read(fdin);
+            sometmp = readexpression(fdin);
 
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
@@ -1699,7 +1700,7 @@ read(FILE *fdin) {
                 return ASTLeft(0, 0, "missing ELSE keyword after THEN value: if conditional then expression else expression");
             }
 
-            sometmp = read(fdin);
+            sometmp = readexpression(fdin);
 
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
@@ -1711,7 +1712,7 @@ read(FILE *fdin) {
         case TBEGIN:
             while(1) {
                 //debugln;
-                sometmp = read(fdin);
+                sometmp = readexpression(fdin);
                 //debugln;
                 if(sometmp->tag == ASTLEFT) {
                     return sometmp;
@@ -1802,7 +1803,7 @@ read(FILE *fdin) {
         case TCALL:
             break;
         case TOPAREN:
-            sometmp = read(fdin);
+            sometmp = readexpression(fdin);
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
             }
@@ -1820,7 +1821,7 @@ read(FILE *fdin) {
             vectmp[idx++] = tmp;
 
             while(1) {
-                sometmp = read(fdin);
+                sometmp = readexpression(fdin);
                 if(sometmp->tag == ASTLEFT) {
                     return sometmp;
                 }
@@ -1868,7 +1869,7 @@ read(FILE *fdin) {
             head->children = (AST **)hmalloc(sizeof(AST *) * 2);
             head->lenchildren = 2;
 
-            sometmp = read(fdin);
+            sometmp = readexpression(fdin);
 
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
@@ -1876,7 +1877,7 @@ read(FILE *fdin) {
                 head->children[0] = sometmp->right;
             }
 
-            sometmp = read(fdin);
+            sometmp = readexpression(fdin);
 
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
@@ -1888,7 +1889,7 @@ read(FILE *fdin) {
                 return ASTLeft(0, 0, "missing `do` statement from `when`: when CONDITION do EXPRESSION");
             }
 
-            sometmp = read(fdin);
+            sometmp = readexpression(fdin);
 
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
@@ -1909,7 +1910,7 @@ read(FILE *fdin) {
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = TVAL;
             
-            sometmp = read(fdin);
+            sometmp = readexpression(fdin);
 
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
@@ -1919,7 +1920,7 @@ read(FILE *fdin) {
                 head->value = sometmp->right->value;
             }
 
-            sometmp = read(fdin);
+            sometmp = readexpression(fdin);
 
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
@@ -1934,7 +1935,7 @@ read(FILE *fdin) {
                 head->lenchildren = 2;
                 head->children = (AST **)hmalloc(sizeof(AST *) * 2);
                 
-                sometmp = read(fdin);
+                sometmp = readexpression(fdin);
 
                 if(sometmp->tag == ASTLEFT) {
                     return sometmp;
@@ -1953,7 +1954,7 @@ read(FILE *fdin) {
                     vectmp[idx++] = tmp;
                     typestate = 1; 
                     while(tmp->tag != TEQ) {
-                        sometmp = read(fdin);
+                        sometmp = readexpression(fdin);
 
                         if(sometmp->tag == ASTLEFT) {
                             return sometmp;
@@ -2002,7 +2003,7 @@ read(FILE *fdin) {
                
                 if(typestate != 3) {
 
-                    sometmp = read(fdin);
+                    sometmp = readexpression(fdin);
 
                     if(sometmp->tag == ASTLEFT) {
                         return sometmp;
@@ -2016,7 +2017,7 @@ read(FILE *fdin) {
                 head->children = (AST **)hmalloc(sizeof(AST *));
             }
 
-            sometmp = read(fdin);
+            sometmp = readexpression(fdin);
 
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
@@ -2032,7 +2033,7 @@ read(FILE *fdin) {
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = TRECORD;
             
-            sometmp = read(fdin);
+            sometmp = readexpression(fdin);
             /* I like this 3-case block-style
              * I think *this* should be the
              * "expect" function, but it's
@@ -2048,7 +2049,7 @@ read(FILE *fdin) {
                 head->value = tmp->value;
             }
 
-            sometmp = read(fdin);
+            sometmp = readexpression(fdin);
 
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
@@ -2085,7 +2086,7 @@ read(FILE *fdin) {
              */
 
             while(tmp->tag != TEND) {
-                sometmp = read(fdin);
+                sometmp = readexpression(fdin);
                 
                 if(sometmp->tag == ASTLEFT) {
                     return sometmp;
@@ -2101,18 +2102,18 @@ read(FILE *fdin) {
                 }
                 vectmp[idx++] = tmp;
 
-                sometmp = read(fdin);
+                sometmp = readexpression(fdin);
                 if(sometmp->tag == ASTLEFT) {
                     return sometmp;
                 } else if(sometmp->right->tag == TCOLON) {
-                    sometmp = read(fdin);
+                    sometmp = readexpression(fdin);
                     if(sometmp->tag == ASTLEFT) {
                         return sometmp;
                     } if(!istypeast(sometmp->right->tag)) {
                         return ASTLeft(0, 0, "a `:` form *must* be followed by a type definition...");
                     } else if(issimpletypeast(sometmp->right->tag)) {
                         vectmp[idx] = sometmp->right;
-                        sometmp = read(fdin);
+                        sometmp = readexpression(fdin);
                         if(sometmp->tag == ASTLEFT) {
                             return sometmp;
                         } else if(sometmp->right->tag != TNEWL && sometmp->right->tag != TSEMI) {
