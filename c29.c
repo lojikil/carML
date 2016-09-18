@@ -149,6 +149,15 @@ main(int ac, char **al) {
         } while(tmp->tag != TEOF);
         fclose(fdin);
     } else {
+        printf("\
+               ___  ___ _     \n\
+               |  \\/  || |    \n\
+  ___ __ _ _ __| .  . || |    \n\
+ / __/ _` | '__| |\\/| || |    \n\
+| (_| (_| | |  | |  | || |____\n\
+ \\___\\__,_|_|  \\_|  |_/\\_____/\n");
+        printf("\t\tcarML/C 2016.3\n");
+        printf("(c) 2016 lojikil, released under ISC License.\n\n");
         do {
             printf(">>> ");
             ret = readexpression(stdin);
