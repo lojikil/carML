@@ -111,6 +111,7 @@ typedef struct _ASTEither {
 char *hstrdup(const char *);
 int next(FILE *, char *, int);
 ASTEither *readexpression(FILE *);
+ASTEither *llreadexpression(FILE *, uint8_t);
 ASTEither *ASTLeft(int, int, char *);
 ASTEither *ASTRight(AST *);
 void walk(AST *, int);
@@ -1406,6 +1407,11 @@ next(FILE *fdin, char *buf, int buflen) {
 
 ASTEither *
 readexpression(FILE *fdin) {
+    return llreadexpression(fdin, 0);
+}
+
+ASTEither *
+llreadexpression(FILE *fdin, uint8_t nltreatment) {
     /* _read_ from `fdin` until a single AST is constructed, or EOF
      * is reached.
      */
@@ -1721,7 +1727,7 @@ readexpression(FILE *fdin) {
         case TBEGIN:
             while(1) {
                 //debugln;
-                sometmp = readexpression(fdin);
+                sometmp = llreadexpression(fdin, 1); // probably should make a const for WANTNL
                 //debugln;
                 if(sometmp->tag == ASTLEFT) {
                     return sometmp;
@@ -2198,9 +2204,13 @@ readexpression(FILE *fdin) {
             head->tag = TEQ;
             return ASTRight(head);
         case TNEWL:
-            head = (AST *)hmalloc(sizeof(AST));
-            head->tag = TNEWL;
-            return ASTRight(head);
+            if(!nltreatment) {
+                return llreadexpression(fdin, nltreatment);
+            } else {
+                head = (AST *)hmalloc(sizeof(AST));
+                head->tag = TNEWL;
+                return ASTRight(head);
+            }
         case TINTT:
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = TINTT;
