@@ -13,4 +13,4 @@ then
     esac
 fi
 
-cc $EXTRAFLAGS -o c29 c29.c -L ~/homebrew/lib/ -I ~/homebrew/include/ -lgc
+cc $EXTRAFLAGS -o carml carml.c -L ~/homebrew/lib/ -I ~/homebrew/include/ -lgc
