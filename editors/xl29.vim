@@ -4,6 +4,7 @@
 " Latest Revision: 18 June 2016
 " add this to your .vimrc:
 " au BufRead,BufNewFile *.29 set filetype=xl29
+" au BufRead,BufNewFile *.carml set filetype=xl29
 
 if exists("b:current_syntax")
   finish
