@@ -1405,6 +1405,14 @@ next(FILE *fdin, char *buf, int buflen) {
     }
 }
 
+/* currently, if there's a parse error mid-stream,
+ * the REPL keeps reading. I think a better way of
+ * handling that would be to lex tokens until we 
+ * get a TEOF, and then use that _stream_ of 
+ * tokens as input to a higher-level expressions
+ * builder. A bit more work, but it would make the
+ * REPL experience nicer.
+ */
 ASTEither *
 readexpression(FILE *fdin) {
     return llreadexpression(fdin, 0);
@@ -1917,6 +1925,10 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = TDO;
             return ASTRight(head);
+        case TOF:
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TOF;
+            return ASTRight(head);
         case TTYPE:
             break;
         case TPOLY:
@@ -1940,7 +1952,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
             } else if(sometmp->right->tag != TEQ && sometmp->right->tag != TCOLON){
-                printf("%d\n", sometmp->right->tag);
+                printf("error: %d\n", sometmp->right->tag);
                 return ASTLeft(0, 0, "val's identifiers *must* be followed by an `=`: `val IDENTIFIER = EXPRESSION`");
             } else if(sometmp->right->tag == TCOLON) {
                 /* ok, the user is specifying a type here
@@ -1966,12 +1978,12 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                      * now we're looking for 
                      * either `of` or `=`.
                      */
-                    vectmp[idx++] = tmp;
+                    vectmp[idx++] = sometmp->right;
                     typestate = 1; 
-                    while(tmp->tag != TEQ) {
+                    while(sometmp->right->tag != TEQ) {
                         sometmp = readexpression(fdin);
 
-                        if(sometmp->tag == ASTLEFT) {
+                        if(sometmp->right->tag == ASTLEFT) {
                             return sometmp;
                         }
 
@@ -2043,7 +2055,9 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             return ASTRight(head);
             break;
         case TARRAY:
-            break;
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TARRAY;
+            return ASTRight(head);
         case TRECORD:
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = TRECORD;
