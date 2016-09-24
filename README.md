@@ -33,6 +33,11 @@ standard base.
 Remember, while the language is meant to be understood quickly, it's not meant to be a replacement for everything, Like Logo, I'll probably
 eventually add something to "preprocess" source code and have operators (or simply make an `expr` form to handle it).
 
+_Note_: I've been working on various ML-dialects for several years, and carML is the one I've decided to run with. Interestingly, 
+[Tulip](http://tuliplang.org/) is also the product of several years of tinkering, and has a very similar syntax. It might be interesting
+to combine the two (or use carML for the base instead of C), but it's exciting to me that there is movement in the ML space again, esp.
+considering that both languages are _not_ derived from existing ML dialects. [Yeti](https://mth.github.io/yeti/) is no longer alone!
+
 # Semantics
 
 - typical ML/PowerLogo/Lisp semantics. 
