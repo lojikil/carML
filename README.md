@@ -111,7 +111,7 @@ eventually add something to "preprocess" source code and have operators (or simp
     println f;
 
     # add:
-    # lambda, ref, make
+    # ref, make
 
 # License
 
