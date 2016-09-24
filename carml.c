@@ -2026,6 +2026,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                     vectmp[flag] = tmp;
                     idx = flag;
                     flag = 0;
+                    head->children[1] = tmp;
                 }
                
                 if(typestate != 3) {
@@ -2300,6 +2301,19 @@ walk(AST *head, int level) {
             break;
         case TPARAMLIST:
             printf("(parameter-list ");
+            for(;idx < head->lenchildren; idx++) {
+                walk(head->children[idx], 0); 
+                if(idx < (head->lenchildren - 1)){
+                    printf(" ");
+                }
+            }
+            printf(") ");
+            break;
+        case TARRAY:
+            printf("(type array)");
+            break;
+        case TCOMPLEXTYPE:
+            printf("(complex-type ");
             for(;idx < head->lenchildren; idx++) {
                 walk(head->children[idx], 0); 
                 if(idx < (head->lenchildren - 1)){
