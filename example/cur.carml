@@ -60,12 +60,9 @@ val foo = "simple string for doc note?"
 let refc = 340 in (sum refc refc)
 
 # nested let
-let x = 54 in let y = 67 in let z = 75 in (sum x (sum y z))
-
-# ^^^ this is getting a TNEWL here and only adding that.
-# should have a mode in `#read` that states if TNEWL
-# should be semantically valid or not. This would be useful
-# to selectively ignore it...
+let x = 54 in
+let y = 67 in
+let z = 75 in (sum x (sum y z))
 
 # simple `letrec` example
 # this is _not_ being parsed correctly...
@@ -91,8 +88,9 @@ record foo = {
 
 val xx : int = 45
 
-# typed vector:
+# typed vectors:
 val yy : array of int = [1,2,3,4,5]
+val zz : array of array of int = [[1,2], [3,4]]
 
-# should have the same type as the above:
+# should have the same type as the first:
 val zz = [1,2,3,4,5]

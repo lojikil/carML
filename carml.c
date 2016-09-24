@@ -61,7 +61,7 @@ typedef enum {
     TINTT, TFLOATT, TCOMMENT, TREF, TDEQUET, // 41
     TBOOLT, TWITH, TOF, TDECLARE, TFALSE, // 47
     TTRUE, TUSE, TIN, TCOLON, TRECDEF, // 52
-    TCOMPLEXTYPE, // 53
+    TCOMPLEXTYPE, TCOMMA, TOVEC, TCVEC // 56
 } TypeTag;
 
 struct _AST {
@@ -311,6 +311,12 @@ next(FILE *fdin, char *buf, int buflen) {
                 return TBEGIN;
             case '}':
                 return TEND;
+            case '[':
+                return TOVEC;
+            case ']':
+                return TCVEC;
+            case ',':
+                return TCOMMA;
             case '=':
                 return TEQ;
             case ';':
