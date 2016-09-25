@@ -61,7 +61,8 @@ typedef enum {
     TINTT, TFLOATT, TCOMMENT, TREF, TDEQUET, // 41
     TBOOLT, TWITH, TOF, TDECLARE, TFALSE, // 47
     TTRUE, TUSE, TIN, TCOLON, TRECDEF, // 52
-    TCOMPLEXTYPE, TCOMMA, TOVEC, TCVEC // 56
+    TCOMPLEXTYPE, TCOMMA, TOARR, TCARR, // 56
+    TARRAYLITERAL, // 57
 } TypeTag;
 
 struct _AST {
@@ -218,7 +219,7 @@ iswhite(int c){
 
 int
 isbrace(int c) {
-    return (c == '{' || c == '}' || c == '(' || c == ')' || c == '[' || c == ']' || c == ';');
+    return (c == '{' || c == '}' || c == '(' || c == ')' || c == '[' || c == ']' || c == ';' || c == ',');
 }
 
 int
@@ -312,9 +313,9 @@ next(FILE *fdin, char *buf, int buflen) {
             case '}':
                 return TEND;
             case '[':
-                return TOVEC;
+                return TOARR;
             case ']':
-                return TCVEC;
+                return TCARR;
             case ',':
                 return TCOMMA;
             case '=':
@@ -2065,11 +2066,39 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = TARRAY;
             return ASTRight(head);
+        case TCOMMA:
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TCOMMA;
+            return ASTRight(head);
+        case TOARR:
+            flag = idx;
+            sometmp = readexpression(fdin);
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            }
+            while(sometmp->right->tag != TCARR) {
+                if(sometmp->right->tag != TCOMMA) {
+                    vectmp[idx++] = sometmp->right;
+                }
+                sometmp = readexpression(fdin);
+            }
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TARRAYLITERAL;
+            head->lenchildren = idx - flag;
+            head->children = (AST **)hmalloc(sizeof(AST *) * (idx - flag));
+            for(int cidx = 0; flag < idx; cidx++, flag++) {
+                head->children[cidx] = vectmp[flag];
+            }
+            return ASTRight(head);
+        case TCARR:
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TCARR;
+            return ASTRight(head);
         case TRECORD:
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = TRECORD;
             
-            sometmp = readexpression(fdin);
+            sometmp = llreadexpression(fdin, 1);
             /* I like this 3-case block-style
              * I think *this* should be the
              * "expect" function, but it's
@@ -2085,7 +2114,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 head->value = tmp->value;
             }
 
-            sometmp = readexpression(fdin);
+            sometmp = llreadexpression(fdin, 1);
 
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
@@ -2122,11 +2151,11 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
              */
 
             while(tmp->tag != TEND) {
-                sometmp = readexpression(fdin);
+                sometmp = llreadexpression(fdin, 1);
                 
                 if(sometmp->tag == ASTLEFT) {
                     return sometmp;
-                } else if(sometmp->right->tag == TNEWL) {
+                } else if(sometmp->right->tag == TNEWL || sometmp->right->tag == TSEMI) {
                     continue;
                 } else if(sometmp->right->tag != TIDENT && sometmp->right->tag != TEND) {
                     printf("%d", sometmp->right->tag);
@@ -2138,18 +2167,18 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 }
                 vectmp[idx++] = tmp;
 
-                sometmp = readexpression(fdin);
+                sometmp = llreadexpression(fdin, 1);
                 if(sometmp->tag == ASTLEFT) {
                     return sometmp;
                 } else if(sometmp->right->tag == TCOLON) {
-                    sometmp = readexpression(fdin);
+                    sometmp = llreadexpression(fdin, 1);
                     if(sometmp->tag == ASTLEFT) {
                         return sometmp;
                     } if(!istypeast(sometmp->right->tag)) {
                         return ASTLeft(0, 0, "a `:` form *must* be followed by a type definition...");
                     } else if(issimpletypeast(sometmp->right->tag)) {
                         vectmp[idx] = sometmp->right;
-                        sometmp = readexpression(fdin);
+                        sometmp = llreadexpression(fdin, 1);
                         if(sometmp->tag == ASTLEFT) {
                             return sometmp;
                         } else if(sometmp->right->tag != TNEWL && sometmp->right->tag != TSEMI) {
@@ -2320,6 +2349,16 @@ walk(AST *head, int level) {
             break;
         case TCOMPLEXTYPE:
             printf("(complex-type ");
+            for(;idx < head->lenchildren; idx++) {
+                walk(head->children[idx], 0); 
+                if(idx < (head->lenchildren - 1)){
+                    printf(" ");
+                }
+            }
+            printf(") ");
+            break;
+        case TARRAYLITERAL:
+            printf("(array-literal ");
             for(;idx < head->lenchildren; idx++) {
                 walk(head->children[idx], 0); 
                 if(idx < (head->lenchildren - 1)){
