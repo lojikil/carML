@@ -1,5 +1,6 @@
 A quick list of the current `TODO`s.
 
+1. **DONE** Add complex types to `val`
 1. Add complex types to records
 1. Add complex types to `let` 
 1. Parse `@` forms
@@ -11,3 +12,4 @@ A quick list of the current `TODO`s.
 1. Compilation of variants
 1. Compilation of polymorphic variants
 1. OCaml/SML-style Modules, and their application to higher-kinded types
+1. Friendlier REPL, with keyboard support, and a simple Logo-style `edit` command

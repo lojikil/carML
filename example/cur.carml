@@ -94,3 +94,6 @@ val zz : array of array of int = [[1,2], [3,4]]
 
 # should have the same type as the first:
 val zz = [1,2,3,4,5]
+
+# commas are optional in arrays
+val jj = [1 2 3 4 5]
