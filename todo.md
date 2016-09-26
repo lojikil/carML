@@ -4,6 +4,7 @@ A quick list of the current `TODO`s.
 1. Add complex types to records
 1. Add complex types to `let` 
 1. Parse `@` forms
+1. `match`/`case` form, with guards.
 1. Figure out a decent backing for Rust-style deques (possibly implemented from records + arrays)
 1. Partial application syntax: `$()`, including `_` as filler
 1. Hoare-logic (pre, post, invariants, &c.)
