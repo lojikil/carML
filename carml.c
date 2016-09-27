@@ -1488,6 +1488,8 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
 
             head->value = hstrdup(tmp->value);
 
+            // add types here
+
             sometmp = readexpression(fdin);
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
