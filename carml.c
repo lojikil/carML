@@ -2192,20 +2192,10 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
             } else if(sometmp->right->tag != TIDENT) {
-                return ASTLeft(0, 0, "record's name *must* be an identifier: `record IDENTIFIER = record-definition`");
+                return ASTLeft(0, 0, "record's name *must* be an identifier: `record IDENTIFIER record-definition`");
             } else {
                 tmp = sometmp->right;
                 head->value = tmp->value;
-            }
-
-            sometmp = llreadexpression(fdin, 1);
-
-            if(sometmp->tag == ASTLEFT) {
-                return sometmp;
-            } else if(sometmp->right->tag != TEQ) {
-                return ASTLeft(0, 0, "record's name *must* be followed by an `=`: `record IDENTIFIER = record-defition`");
-            } else {
-                tmp = sometmp->right;
             }
 
             /* so now we are at the point where

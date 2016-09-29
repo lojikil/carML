@@ -5,7 +5,7 @@ A quick list of the current `TODO`s.
 1. **DONE** Add complex types to `val`
 1. Add complex types to records
 1. **DONE** Add complex types to `let` 
-1. Parse `@` forms
+1. Parse `@`/`declare` forms
 1. Make function definitions & `let` forms accept `begin` style function calls (i.e. avoid using `()`)
 1. `match`/`case` form, with guards.
 1. Figure out a decent backing for Rust-style deques (possibly implemented from records + arrays)
@@ -14,11 +14,17 @@ A quick list of the current `TODO`s.
 1. Runtime, which should be pretty minimal
 1. Compile to C in the style of Enyalios
 1. an `extern` or `alien` form for easy FFI
+1. Parsing of variants
 1. Compilation of variants
+1. Parsing of polymorphic variants
 1. Compilation of polymorphic variants
 1. OCaml/SML-style Modules, and their application to higher-kinded types
 1. Friendlier REPL, with keyboard support, and a simple Logo-style `edit` command
-1. Syntax updates
+1. **DONE** Syntax updates: `record`
+1. Syntax updates: `def`
+1. Syntax updates: `match`
+1. make the types parsing code more modular; could easily extract that out into a function
+1. Finally fix the frakking lexer to not goof up internal states
 
 # Begin-style function calls
 

@@ -1,6 +1,6 @@
 # Overview of carML
 
-_carML_ (pronounce "caramel"), previously called _XL/29_ (eXperimental Language No. 29), is meant to take ideas from PowerLogo & Yeti, mixed in with my experiences of working
+_carML_ (pronounced "car-mul", caramel), previously called _XL/29_ (eXperimental Language No. 29), is meant to take ideas from PowerLogo & Yeti, mixed in with my experiences of working
 with [Digamma](http://lojikil.com/p/digamma/). It's meant to be:
 
 - tiny
