@@ -1459,11 +1459,10 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             /* setup:
              * - head->value = name binding
              * - head->children[0] = value
-             * - head->chidlren[1] = body
+             * - head->children[1] = body
+             * - head->children[2] = type (optional)
              */
 
-            head->lenchildren = 2;
-            head->children = (AST **)hmalloc(sizeof(AST *) * 2);
 
             if(ltype == TLET) {
                 strncpy(name, "let", 3);
@@ -1493,20 +1492,103 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             sometmp = readexpression(fdin);
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
-            } else {
-                tmp = sometmp->right;
-            }
-
-            /* this really should check if the 
-             * tmp is a ':' (type specifier) or
-             * '='... for now tho, just take the
-             * shortcut here.
-             */
-            if(tmp->tag != TEQ) {
+            } else if(sometmp->right->tag != TEQ && sometmp->right->tag != TCOLON) {
                 snprintf(&errbuf[0], 512,
                          "%s's IDENT must be followed by an `=`: `%s IDENT = EXPRESSION in EXPRESSION`",
                          name, name);
                 return ASTLeft(0, 0, hstrdup(&errbuf[0]));
+            } else if(sometmp->right->tag == TCOLON) {
+                /* ok, the user is specifying a type here
+                 * we have to consume the type, and then
+                 * store it.
+                 */
+                head->lenchildren = 3;
+                head->children = (AST **)hmalloc(sizeof(AST *) * 3);
+                
+                sometmp = readexpression(fdin);
+
+                if(sometmp->tag == ASTLEFT) {
+                    return sometmp;
+                } else if(!istypeast(sometmp->right->tag)) {
+                    return ASTLeft(0, 0, "a `:` form *must* be followed by a type definition...");
+                } else if(issimpletypeast(sometmp->right->tag)) {
+                    head->children[2] = sometmp->right;
+                } else {
+                    /* complex type...
+                     */
+                    flag = idx;
+                    /* we hit a complex type,
+                     * now we're looking for 
+                     * either `of` or `=`.
+                     */
+                    vectmp[idx++] = sometmp->right;
+                    typestate = 1; 
+                    while(sometmp->right->tag != TEQ) {
+                        sometmp = readexpression(fdin);
+
+                        if(sometmp->right->tag == ASTLEFT) {
+                            return sometmp;
+                        }
+
+                        switch(typestate) {
+                            case 0: // awaiting a type
+                                if(!istypeast(sometmp->right->tag)) {
+                                    return ASTLeft(0, 0, "expected type in `:` form");
+                                } else if(issimpletypeast(sometmp->right->tag)) {
+                                    typestate = 2;
+                                } else {
+                                    typestate = 1;
+                                }
+                                vectmp[idx++] = sometmp->right;
+                                break;
+                            case 1: // awaiting either TOF or an end
+                                if(sometmp->right->tag == TOF) {
+                                    typestate = 0;
+                                } else if(sometmp->right->tag == TEQ) {
+                                    typestate = 3;
+                                } else {
+                                    return ASTLeft(0, 0, "expected either an `of` or a `=`");
+                                }
+                                break;
+                            case 2:
+                            case 3:
+                                break;
+                        }
+                        if(typestate == 2 || typestate == 3) {
+                            break;
+                        }
+                    }
+                    /* collapse the above type states here... */
+                    tmp = (AST *) hmalloc(sizeof(AST));
+                    tmp->tag = TCOMPLEXTYPE;
+                    tmp->lenchildren = idx - flag;
+                    tmp->children = (AST **) hmalloc(sizeof(AST *) * tmp->lenchildren);
+                    for(int cidx = 0, tidx = flag, tlen = tmp->lenchildren; cidx < tlen; cidx++, tidx++) {
+                        tmp->children[cidx] = vectmp[tidx];
+                    }
+                    vectmp[flag] = tmp;
+                    idx = flag;
+                    flag = 0;
+                    head->children[2] = tmp;
+                }
+               
+                if(typestate != 3) {
+
+                    sometmp = readexpression(fdin);
+
+                    if(sometmp->tag == ASTLEFT) {
+                        return sometmp;
+                    } else if(sometmp->right->tag != TEQ) {
+                        return ASTLeft(0, 0, "a `val` type definition *must* be followed by an `=`...");
+                    }
+                }
+
+            } else { 
+                /* if we hit a TEQ, then we don't need any extra allocation,
+                 * just two slots.
+                 */
+                head->lenchildren = 2;
+                head->children = (AST **)hmalloc(sizeof(AST *) * 2);
             }
 
             sometmp = readexpression(fdin);
@@ -2325,8 +2407,18 @@ walk(AST *head, int level) {
             printf("%s ", head->value);
 
             walk(head->children[0], 0);
+            
+            if(head->lenchildren == 3) {
+                /* if we have a type,
+                 * go ahead and print it.
+                 */
+                printf(" ");
+                walk(head->children[2], 0);
+            }
+
             printf("\n");
             walk(head->children[1], level + 1);
+
             printf(")");
             break;
         case TWHEN:
