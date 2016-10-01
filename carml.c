@@ -1579,7 +1579,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                     if(sometmp->tag == ASTLEFT) {
                         return sometmp;
                     } else if(sometmp->right->tag != TEQ) {
-                        return ASTLeft(0, 0, "a `val` type definition *must* be followed by an `=`...");
+                        return ASTLeft(0, 0, "a `let` type definition *must* be followed by an `=`...");
                     }
                 }
 
