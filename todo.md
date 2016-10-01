@@ -61,7 +61,7 @@ Additionally, I want the repl to be able to handle those sorts of calls as well:
 
 I've been thinking about certain syntax choices I made originally, and thinking about updating them:
 
-- remove the `=` in `record`s: `record foo { x int; y int;}`
+- **DONE** remove the `=` in `record`s: `record foo { x int; y int;}`
 - allow the use of begin blocks directly following parameter lists: `def foo x { println x; sum x x}`
 - still allow `def foo x = { block stuff ... }`
 - match forms to just directly use begin blocks: `match x { Some y => ... ; None => ... }`
