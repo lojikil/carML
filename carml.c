@@ -2251,6 +2251,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                     } if(!istypeast(sometmp->right->tag)) {
                         return ASTLeft(0, 0, "a `:` form *must* be followed by a type definition...");
                     } else if(issimpletypeast(sometmp->right->tag)) {
+                        debugln;
                         vectmp[idx] = sometmp->right;
                         sometmp = llreadexpression(fdin, 1);
                         if(sometmp->tag == ASTLEFT) {
@@ -2268,7 +2269,9 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         tmp->children[0] = vectmp[idx - 1];
                         tmp->children[1] = vectmp[idx];
                         vectmp[idx - 1] = tmp;
+                        debugln;
                     } else {
+                        debugln;
                         /* complex type...
                          h*/
                         flag = idx;
@@ -2279,12 +2282,13 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         vectmp[idx++] = sometmp->right;
                         typestate = 1; 
                         while(sometmp->right->tag != TEQ) {
+                            debugln;
                             sometmp = readexpression(fdin);
-
+                            debugln;
                             if(sometmp->right->tag == ASTLEFT) {
                                 return sometmp;
                             }
-
+                            debugln;
                             switch(typestate) {
                                 case 0: // awaiting a type
                                     if(!istypeast(sometmp->right->tag)) {
@@ -2310,21 +2314,29 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                                     break;
                             }
                             if(typestate == 2 || typestate == 3) {
+                                debugln;
                                 break;
                             }
                         }
+                        debugln;
                         /* collapse the above type states here... */
                         tmp = (AST *) hmalloc(sizeof(AST));
                         tmp->tag = TCOMPLEXTYPE;
                         tmp->lenchildren = idx - flag;
                         tmp->children = (AST **) hmalloc(sizeof(AST *) * tmp->lenchildren);
+                        debugln;
                         for(int cidx = 0, tidx = flag, tlen = tmp->lenchildren; cidx < tlen; cidx++, tidx++) {
                             tmp->children[cidx] = vectmp[tidx];
                         }
+                        debugln;
                         vectmp[flag] = tmp;
                         idx = flag;
                         flag = 0;
+                        debugln
+                        // this is wrong; don't collapse this into
+                        // head, collapse this into vectmp and push onto that stack...
                         head->children[2] = tmp;
+                        debugln;
                     }
                    
                     if(typestate != 3) {
