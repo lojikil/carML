@@ -65,3 +65,16 @@ I've been thinking about certain syntax choices I made originally, and thinking 
 - allow the use of begin blocks directly following parameter lists: `def foo x { println x; sum x x}`
 - still allow `def foo x = { block stuff ... }`
 - match forms to just directly use begin blocks: `match x { Some y => ... ; None => ... }`
+
+# Pre-requisites, Post-requisites, Invariants
+
+I'd like to embed some notion of the usual Hoare-logic forms into the language as extensions or _refinements_ to
+the `declare` or `@` form. I was thinking something similar to:
+
+    @foo x Num y Num => Num
+    @/requires foo >= x y
+    @/returns foo + x y
+    def foo x y = ...
+
+Not sure how I want the Hoare-logic to look; `@<name> /requires` vs `@/requires <name>`...
+

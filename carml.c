@@ -2337,16 +2337,15 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         // head, collapse this into vectmp and push onto that stack...
                         head->children[2] = tmp;
                         debugln;
-                    }
-                   
-                    if(typestate != 3) {
+                        if(typestate != 3) {
 
-                        sometmp = llreadexpression(fdin, 1);
+                            sometmp = llreadexpression(fdin, 1);
 
-                        if(sometmp->tag == ASTLEFT) {
-                            return sometmp;
-                        } else if(sometmp->right->tag != TSEMI && sometmp->right->tag != TNEWL && sometmp->right->tag != TEND) {
-                            return ASTLeft(0, 0, "a `record` type definition *must* be followed by an `=`...");
+                            if(sometmp->tag == ASTLEFT) {
+                                return sometmp;
+                            } else if(sometmp->right->tag != TSEMI && sometmp->right->tag != TNEWL && sometmp->right->tag != TEND) {
+                                return ASTLeft(0, 0, "a `record` type definition *must* be followed by an `=`...");
+                            }
                         }
                     }
                 } else if(sometmp->right->tag == TNEWL) {
