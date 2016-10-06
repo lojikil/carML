@@ -3,7 +3,7 @@
 A quick list of the current `TODO`s.
 
 1. **DONE** Add complex types to `val`
-1. Add complex types to records
+1. **DONE** Add complex types to records
 1. **DONE** Add complex types to `let` 
 1. Parse `@`/`declare` forms
 1. Make function definitions & `let` forms accept `begin` style function calls (i.e. avoid using `()`)

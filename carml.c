@@ -2251,7 +2251,6 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                     } if(!istypeast(sometmp->right->tag)) {
                         return ASTLeft(0, 0, "a `:` form *must* be followed by a type definition...");
                     } else if(issimpletypeast(sometmp->right->tag)) {
-                        debugln;
                         vectmp[idx] = sometmp->right;
                         sometmp = llreadexpression(fdin, 1);
                         if(sometmp->tag == ASTLEFT) {
@@ -2269,9 +2268,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         tmp->children[0] = vectmp[idx - 1];
                         tmp->children[1] = vectmp[idx];
                         vectmp[idx - 1] = tmp;
-                        debugln;
                     } else {
-                        debugln;
                         /* complex type...
                          h*/
                         flag = idx;
@@ -2282,13 +2279,12 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         vectmp[idx++] = sometmp->right;
                         typestate = 1; 
                         while(sometmp->right->tag != TEQ) {
-                            debugln;
-                            sometmp = readexpression(fdin);
-                            debugln;
+
+                            sometmp = llreadexpression(fdin, 1);
                             if(sometmp->right->tag == ASTLEFT) {
                                 return sometmp;
                             }
-                            debugln;
+
                             switch(typestate) {
                                 case 0: // awaiting a type
                                     if(!istypeast(sometmp->right->tag)) {
@@ -2303,10 +2299,10 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                                 case 1: // awaiting either TOF or an end
                                     if(sometmp->right->tag == TOF) {
                                         typestate = 0;
-                                    } else if(sometmp->right->tag == TEQ) {
+                                    } else if(sometmp->right->tag == TNEWL || sometmp->right->tag == TSEMI) {
                                         typestate = 3;
                                     } else {
-                                        return ASTLeft(0, 0, "expected either an `of` or a `=`");
+                                        return ASTLeft(0, 0, "expected either a newline or a `;`");
                                     }
                                     break;
                                 case 2:
@@ -2314,29 +2310,29 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                                     break;
                             }
                             if(typestate == 2 || typestate == 3) {
-                                debugln;
                                 break;
                             }
                         }
-                        debugln;
+
                         /* collapse the above type states here... */
-                        tmp = (AST *) hmalloc(sizeof(AST));
-                        tmp->tag = TCOMPLEXTYPE;
-                        tmp->lenchildren = idx - flag;
-                        tmp->children = (AST **) hmalloc(sizeof(AST *) * tmp->lenchildren);
-                        debugln;
-                        for(int cidx = 0, tidx = flag, tlen = tmp->lenchildren; cidx < tlen; cidx++, tidx++) {
-                            tmp->children[cidx] = vectmp[tidx];
+                        AST *ctmp = (AST *) hmalloc(sizeof(AST));
+                        ctmp->tag = TCOMPLEXTYPE;
+                        ctmp->lenchildren = idx - flag;
+                        ctmp->children = (AST **) hmalloc(sizeof(AST *) * tmp->lenchildren);
+                        for(int cidx = 0, tidx = flag, tlen = ctmp->lenchildren; cidx < tlen; cidx++, tidx++) {
+                            ctmp->children[cidx] = vectmp[tidx];
                         }
-                        debugln;
-                        vectmp[flag] = tmp;
+
+                        /* create the record field defition holder */
+                        tmp = (AST *)hmalloc(sizeof(AST));
+                        tmp->tag = TRECDEF;
+                        tmp->lenchildren = 2;
+                        tmp->children = (AST **)hmalloc(sizeof(AST *) * 2);
+                        tmp->children[0] = vectmp[flag - 1];
+                        tmp->children[1] = ctmp;
+                        vectmp[flag - 1] = tmp;
                         idx = flag;
                         flag = 0;
-                        debugln
-                        // this is wrong; don't collapse this into
-                        // head, collapse this into vectmp and push onto that stack...
-                        head->children[2] = tmp;
-                        debugln;
                         if(typestate != 3) {
 
                             sometmp = llreadexpression(fdin, 1);
@@ -2344,7 +2340,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             if(sometmp->tag == ASTLEFT) {
                                 return sometmp;
                             } else if(sometmp->right->tag != TSEMI && sometmp->right->tag != TNEWL && sometmp->right->tag != TEND) {
-                                return ASTLeft(0, 0, "a `record` type definition *must* be followed by an `=`...");
+                                return ASTLeft(0, 0, "a `record` type definition *must* be followed by a newline, a semicolon or an END");
                             }
                         }
                     }
