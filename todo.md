@@ -25,6 +25,8 @@ A quick list of the current `TODO`s.
 1. Syntax updates: `match`
 1. make the types parsing code more modular; could easily extract that out into a function
 1. Finally fix the frakking lexer to not goof up internal states
+1. Csharp-style record parameter unboxing
+1. Error handling: `Either`
 
 # Begin-style function calls
 
@@ -78,3 +80,33 @@ the `declare` or `@` form. I was thinking something similar to:
 
 Not sure how I want the Hoare-logic to look; `@<name> /requires` vs `@/requires <name>`...
 
+# Csharp style record parameter unboxing
+
+So C# will actually unbox structs that are passed as args:
+
+    foo(mystruct);
+
+will actually become
+
+    foo(mystruct.member0, mystruct.member1, ...);
+
+iff the struct is not modified (iirc). 
+
+# Error handling
+
+I don't really want to get too fancy with Error handling. I think it should be simple enough to just
+use `Either` heavily for all core functions. Like an `os.open` could theoretically look like:
+
+    @os.open string int => Either a b 
+    def os.open path mode {
+        let res = (alien "open" path mode) in
+        if (< res 0) then
+            (Left (os.errno_lookup res))
+        else
+            (Right res)
+    }
+
+Yes, this would mean that the other side will always have to have some sort of `match` form to
+test what the result actually is, but that would mean that error handling should be relatively
+simple. I _like_ how Digamma implements SRFIs 23 & 34, but I don't know if I want to have that
+much "stuff" in carML.
