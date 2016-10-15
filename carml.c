@@ -459,12 +459,13 @@ next(FILE *fdin, char *buf, int buflen) {
 
                     buf[idx++] = cur;
 
-                    /*
-                    if(substate == LIDENT0 && (iswhite(cur) || cur == '\n' || isbrace(cur))) {
+                    // so close to being what we want, but...
+                    /*if(substate == LIDENT0 && (iswhite(cur) || cur == '\n' || isbrace(cur))) {
+                        debugln;
                         ungetc(cur, fdin);
                         buf[idx - 1] = '\0';
                         return TIDENT;
-                    } */
+                    }*/
 
                     /* the vast majority of the code below is
                      * generated... that still doesn't mean it's
@@ -538,6 +539,10 @@ next(FILE *fdin, char *buf, int buflen) {
                                 substate = LBEGIN0;
                             } else if(cur == 'o') {
                                 substate = LBOOL0;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -545,6 +550,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LBEGIN0: 
                             if(cur == 'g') {
                                 substate = LBEGIN1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -552,6 +561,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LBEGIN1: 
                             if(cur == 'i') {
                                 substate = LBEGIN2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -559,6 +572,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LBEGIN2: 
                             if(cur == 'n') {
                                 substate = LBEGIN3;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -577,6 +594,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LBOOL0: 
                             if(cur == 'o') {
                                 substate = LBOOL1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -584,6 +605,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LBOOL1: 
                             if(cur == 'l') {
                                 substate = LBOOL2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -591,6 +616,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LBOOL2:
                             if(isident(cur)) {
                                 substate = LIDENT0;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
                                 ungetc(cur, fdin);
                                 return TBOOLT;
@@ -602,6 +631,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LC0:
                             if(cur == 'h') {
                                 substate = LCHAR0;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else if(cur == 'a') {
                                 substate = LCASE0;
                             } else {
@@ -611,6 +644,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LD0:
                             if(cur == 'o') {
                                 substate = LDO0;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else if(cur == 'e') {
                                 substate = LDE0;
                             } else {
@@ -635,6 +672,10 @@ next(FILE *fdin, char *buf, int buflen) {
                                 substate = LDEQ0;
                             } else if(cur == 'c') {
                                 substate = LDEC0;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -642,6 +683,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LDEQ0:
                             if(cur == 'u') {
                                 substate = LDEQ1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -649,6 +694,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LDEQ1:
                             if(cur == 'e') {
                                 substate = LDEQ2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -656,6 +705,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LDEQ2:
                             if(isident(cur)) {
                                 substate = LIDENT0;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
                                 ungetc(cur, fdin);
                                 buf[idx] = '\0';
@@ -668,6 +721,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LDEC0: 
                             if(cur == 'l') {
                                 substate = LDEC1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -675,6 +732,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LDEC1: 
                             if(cur == 'a') {
                                 substate = LDEC2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -682,6 +743,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LDEC2: 
                             if(cur == 'r') {
                                 substate = LDEC3;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -689,6 +754,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LDEC3: 
                             if(cur == 'e') {
                                 substate = LDEC4;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -721,6 +790,10 @@ next(FILE *fdin, char *buf, int buflen) {
                                substate = LELSE0;
                             } else if(cur == 'n') {
                                substate = LEND0;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else substate = LIDENT0;
                             break;
                         case LELSE0: 
@@ -733,6 +806,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LELSE1: 
                             if(cur == 'e') {
                                 substate = LELSE2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -751,6 +828,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LEND0: 
                             if(cur == 'd') {
                                 substate = LEND1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -773,6 +854,10 @@ next(FILE *fdin, char *buf, int buflen) {
                                 substate = LFLOATT0;
                             } else if (cur == 'a') {
                                 substate = LFALSE0;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -780,6 +865,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LFALSE0: 
                             if(cur == 'l') {
                                 substate = LFALSE1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -787,6 +876,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LFALSE1: 
                             if(cur == 's') {
                                 substate = LFALSE2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -794,6 +887,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LFALSE2: 
                             if(cur == 'e') {
                                 substate = LFALSE3;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -812,6 +909,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LFLOATT0: 
                             if(cur == 'o') {
                                 substate = LFLOATT1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -819,6 +920,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LFLOATT1: 
                             if(cur == 'a') {
                                 substate = LFLOATT2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -826,6 +931,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LFLOATT2: 
                             if(cur == 't') {
                                 substate = LFLOATT3;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -864,6 +973,10 @@ next(FILE *fdin, char *buf, int buflen) {
                                 substate = LIF0;
                             } else if(cur == 'n') {
                                 substate = LINTT0;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -903,6 +1016,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LL0:
                             if(cur == 'e') {
                                 substate = LLET1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -910,6 +1027,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LLET0: 
                             if(cur == 'e') {
                                 substate = LLET1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -917,6 +1038,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LLET1: 
                             if(cur == 't') {
                                 substate = LLET2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -937,6 +1062,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LLETREC0: 
                             if(cur == 'e') {
                                 substate = LLETREC1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -944,6 +1073,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LLETREC1: 
                             if(cur == 'c') {
                                 substate = LLETREC2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -962,6 +1095,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LR0:
                             if(cur == 'e') {
                                 substate = LRE0;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -969,6 +1106,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LRE0:
                             if(cur == 'c') {
                                 substate = LRECORD0;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else if(cur == 'f') {
                                 substate = LREF0;
                             } else {
@@ -978,6 +1119,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LRECORD0: 
                             if(cur == 'o') {
                                 substate = LRECORD1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -985,6 +1130,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LRECORD1: 
                             if(cur == 'r') {
                                 substate = LRECORD2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -992,6 +1141,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LRECORD2: 
                             if(cur == 'd') {
                                 substate = LRECORD3;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1026,6 +1179,10 @@ next(FILE *fdin, char *buf, int buflen) {
                                 substate = LTYPE0;
                             } else if(cur == 'r') {
                                 substate = LTRUE0;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1034,6 +1191,10 @@ next(FILE *fdin, char *buf, int buflen) {
                             if(cur == 'e') {
                                 //debugln;
                                 substate = LTHEN1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1042,6 +1203,10 @@ next(FILE *fdin, char *buf, int buflen) {
                             if(cur == 'n') {
                                 //debugln;
                                 substate = LTHEN2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1061,6 +1226,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LTYPE0: 
                             if(cur == 'p') {
                                 substate = LTYPE1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1068,6 +1237,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LTYPE1: 
                             if(cur == 'e') {
                                 substate = LTYPE2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1086,6 +1259,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LTRUE0: 
                             if(cur == 'u') {
                                 substate = LTRUE1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1093,6 +1270,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LTRUE1: 
                             if(cur == 'e') {
                                 substate = LTRUE2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1111,6 +1292,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LARRAY1:
                             if(cur == 'r') {
                                 substate = LARRAY2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate= LIDENT0;
                             }
@@ -1118,6 +1303,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LARRAY2:
                             if(cur == 'a') {
                                 substate = LARRAY3;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1125,6 +1314,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LARRAY3:
                             if(cur == 'y') {
                                 substate = LARRAY4;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1146,6 +1339,10 @@ next(FILE *fdin, char *buf, int buflen) {
                                 substate = LWHEN0;
                             } else if(cur == 'i') {
                                 substate = LWITH0;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1153,6 +1350,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LWHEN0: 
                             if(cur == 'e') {
                                 substate = LWHEN1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1160,6 +1361,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LWHEN1: 
                             if(cur == 'n') {
                                 substate = LWHEN2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1178,6 +1383,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LWITH0: 
                             if(cur == 't') {
                                 substate = LWITH1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1185,6 +1394,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LWITH1: 
                             if(cur == 'h') {
                                 substate = LWITH2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1203,6 +1416,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LOF0: 
                             if(cur == 'f') {
                                 substate = LOF1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1221,6 +1438,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LPOLY0: 
                             if(cur == 'o') {
                                 substate = LPOLY1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1228,6 +1449,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LPOLY1: 
                             if(cur == 'l') {
                                 substate = LPOLY2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1235,6 +1460,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LPOLY2: 
                             if(cur == 'y') {
                                 substate = LPOLY3;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1253,6 +1482,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LUSE0: 
                             if(cur == 's') {
                                 substate = LUSE1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1260,6 +1493,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LUSE1: 
                             if(cur == 'e') {
                                 substate = LUSE2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1279,6 +1516,10 @@ next(FILE *fdin, char *buf, int buflen) {
                             //debugln;
                             if(cur == 'a') {
                                 substate = LVAL1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1286,6 +1527,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LVAL1: 
                             if(cur == 'l') {
                                 substate = LVAL2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1306,6 +1551,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LSTRT0: 
                             if(cur == 't') {
                                 substate = LSTRT1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1313,6 +1562,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LSTRT1: 
                             if(cur == 'r') {
                                 substate = LSTRT2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1320,6 +1573,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LSTRT2: 
                             if(cur == 'i') {
                                 substate = LSTRT3;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1327,6 +1584,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LSTRT3: 
                             if(cur == 'n') {
                                 substate = LSTRT4;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1334,6 +1595,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LSTRT4: 
                             if(cur == 'g') {
                                 substate = LSTRT5;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1352,6 +1617,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LMATCH0: 
                             if(cur == 'a') {
                                 substate = LMATCH1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1359,6 +1628,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LMATCH1: 
                             if(cur == 't') {
                                 substate = LMATCH2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1366,6 +1639,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LMATCH2: 
                             if(cur == 'c') {
                                 substate = LMATCH3;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1373,6 +1650,10 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LMATCH3: 
                             if(cur == 'h') {
                                 substate = LMATCH4;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
                             } else {
                                 substate = LIDENT0;
                             }
@@ -1629,6 +1910,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             head->tag = TDECLARE;
             head->lenchildren = 2;
             head->children = (AST **)hmalloc(sizeof(AST *) * 2);
+            int substate = 0;
 
             /* the structure of a declaration:
              * head->value: ident name being declared
@@ -1671,10 +1953,22 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                  * applied to collexions.
                  */
                 /*
-                switch(ltmp) {
-                    case TARRAY:
-                        tmp = 
+                 * Have to handle a few different cases here.
+                 * - functions-as-parameters: (Num => Num)
+                 * - type variables: Either of (a b)
+                 * - complex types: array of Optional of string
+                 * - simple types: string, int, &c.
                 }*/
+                switch(substate) {
+                    case 0: // awaiting a type
+
+                    case 1: // awaiting either an "of" or a space
+
+                    case 2: // awaiting a subtype
+
+                    case 3: // have seen =>
+                        break; // place holder
+                }
             } while(ltmp != TNEWL);
 
             return ASTRight(head);

@@ -24,7 +24,7 @@ A quick list of the current `TODO`s.
 1. Syntax updates: `def`
 1. Syntax updates: `match`
 1. make the types parsing code more modular; could easily extract that out into a function
-1. Finally fix the frakking lexer to not goof up internal states
+1. **DONE** (not in the most elegant way, mind, but...) Finally fix the frakking lexer to not goof up internal states
 1. Csharp-style record parameter unboxing
 1. Error handling: `Either`
 
