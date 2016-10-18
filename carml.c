@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
-#include <strings.h>
+#include <string.h>
 #include <gc.h>
 
 #define hmalloc GC_MALLOC
