@@ -1,13 +1,13 @@
 #!/bin/bash
 
 args="$@"
-EXTRAFLAGS=""
+EXTRAFLAGS="-std=c99"
 
 if [ ${#args} -gt 1 ] 
 then
     case $1 in
         debug)
-            EXTRAFLAGS="-g" ;;
+            EXTRAFLAGS="-std=c99 -g" ;;
         *)
             ;;
     esac
