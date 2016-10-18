@@ -27,6 +27,7 @@ A quick list of the current `TODO`s.
 1. **DONE** (not in the most elegant way, mind, but...) Finally fix the frakking lexer to not goof up internal states
 1. Csharp-style record parameter unboxing
 1. Error handling: `Either`
+1. Lexer-as-stream
 
 # Begin-style function calls
 
@@ -110,3 +111,11 @@ Yes, this would mean that the other side will always have to have some sort of `
 test what the result actually is, but that would mean that error handling should be relatively
 simple. I _like_ how Digamma implements SRFIs 23 & 34, but I don't know if I want to have that
 much "stuff" in carML.
+
+# Lexer-as-stream
+
+The idea here is that a simple lexer should consume _all_ tokens from input, regardless of their syntactic
+validity, prior to returning to the parser. The parser then can do the usual RDP, but instead of operating
+on the file buffer, the RDP then can operate on the _token_ buffer. Thus, the file stream is completely
+consumed (there are no dangling tokens the parser will consume once an error has occurred: the entire
+stream can be abandoned), and we can implement nicer parser stuffs.

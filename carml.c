@@ -2664,6 +2664,14 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             }
             return ASTRight(head);
             break;
+        case TFALSE:
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TFALSE;
+            return ASTRight(head);
+        case TTRUE:
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TTRUE;
+            return ASTRight(head);
         case TINT:
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = TINT;
@@ -2876,6 +2884,15 @@ walk(AST *head, int level) {
             break;
         case TFLOAT:
             printf("(float %s)", head->value);
+            break;
+        case TFALSE:
+        case TTRUE:
+            printf("(boolean ");
+            if(head->tag == TFALSE) {
+                printf("false)");
+            } else {
+                printf("true)");
+            }
             break;
         case TINT:
             printf("(integer %s)", head->value);
