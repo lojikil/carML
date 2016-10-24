@@ -119,3 +119,17 @@ validity, prior to returning to the parser. The parser then can do the usual RDP
 on the file buffer, the RDP then can operate on the _token_ buffer. Thus, the file stream is completely
 consumed (there are no dangling tokens the parser will consume once an error has occurred: the entire
 stream can be abandoned), and we can implement nicer parser stuffs.
+
+# what in the world...
+
+    >>> foo [1,2,3,4]
+    (identifier foo)
+    >>> (array-literal (integer 1) (integer 2) (integer 3) (integer 4)) 
+    >>> r
+    (identifier r)
+    >>> r [1 2 3 4]
+    (identifier r)
+    >>> (array-literal (integer 1) (integer 2) (integer 3) (integer 4)) 
+    >>> car [1 2 3 4]
+
+It never finished reading with the `car`...
