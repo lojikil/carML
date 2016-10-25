@@ -120,7 +120,10 @@ on the file buffer, the RDP then can operate on the _token_ buffer. Thus, the fi
 consumed (there are no dangling tokens the parser will consume once an error has occurred: the entire
 stream can be abandoned), and we can implement nicer parser stuffs.
 
-# what in the world...
+# **DONE** what in the world...
+
+Figured it out: parser has a case for 'c', but no productions, so it can't actually parse anything that
+starts with a 'c'
 
     >>> foo [1,2,3,4]
     (identifier foo)
