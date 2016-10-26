@@ -1927,7 +1927,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
 
             do {
                 ltmp = next(fdin, &buffer[0], 512);
-                if(ltmp == TEOF || ltmp == TERROR) {
+                if(ltmp == TEOF || ltmp == TERROR || ltmp == TNEWL) {
                     break;
                 }
 
@@ -1954,13 +1954,13 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                  */
                 /*
                  * Have to handle a few different cases here.
-                 * - functions-as-parameters: (Num => Num)
+                 * - functions-as-parameters: (Num -> Num)
                  * - type variables: Either of (a b)
                  * - complex types: array of Optional of string
                  * - simple types: string, int, &c.
                 }*/
                 switch(substate) {
-                    case 0: // awaiting a type
+                    case 0: // dispatch
 
                     case 1: // awaiting either an "of" or a space
 

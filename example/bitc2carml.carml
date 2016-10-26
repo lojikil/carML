@@ -3,7 +3,7 @@
 # cML before it, is pretty heavily influenced by BitC,
 # so I naturally wanted to see translations
 # could almost be @fact Num of a => a
-#@fact int => int
+#@fact int -> int
 def fact x =
     if (< x 0) then (fact (abs x))
     else if (num= x 0) then 1

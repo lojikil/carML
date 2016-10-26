@@ -74,7 +74,7 @@ I've been thinking about certain syntax choices I made originally, and thinking 
 I'd like to embed some notion of the usual Hoare-logic forms into the language as extensions or _refinements_ to
 the `declare` or `@` form. I was thinking something similar to:
 
-    @foo x Num y Num => Num
+    @foo x Num y Num -> Num
     @/requires foo >= x y
     @/returns foo + x y
     def foo x y = ...
@@ -98,7 +98,7 @@ iff the struct is not modified (iirc).
 I don't really want to get too fancy with Error handling. I think it should be simple enough to just
 use `Either` heavily for all core functions. Like an `os.open` could theoretically look like:
 
-    @os.open string int => Either a b 
+    @os.open string int -> Either a b 
     def os.open path mode {
         let res = (alien "open" path mode) in
         if (< res 0) then
