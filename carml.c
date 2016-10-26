@@ -62,7 +62,7 @@ typedef enum {
     TBOOLT, TWITH, TOF, TDECLARE, TFALSE, // 47
     TTRUE, TUSE, TIN, TCOLON, TRECDEF, // 52
     TCOMPLEXTYPE, TCOMMA, TOARR, TCARR, // 56
-    TARRAYLITERAL, // 57
+    TARRAYLITERAL, TBIN, TOCT, THEX, // 60
 } TypeTag;
 
 struct _AST {
@@ -422,7 +422,17 @@ next(FILE *fdin, char *buf, int buflen) {
                             if((cur >= '0' && cur <= '9')) {
                                 buf[idx++] = cur;
                             } else if(cur == '.') {
+                                buf[idx++] = cur;
                                 substate = TFLOAT;
+                            } else if(cur == 'x' || cur == 'X') {
+                                idx--;
+                                substate = THEX;
+                            } else if(cur == 'b' || cur == 'B') {
+                                idx--;
+                                substate = TBIN;
+                            } else if(cur == 'o' || cur == 'O') {
+                                idx--;
+                                substate = TOCT;
                             } else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
                                 ungetc(cur, fdin);
                                 buf[idx] = '\0';
@@ -433,14 +443,50 @@ next(FILE *fdin, char *buf, int buflen) {
                             }
                             break;
                         case TFLOAT:
-                            if((cur >= '0' && cur <= '9')) {
+                            if(cur >= '0' && cur <= '9') {
                                 buf[idx++] = cur;
                             } else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
                                 ungetc(cur, fdin);
                                 buf[idx] = '\0';
-                                return TINT;
+                                return TFLOAT;
                             } else { 
                                 strncpy(buf, "incorrectly formatted floating point numeral", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case THEX:
+                            if((cur >= '0' && cur <= '9') || (cur >= 'a' && cur <= 'f') || (cur >= 'A' && cur <= 'F')) {
+                                buf[idx++] = cur;
+                            } else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                buf[idx] = '\0';
+                                return THEX;
+                            } else { 
+                                strncpy(buf, "incorrectly formatted hex literal", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case TOCT:
+                            if(cur >= '0' && cur <= '7') {
+                                buf[idx++] = cur;
+                            } else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                buf[idx] = '\0';
+                                return TOCT;
+                            } else { 
+                                strncpy(buf, "incorrectly formatted octal literal", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case TBIN:
+                            if(cur == '0' || cur == '1') {
+                                buf[idx++] = cur;
+                            } else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                buf[idx] = '\0';
+                                return TBIN;
+                            } else { 
+                                strncpy(buf, "incorrectly formatted binary literal", 512);
                                 return TERROR;
                             }
                             break;
@@ -2672,29 +2718,16 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = TTRUE;
             return ASTRight(head);
+        case THEX:
+        case TOCT:
+        case TBIN:
         case TINT:
-            head = (AST *)hmalloc(sizeof(AST));
-            head->tag = TINT;
-            head->value = hstrdup(buffer);
-            return ASTRight(head);
         case TFLOAT:
-            head = (AST *)hmalloc(sizeof(AST));
-            head->tag = TFLOAT;
-            head->value = hstrdup(buffer);
-            return ASTRight(head);
         case TSTRING:
-            head = (AST *)hmalloc(sizeof(AST));
-            head->tag = TSTRING;
-            head->value = hstrdup(buffer);
-            return ASTRight(head);
         case TCHAR:
-            head = (AST *)hmalloc(sizeof(AST));
-            head->tag = TCHAR;
-            head->value = hstrdup(buffer);
-            return ASTRight(head);
         case TBOOL:
             head = (AST *)hmalloc(sizeof(AST));
-            head->tag = TBOOL;
+            head->tag = ltype;
             head->value = hstrdup(buffer);
             return ASTRight(head);
         case TEQ:
@@ -2893,6 +2926,15 @@ walk(AST *head, int level) {
             } else {
                 printf("true)");
             }
+            break;
+        case THEX:
+            printf("(hex-integer %s)", head->value);
+            break;
+        case TOCT:
+            printf("(octal-integer %s)", head->value);
+            break;
+        case TBIN:
+            printf("(binary-integer %s)", head->value);
             break;
         case TINT:
             printf("(integer %s)", head->value);
