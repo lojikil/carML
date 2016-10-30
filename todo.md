@@ -81,6 +81,10 @@ the `declare` or `@` form. I was thinking something similar to:
 
 Not sure how I want the Hoare-logic to look; `@<name> /requires` vs `@/requires <name>`...
 
+_Update_: I've been playing with F\* for a while now, and reading up about its
+[KreMLin](https://fstarlang.github.io/general/2016/09/30/introducing-kremlin.html) backend... the idea to have
+refinements & pre/post conditions as `{block}` is pretty appealing to me.
+
 # Csharp style record parameter unboxing
 
 So C# will actually unbox structs that are passed as args:

@@ -2005,6 +2005,14 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                  * - complex types: array of Optional of string
                  * - simple types: string, int, &c.
                 }*/
+
+                /* I think what the initial pass should do is read
+                 * in a list of productions, until we hit TNEWL,
+                 * TSEMI, or TEOF, and *then* process the list. This
+                 * would also be the strategy for parsing at the REPL
+                 * without returning un-parsed forms (which is what 
+                 * currently happens)
+                 */
                 switch(substate) {
                     case 0: // dispatch
 
