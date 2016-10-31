@@ -1956,7 +1956,9 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             head->tag = TDECLARE;
             head->lenchildren = 2;
             head->children = (AST **)hmalloc(sizeof(AST *) * 2);
-            int substate = 0;
+            int substate = 0, curoffset = 0;
+            char *decls[32] = {0};
+            int lexemes[32] = {0};
 
             /* the structure of a declaration:
              * head->value: ident name being declared
@@ -1971,59 +1973,29 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
 
             head->value = hstrdup(buffer);
 
+            /* ok, so first we collate the terms of the declaration
+             * into a pair of stacks, one side is the string representation
+             * the other the lexeme type.
+             */
             do {
                 ltmp = next(fdin, &buffer[0], 512);
                 if(ltmp == TEOF || ltmp == TERROR || ltmp == TNEWL) {
                     break;
                 }
 
-                /* we need to read in a list of types
-                 * and process them accordingly. The
-                 * issue arrises from collection types:
-                 * how do we (easily) process types like
-                 * `dequeue of array of (Num -> Num)`?
-                 * My thought here is to create a stack
-                 * of types, and then collapse them into
-                 * one type when we finish seeing the
-                 * `of` form. So:
-                 * `array of array of Num` becomes
-                 * the stack:
-                 * [array array Num]
-                 * which we then collapse.
-                 * `@foo array of array of Num Num -> Num`
-                 * we make a stack of `array of array of Num`
-                 * and then stop processing when we see the
-                 * next `Num`, since that is not part of
-                 * the type. Have to have some intelligence
-                 * here as well, since `of` can only be
-                 * applied to collexions.
-                 */
-                /*
-                 * Have to handle a few different cases here.
-                 * - functions-as-parameters: (Num -> Num)
-                 * - type variables: Either of (a b)
-                 * - complex types: array of Optional of string
-                 * - simple types: string, int, &c.
-                }*/
-
-                /* I think what the initial pass should do is read
-                 * in a list of productions, until we hit TNEWL,
-                 * TSEMI, or TEOF, and *then* process the list. This
-                 * would also be the strategy for parsing at the REPL
-                 * without returning un-parsed forms (which is what 
-                 * currently happens)
-                 */
-                switch(substate) {
-                    case 0: // dispatch
-
-                    case 1: // awaiting either an "of" or a space
-
-                    case 2: // awaiting a subtype
-
-                    case 3: // have seen =>
-                        break; // place holder
-                }
+                decls[curoffset] = hstrdup(buffer);
+                lexems[curoffset] = ltmp;
+                curoffset++;
             } while(ltmp != TNEWL);
+
+            /* next, we iterate o'er the list of collected terms
+             * and parse them as a collection of type declarations.
+             */
+            for(int idx = 0; idx < curoffset; idx++) {
+                switch(substate) {
+
+                }
+            }
 
             return ASTRight(head);
         case TFN:
