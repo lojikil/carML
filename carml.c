@@ -111,6 +111,7 @@ typedef struct _ASTEither {
 
 char *hstrdup(const char *);
 int next(FILE *, char *, int);
+AST *mung_declare(char **, int **, int, AST *);
 ASTEither *readexpression(FILE *);
 ASTEither *llreadexpression(FILE *, uint8_t);
 ASTEither *ASTLeft(int, int, char *);
@@ -1991,11 +1992,11 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             /* next, we iterate o'er the list of collected terms
              * and parse them as a collection of type declarations.
              */
-            for(int idx = 0; idx < curoffset; idx++) {
-                switch(substate) {
 
-                }
-            }
+            tmp = mung_declare(decls, lexems, curoffset, TNEWL, &rettype);
+
+            head->children[0] = tmp;
+            head->children[1] = rettype;
 
             return ASTRight(head);
         case TFN:
@@ -2736,6 +2737,22 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             return ASTRight(head);
     }
     return ASTLeft(0, 0, "unable to parse statement"); 
+}
+
+AST *
+mung_declare(char **decls, int **lexemes, int len, int substate AST ** rettype) {
+    /* ok, so instead of creating a complex stack here,
+     * just use the C call stack to maintain the position of where we are
+     * in a tail recursive manner. This means that we can simply
+     * treat declaration terms in LL(1) terms, and it's still relatively
+     * straight forward to follow.
+     */
+    switch(substate) {
+
+    }
+
+    rettype = nil;
+    return nil;
 }
 
 void
