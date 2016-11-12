@@ -2747,8 +2747,18 @@ mung_declare(char **decls, int **lexemes, int len, int substate AST ** rettype) 
      * treat declaration terms in LL(1) terms, and it's still relatively
      * straight forward to follow.
      */
-    switch(substate) {
+    int flag = -1;
+    AST *tmp = nil, *stack[128] = {nil};
+    for(int idx = 0; idx < len; idx++) {
+        switch(substate) {
+            case 0:
 
+            case 1:
+
+            case 2:
+
+            case 3:
+        }
     }
 
     rettype = nil;
