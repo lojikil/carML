@@ -2639,7 +2639,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         AST *ctmp = (AST *) hmalloc(sizeof(AST));
                         ctmp->tag = TCOMPLEXTYPE;
                         ctmp->lenchildren = idx - flag;
-                        ctmp->children = (AST **) hmalloc(sizeof(AST *) * tmp->lenchildren);
+                        ctmp->children = (AST **) hmalloc(sizeof(AST *) * ctmp->lenchildren);
                         for(int cidx = 0, tidx = flag, tlen = ctmp->lenchildren; cidx < tlen; cidx++, tidx++) {
                             ctmp->children[cidx] = vectmp[tidx];
                         }
@@ -2739,20 +2739,56 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
     return ASTLeft(0, 0, "unable to parse statement"); 
 }
 
+/* almost should be renamed, but I _think_ I want to try and
+ * rip out all the custom code used in `let`, `letrec`, and `val`
+ * in favor of this, which is why I included a type... For example,
+ * declare forms could break on TNEWL, whereas val could break on
+ * TEQ.
+ */
 AST *
-mung_declare(char **decls, int **lexemes, int len, int substate AST ** rettype) {
+mung_declare(char **pdecls, int **plexemes, int len, int substate AST ** rettype) {
     /* ok, so instead of creating a complex stack here,
      * just use the C call stack to maintain the position of where we are
      * in a tail recursive manner. This means that we can simply
      * treat declaration terms in LL(1) terms, and it's still relatively
      * straight forward to follow.
      */
-    int flag = -1;
+    int flag = -1, stackptr = 0;
+    int *lexemes = *plexemes;
     AST *tmp = nil, *stack[128] = {nil};
     for(int idx = 0; idx < len; idx++) {
         switch(substate) {
             case 0:
+                switch(lexemes[idx]) {
+                    case TINTT:
+                    case TFLOATT:
+                    case TSTRT:
+                    case TCHART:
+                    case TBOOLT:
+                        if(flag == -1) {
+                            tmp = (AST *)hmalloc(sizeof(AST));
+                            tmp->tag = lexemes[idx];
+                            stack[stackptr] = tmp;
+                            stackptr++;
+                        } else {
+                            /* I _think_ we can thus collapse a complex
+                             * type here, because we know that we can't
+                             * have a meaningful type of type here that
+                             * includes `of`...
+                             */
+                           AST *ctmp = (AST *) hmalloc(sizeof(AST));
+                           ctmp->tag = TCOMPLEXTYPE;
+                           ctmp->lenchildren = idx - flag;
+                           ctmp->children = (AST **) hmalloc(sizeof(AST *) * ctmp->lenchildren);
 
+                           for(int cidx = 0, tidx = flag, tlen = ctmp->lenchildren; cidx < tlen; cidx++, tidx++) {
+                               tmp = (AST *) hmalloc(sizeof(AST));
+                               tmp->tag = lexemes[tidx];
+                               tmp->value = hstrdup(pdecls[tidx]);
+                               ctmp->children[cidx] = tmp;
+                           }
+                        }
+                }
             case 1:
 
             case 2:

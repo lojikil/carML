@@ -6,6 +6,7 @@ A quick list of the current `TODO`s.
 1. **DONE** Add complex types to records
 1. **DONE** Add complex types to `let` 
 1. Parse `@`/`declare` forms
+1. Update `val`, `let`, records to use the new `declare` type parser
 1. Make function definitions & `let` forms accept `begin` style function calls (i.e. avoid using `()`)
 1. `match`/`case` form, with guards.
 1. Figure out a decent backing for Rust-style deques (possibly implemented from records + arrays)

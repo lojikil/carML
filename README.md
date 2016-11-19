@@ -28,7 +28,7 @@ if you're familiar with Yeti, StandardML, OCaml, &c. it should be relatively str
 standard base.
 
 - there are no operators in the standard base. Functions like `(+)` are replaced by `sum`.
-- there are no lists or other GC'd data structures in the standard base (this may change based on implementation of the memory).
+- there are no lists or other GC'd data structures in the standard base (this may change based on the implementation of memory).
 
 Remember, while the language is meant to be understood quickly, it's not meant to be a replacement for everything, Like Logo, I'll probably
 eventually add something to "preprocess" source code and have operators (or simply make an `expr` form to handle it).
