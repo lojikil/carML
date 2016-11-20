@@ -111,7 +111,7 @@ typedef struct _ASTEither {
 
 char *hstrdup(const char *);
 int next(FILE *, char *, int);
-AST *mung_declare(char **, int **, int, AST *);
+AST *mung_declare(char **, int **, int);
 ASTEither *readexpression(FILE *);
 ASTEither *llreadexpression(FILE *, uint8_t);
 ASTEither *ASTLeft(int, int, char *);
@@ -1993,7 +1993,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
              * and parse them as a collection of type declarations.
              */
 
-            tmp = mung_declare(decls, lexems, curoffset, TNEWL, &rettype);
+            tmp = mung_declare(decls, lexems, curoffset, TNEWL);
 
             head->children[0] = tmp;
             head->children[1] = rettype;
@@ -2746,14 +2746,14 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
  * TEQ.
  */
 AST *
-mung_declare(char **pdecls, int **plexemes, int len, int substate AST ** rettype) {
+mung_declare(char **pdecls, int **plexemes, int len, int haltstate) {
     /* ok, so instead of creating a complex stack here,
      * just use the C call stack to maintain the position of where we are
      * in a tail recursive manner. This means that we can simply
      * treat declaration terms in LL(1) terms, and it's still relatively
      * straight forward to follow.
      */
-    int flag = -1, stackptr = 0;
+    int flag = -1, stackptr = 0, substate = 0;
     int *lexemes = *plexemes;
     AST *tmp = nil, *stack[128] = {nil};
     for(int idx = 0; idx < len; idx++) {
@@ -2787,7 +2787,15 @@ mung_declare(char **pdecls, int **plexemes, int len, int substate AST ** rettype
                                tmp->value = hstrdup(pdecls[tidx]);
                                ctmp->children[cidx] = tmp;
                            }
+                           stack[stackptr] = ctmp;
+                           stackptr++;
                         }
+                        break;
+                    case TARRAY:
+                    case TQUEUE:
+                    case TIDENT:
+                        break;
+
                 }
             case 1:
 
