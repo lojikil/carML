@@ -63,6 +63,7 @@ typedef enum {
     TTRUE, TUSE, TIN, TCOLON, TRECDEF, // 52
     TCOMPLEXTYPE, TCOMMA, TOARR, TCARR, // 56
     TARRAYLITERAL, TBIN, TOCT, THEX, // 60
+    TARROW, TFATARROW, // 62
 } TypeTag;
 
 struct _AST {
@@ -2791,11 +2792,31 @@ mung_declare(char **pdecls, int **plexemes, int len, int haltstate) {
                            stackptr++;
                         }
                         break;
+                    /* When we're in a procedural (), we should treat these
+                     * as demarcating the return type, but not the end of the
+                     * parse. If we're in a top-level declare form, it's def
+                     * the end of the parse...
+                     */
+                    case TARROW:
+                    case TFATARROW:
+                        break;
                     case TARRAY:
                     case TQUEUE:
                     case TIDENT:
+                        /* we're here, so we probably are looking for
+                         * another type, with a TOF inbetween.
+                         */
+                        substate = 1;
                         break;
-
+                    case TOPAREN:
+                        break;
+                    case TOF:
+                        break;
+                    default:
+                        /* need to check if we've hit a terminal symbol
+                         * here.
+                         */
+                        break;
                 }
             case 1:
 
