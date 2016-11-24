@@ -63,7 +63,7 @@ typedef enum {
     TTRUE, TUSE, TIN, TCOLON, TRECDEF, // 52
     TCOMPLEXTYPE, TCOMMA, TOARR, TCARR, // 56
     TARRAYLITERAL, TBIN, TOCT, THEX, // 60
-    TARROW, TFATARROW, // 62
+    TARROW, TFATARROW, TCUT, TDOLLAR, // 64
 } TypeTag;
 
 struct _AST {
@@ -343,6 +343,20 @@ next(FILE *fdin, char *buf, int buflen) {
                      */
                     ungetc(cur, fdin);
                     buf[idx++] = '=';
+                }
+                break;
+            case '$':
+                cur = fgetc(fdin)
+
+                if(cur == '(') {
+                    return TCUT;
+                } else if(iswhite(cur) || isbrace(cur)) {
+                    ungetc(cur, fdin);
+                    return TDOLLAR;
+                } else {
+                    /* same jazz here as above with '='. */
+                    ungetc(cur, fdin);
+                    buf[idx++] = '$';
                 }
                 break;
             case ';':
@@ -1791,6 +1805,10 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
 
     ltype = next(fdin, &buffer[0], 512);
     switch(ltype) {
+        case TDOLLAR:
+            tmp = (AST *)hmalloc(sizeof(AST));
+            tmp->tag = TDOLLAR;
+            return ASTRight(tmp);
         case TCOMMENT:
             /* do we want return this, so that we can
              * return documentation, &c.?
@@ -2261,6 +2279,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             return ASTRight(head);
         case TCALL:
             break;
+        case TCUT:
         case TOPAREN:
             sometmp = readexpression(fdin);
             if(sometmp->tag == ASTLEFT) {
@@ -2298,7 +2317,11 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             }
 
             head = (AST *)hmalloc(sizeof(AST));
-            head->tag = TCALL;
+            if(ltype == TCUT) {
+                head->tag = TCUT;
+            } else {
+                head->tag = TCALL;
+            }
             head->lenchildren = idx;
             head->children = (AST **)hmalloc(sizeof(AST *) * idx);
             for(int i = 0; i < idx; i++) {

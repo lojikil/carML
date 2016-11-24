@@ -10,7 +10,7 @@ A quick list of the current `TODO`s.
 1. Make function definitions & `let` forms accept `begin` style function calls (i.e. avoid using `()`)
 1. `match`/`case` form, with guards.
 1. Figure out a decent backing for Rust-style deques (possibly implemented from records + arrays)
-1. Partial application syntax: `$()`, including `_` as filler
+1. **DONE**: Partial application syntax: `$()`, including `_` as filler
 1. Hoare-logic (pre, post, invariants, &c.)
 1. Runtime, which should be pretty minimal
 1. Compile to C in the style of Enyalios
