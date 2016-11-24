@@ -141,3 +141,50 @@ starts with a 'c'
     >>> car [1 2 3 4]
 
 It never finished reading with the `car`...
+
+# Partial Application form (really, a specialization form)
+
+I'm thinking that `$()` will denote partial application. For example:
+
+    def foo x y z = + x (* y z)
+
+So here, the function `foo` requires 3 parameters, but there may be cases wherein we
+do **not** wish to use all three, and this is where `$()` forms would come into play:
+
+    let bar = $(foo 10 _ 12) in
+    println (bar 11)
+
+Here, the "call" to `bar` is just rewritten to be `foo 10 11 12`. I've wondered how, or if, it
+should support memoizing parameters; for example, consider the following:
+
+    def foo x y = + x y
+    def baz x = * x 10
+    let bar = $(foo _ (baz 11)) in
+    println (bar 12)
+
+Should we compute and store the value `(baz 11)`, or should we rerun that calculation at each
+application of the specialization form? Both have implications, but I'm wondering which is the
+less surprising of the two? I guess the fact that we're going for an SRFI-26 style here is the
+real answer to capturing...
+
+## Interaction with thrushing forms
+
+I **do** wish to support `|>` and the like. I think Haskell's `$` form has less appeal here, because
+I'm already avoiding as many parens as possible, but `|>` from the various ML dialects is interesting.
+
+    (|>
+        foo
+        $(bar _ 11)
+        baz
+        $(blah _ 12))
+
+It'll be interesting to have a form that doesn't introduce a lambda capture but _does_ allow for
+specialization...
+
+Thinking about `$` though, that might be interesting to have...
+
+    println (int_to_string (sum 54 100))
+    # vs
+    println $ int_to_string $ sum 54 100
+
+Could make `$` the only infix form...
