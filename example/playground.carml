@@ -1,0 +1,22 @@
+# just a syntactic playground to see what's what.
+
+@arrayIota3 array of Num (Num => Num) => ()
+def arrayIota3 arr fun = {
+    letrec internalIota = fn idx = {
+        set-array-index! arr (fun idx) x
+        internalIota (sum idx 1)
+    } in
+    internalIota 0
+}
+
+@arrayIota4 array of Num (Num => Num) => ()
+def arrayIota4 arr fun {
+    # should `fn` forms accept a `begin`
+    # form sans `=` just like `def`?
+    # looks... so much cleaner
+    letrec internalIota = fn idx {
+        Array.set! arr (fun idx) x
+        internalIota $ sum idx 1
+    } in
+    internalIota 0
+}
