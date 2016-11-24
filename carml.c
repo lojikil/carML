@@ -2289,6 +2289,9 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             tmp = sometmp->right;
 
             if(tmp->tag == TCPAREN) {
+                if(ltype == TCUT){
+                    return ASTLeft(0, 0, "illegal $() form");
+                }
                 tmp = (AST *)hmalloc(sizeof(AST));
                 tmp->tag = TUNIT;
                 return ASTRight(tmp);
