@@ -64,6 +64,7 @@ typedef enum {
     TCOMPLEXTYPE, TCOMMA, TOARR, TCARR, // 56
     TARRAYLITERAL, TBIN, TOCT, THEX, // 60
     TARROW, TFATARROW, TCUT, TDOLLAR, // 64
+    TPIPEARROW, // 65
 } TypeTag;
 
 struct _AST {
@@ -320,6 +321,20 @@ next(FILE *fdin, char *buf, int buflen) {
                 return TCARR;
             case ',':
                 return TCOMMA;
+            case '|':
+                cur = fgetc(fdin);
+                if(iswhite(cur) || isbrace(cur)) {
+                    buf[idx++] = '|';
+                    buf[idx] = nul;
+                    ungetc(cur, fdin);
+                    return TIDENT;
+                } else if(cur == '>') {
+                    return TPIPEARROW;
+                } else {
+                    ungetc(cur, fdin);
+                    buf[idx++] = '|';
+                }
+                break;
             case '=':
                 cur = fgetc(fdin);
                 if(iswhite(cur) || isbrace(cur)) {
