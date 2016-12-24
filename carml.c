@@ -2825,7 +2825,27 @@ mung_declare(const char **pdecls, const int **plexemes, int len, int haltstate) 
  */
 AST *
 mung_single_type(const char **pdecls, const int **plexemes, int len, int haltstate) {
-
+    int substate = 0, flag = -1, *lexemes = *plexemes, stackptr = 0;
+    AST *tmp = nil, *stack[128] = {nil};
+    for(int idx = 0; idx < len; idx ++){
+        switch(lexemes[idx]) {
+            case TCHART:
+            case TSTRT:
+            case TINTT:
+            case TFLOATT:
+                tmp = (AST *)hmalloc(sizeof(AST));
+                tmp->tag = lexemes[idx];
+                if(flag == -1) {
+                    return tmp;
+                } else {
+                    stack[stackptr] = tmp;
+                    stackptr += 1;
+                }
+            case TARRAYT:
+            case TQUEUET:
+            
+        }
+    }
 }
 
 void
