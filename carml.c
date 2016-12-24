@@ -113,7 +113,8 @@ typedef struct _ASTEither {
 
 char *hstrdup(const char *);
 int next(FILE *, char *, int);
-AST *mung_declare(char **, int **, int);
+AST *mung_declare(const char **, const int **, int, int);
+AST *mung_single_type(const char **, const int **, int, int);
 ASTEither *readexpression(FILE *);
 ASTEither *llreadexpression(FILE *, uint8_t);
 ASTEither *ASTLeft(int, int, char *);
@@ -2811,87 +2812,20 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
  * TEQ.
  */
 AST *
-mung_declare(char **pdecls, int **plexemes, int len, int haltstate) {
-    /* ok, so instead of creating a complex stack here,
-     * just use the C call stack to maintain the position of where we are
-     * in a tail recursive manner. This means that we can simply
-     * treat declaration terms in LL(1) terms, and it's still relatively
-     * straight forward to follow.
-     */
-    int flag = -1, stackptr = 0, substate = 0;
-    int *lexemes = *plexemes;
-    AST *tmp = nil, *stack[128] = {nil};
-    for(int idx = 0; idx < len; idx++) {
+mung_declare(const char **pdecls, const int **plexemes, int len, int haltstate) {
+    int idx = 0, substate = 0;
+    for(; idx < len ; idx++) {
         switch(substate) {
-            case 0:
-                switch(lexemes[idx]) {
-                    case TINTT:
-                    case TFLOATT:
-                    case TSTRT:
-                    case TCHART:
-                    case TBOOLT:
-                        if(flag == -1) {
-                            tmp = (AST *)hmalloc(sizeof(AST));
-                            tmp->tag = lexemes[idx];
-                            stack[stackptr] = tmp;
-                            stackptr++;
-                        } else {
-                            /* I _think_ we can thus collapse a complex
-                             * type here, because we know that we can't
-                             * have a meaningful type of type here that
-                             * includes `of`...
-                             */
-                           AST *ctmp = (AST *) hmalloc(sizeof(AST));
-                           ctmp->tag = TCOMPLEXTYPE;
-                           ctmp->lenchildren = idx - flag;
-                           ctmp->children = (AST **) hmalloc(sizeof(AST *) * ctmp->lenchildren);
-
-                           for(int cidx = 0, tidx = flag, tlen = ctmp->lenchildren; cidx < tlen; cidx++, tidx++) {
-                               tmp = (AST *) hmalloc(sizeof(AST));
-                               tmp->tag = lexemes[tidx];
-                               tmp->value = hstrdup(pdecls[tidx]);
-                               ctmp->children[cidx] = tmp;
-                           }
-                           stack[stackptr] = ctmp;
-                           stackptr++;
-                        }
-                        break;
-                    /* When we're in a procedural (), we should treat these
-                     * as demarcating the return type, but not the end of the
-                     * parse. If we're in a top-level declare form, it's def
-                     * the end of the parse...
-                     */
-                    case TARROW:
-                    case TFATARROW:
-                        break;
-                    case TARRAY:
-                    case TQUEUE:
-                    case TIDENT:
-                        /* we're here, so we probably are looking for
-                         * another type, with a TOF inbetween.
-                         */
-                        substate = 1;
-                        break;
-                    case TOPAREN:
-                        break;
-                    case TOF:
-                        break;
-                    default:
-                        /* need to check if we've hit a terminal symbol
-                         * here.
-                         */
-                        break;
-                }
-            case 1:
-
-            case 2:
-
-            case 3:
+            
         }
     }
+}
 
-    rettype = nil;
-    return nil;
+/* read in a single type, and return it as an AST node
+ */
+AST *
+mung_single_type(const char **pdecls, const int **plexemes, int len, int haltstate) {
+
 }
 
 void
