@@ -2841,9 +2841,31 @@ mung_single_type(const char **pdecls, const int **plexemes, int len, int haltsta
                     stack[stackptr] = tmp;
                     stackptr += 1;
                 }
+                break;
             case TARRAYT:
             case TQUEUET:
-            
+                /* there's a few cases to consider here:
+                 * - that the next token is TOF
+                 * - that the next token is *not* TOF
+                 * - that the next token is not TOF *and* that this is the terminal type.
+                 * for example:
+                 * array of int
+                 * array
+                 * array of array
+                 */
+                tmp = (AST *)hmalloc(sizeof(AST));
+                tmp->tag = lexemes[idx];
+
+                /* should I check for TOF here, or in another state?
+                 * _almost_ seems like another state is "cleaner"...
+                 * oooo, and that way too we can see if the () is correct
+                 */
+                if(flag == -1) {
+
+                } else {
+
+                }
+                break;
         }
     }
 }
