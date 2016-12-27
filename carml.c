@@ -2838,6 +2838,9 @@ mung_single_type(const char **pdecls, const int **plexemes, int len, int haltsta
                 if(flag == -1) {
                     return tmp;
                 } else {
+                    if(substate == 1) {
+                    } else {
+                    } 
                     stack[stackptr] = tmp;
                     stackptr += 1;
                 }
@@ -2856,6 +2859,11 @@ mung_single_type(const char **pdecls, const int **plexemes, int len, int haltsta
                 break;
             case TOF:
                 /* ... */
+                if(substate == 1) {
+                    substate = 2;
+                } else {
+                    substate = 99; /* parse error */
+                }
                 break;
             case TARRAYT:
             case TQUEUET:
@@ -2877,6 +2885,7 @@ mung_single_type(const char **pdecls, const int **plexemes, int len, int haltsta
                  */
                 if(flag == -1) {
                     flag = idx + 1;
+                    substate = 1;
                 } 
                 stack[stackptr] = tmp;
                 stackptr += 1;
