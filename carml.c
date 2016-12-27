@@ -2842,6 +2842,21 @@ mung_single_type(const char **pdecls, const int **plexemes, int len, int haltsta
                     stackptr += 1;
                 }
                 break;
+            case TOPAREN:
+                /* Ok, here, we need to know
+                 * what state we're in. It's
+                 * partially context dependent
+                 * (yuck), but it means that we
+                 * can easily parse procedures
+                 * versus tuples (for sum types)
+                 */
+                break;
+            case TIDENT:
+                /* ... */
+                break;
+            case TOF:
+                /* ... */
+                break;
             case TARRAYT:
             case TQUEUET:
                 /* there's a few cases to consider here:
@@ -2861,10 +2876,10 @@ mung_single_type(const char **pdecls, const int **plexemes, int len, int haltsta
                  * oooo, and that way too we can see if the () is correct
                  */
                 if(flag == -1) {
-
-                } else {
-
-                }
+                    flag = idx + 1;
+                } 
+                stack[stackptr] = tmp;
+                stackptr += 1;
                 break;
         }
     }
