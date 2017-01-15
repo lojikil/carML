@@ -362,7 +362,7 @@ next(FILE *fdin, char *buf, int buflen) {
                 }
                 break;
             case '$':
-                cur = fgetc(fdin)
+                cur = fgetc(fdin);
 
                 if(cur == '(') {
                     return TCUT;
@@ -2043,7 +2043,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 }
 
                 decls[curoffset] = hstrdup(buffer);
-                lexems[curoffset] = ltmp;
+                lexemes[curoffset] = ltmp;
                 curoffset++;
             } while(ltmp != TNEWL);
 
@@ -2051,10 +2051,9 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
              * and parse them as a collection of type declarations.
              */
 
-            tmp = mung_declare(decls, lexems, curoffset, TNEWL);
+            tmp = mung_declare(decls, lexemes, curoffset, TNEWL);
 
             head->children[0] = tmp;
-            head->children[1] = rettype;
 
             return ASTRight(head);
         case TFN:
@@ -2789,9 +2788,11 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 head->tag = TNEWL;
                 return ASTRight(head);
             }
+        case TCHART:
+        case TSTRT:
         case TINTT:
             head = (AST *)hmalloc(sizeof(AST));
-            head->tag = TINTT;
+            head->tag = ltype;
             return ASTRight(head);
         case TCOLON:
             head = (AST *)hmalloc(sizeof(AST));
@@ -2853,6 +2854,13 @@ mung_single_type(const char **pdecls, const int **plexemes, int len, int haltsta
                  * can easily parse procedures
                  * versus tuples (for sum types)
                  */
+                if(substate == 0) {
+                    /* procedure */
+                } else if(substate == 2) {
+                    /* tuple for sum types */
+                } else {
+                    substate = 99;
+                }
                 break;
             case TIDENT:
                 /* ... */
@@ -2865,8 +2873,8 @@ mung_single_type(const char **pdecls, const int **plexemes, int len, int haltsta
                     substate = 99; /* parse error */
                 }
                 break;
-            case TARRAYT:
-            case TQUEUET:
+            case TARRAY:
+            case TDEQUET:
                 /* there's a few cases to consider here:
                  * - that the next token is TOF
                  * - that the next token is *not* TOF

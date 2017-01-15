@@ -1,6 +1,7 @@
 *.swp
 c29
 carml
+carmlc
 *.dSYM
 staging/*
 .idea/*

@@ -118,6 +118,23 @@ considering that both languages are _not_ derived from existing ML dialects. [Ye
     # add:
     # ref, make
 
+# Implementations
+
+ There are two major implementations:
+
+- `carmlc` which is just a compiler, written in C.
+- `carml` which is a self-hosting version.
+
+Note that, when supplied with no arguments, `carmlc` will actually enter a REPL. However,
+this REPL does not evaluate the supplied expressions for _values_, but rather for _code_:
+
+    >>> def foo x = (sum x x)
+    (define-function foo (x)
+        (call (identifier sum) (identifier x) (identifier x)))
+
+The purpose is more to see what the IR/code will look like, rather than what the code does. It 
+is meant more as a test bed than an actual REPL.
+
 # License
 
 See `LICENSE` for details (ISC license).
