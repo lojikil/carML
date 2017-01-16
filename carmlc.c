@@ -2791,6 +2791,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
         case TCHART:
         case TSTRT:
         case TINTT:
+        case TBOOLT:
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = ltype;
             return ASTRight(head);
@@ -2840,7 +2841,10 @@ mung_single_type(const char **pdecls, const int **plexemes, int len, int haltsta
                     return tmp;
                 } else {
                     if(substate == 1) {
+                    } else if(substate = 2) {
+                        break;
                     } else {
+                        substate = 99;
                     } 
                     stack[stackptr] = tmp;
                     stackptr += 1;
