@@ -2825,11 +2825,28 @@ mung_declare(const char **pdecls, const int **plexemes, int len, int haltstate) 
 
 /* read in a single type, and return it as an AST node
  */
-AST *
-mung_single_type(const char **pdecls, const int **plexemes, int len, int haltstate) {
-    int substate = 0, flag = -1, *lexemes = *plexemes, stackptr = 0;
+ASTOffset *
+mung_single_type(const char **pdecls, const int **plexemes, int len, int haltstate, int offset) {
+    int substate = 0, flag = -1, *lexemes = *plexemes, stackptr = 0, idx = 0;
     AST *tmp = nil, *stack[128] = {nil};
-    for(int idx = 0; idx < len; idx ++){
+
+    if(issimpletypeast(lexemes[idx])) {
+        tmp = (AST *)hmalloc(sizeof(AST));
+        tmp->tag = lexemes[idx];
+        return ASTOffsetRight(tmp, idx);
+    } else if(lexemes[idx] == TIDENT) {
+        /* here, we need to check if the
+         * next element is a TOF, because
+         * we don't _really_ know if we
+         * have a complex type or a simple
+         * type based on the fact that we
+         * have an identifier here...
+         */
+    }
+
+    /* ok, now we're in a complex type here... */
+
+    for(flag = offset, idx = offset; idx < len; idx ++){
         switch(lexemes[idx]) {
             case TCHART:
             case TSTRT:
@@ -2838,7 +2855,7 @@ mung_single_type(const char **pdecls, const int **plexemes, int len, int haltsta
                 tmp = (AST *)hmalloc(sizeof(AST));
                 tmp->tag = lexemes[idx];
                 if(flag == -1) {
-                    return tmp;
+                    return ASTOffsetRight(tmp, idx);
                 } else {
                     if(substate == 1) {
                     } else if(substate = 2) {
@@ -2859,9 +2876,17 @@ mung_single_type(const char **pdecls, const int **plexemes, int len, int haltsta
                  * versus tuples (for sum types)
                  */
                 if(substate == 0) {
-                    /* procedure */
+                    /* procedure:
+                     * read single types and
+                     * a fat arrow (=>) until
+                     * we hit a TCPAREN
+                     */
                 } else if(substate == 2) {
-                    /* tuple for sum types */
+                    /* tuple for sum types:
+                     * read a type, then a TCOMMA,
+                     * then a type, until we hit 
+                     * TCPAREN
+                     */
                 } else {
                     substate = 99;
                 }
