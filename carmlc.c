@@ -64,7 +64,7 @@ typedef enum {
     TCOMPLEXTYPE, TCOMMA, TOARR, TCARR, // 56
     TARRAYLITERAL, TBIN, TOCT, THEX, // 60
     TARROW, TFATARROW, TCUT, TDOLLAR, // 64
-    TPIPEARROW, // 65
+    TPIPEARROW, TUSERT // 66
 } TypeTag;
 
 struct _AST {
@@ -2842,6 +2842,12 @@ mung_single_type(const char **pdecls, const int **plexemes, int len, int haltsta
          * type based on the fact that we
          * have an identifier here...
          */
+        if((idx + 1) < len && lexemes[idx + 1] != TOF) {
+            tmp = (AST *)hmalloc(sizeof(AST));
+            tmp->tag = TUSERT;
+            tmp->value = hstrdup(pdecls[idx];
+            return ASTOffsetRight(tmp, idx);
+        }
     }
 
     /* ok, now we're in a complex type here... */
