@@ -111,14 +111,37 @@ typedef struct _ASTEither {
     AST *right;
 } ASTEither;
 
+/* A simple type to hold an ASTEither and an
+ * offset into the stream as to where we saw
+ * said ASTEither. Originally this was just a
+ * wrapper, but I decided to linearize it, looking
+ * forward to what I'm toying wrt SRFI-57-style
+ * records
+ */
+
+typedef enum _ASTOFFSETTAG { ASTOFFSETLEFT, ASTOFFSETRIGHT } ASTOffsetTag;
+
+typedef struct _ASTOFFSET {
+    int offset;
+    ASTOffsetTag tag;
+    struct {
+        int line;
+        int error;
+        char *message;
+    } left;
+    AST *right;
+} ASTOffset;
+
 char *hstrdup(const char *);
 int next(FILE *, char *, int);
 AST *mung_declare(const char **, const int **, int, int);
-AST *mung_single_type(const char **, const int **, int, int);
+ASTOffset *mung_single_type(const char **, const int **, int, int, int);
 ASTEither *readexpression(FILE *);
 ASTEither *llreadexpression(FILE *, uint8_t);
 ASTEither *ASTLeft(int, int, char *);
 ASTEither *ASTRight(AST *);
+ASTOffset *ASTOffsetLeft(int, int, char *, int);
+ASTOffset *ASTOffsetRight(AST *, int);
 void walk(AST *, int);
 int compile(FILE *, FILE *);
 int iswhite(int);
@@ -209,6 +232,32 @@ ASTRight(AST *head) {
     ASTEither *ret = (ASTEither *)hmalloc(sizeof(ASTEither));
     ret->tag = ASTRIGHT;
     ret->right = head;
+    return ret;
+}
+
+ASTOffset *
+ASTOffsetLeft(int line, int error, char *message, int offset) {
+    /* CADT would be pretty easy here, but there's little
+     * point in doing what this compiler will do anyway eventually
+     * So I toil away, in the dark, writing out things I know how
+     * to automate, so that a brighter future may be created from
+     * those dark times when we languished in the C.
+     */
+    ASTOffset *head = (ASTOffset *)hmalloc(sizeof(ASTOffset));
+    head->tag = ASTOFFSETLEFT;
+    head->left.line = line;
+    head->left.error = error;
+    head->left.message = hstrdup(message);
+    head->offset = offset;
+    return head;
+}
+
+ASTOffset *
+ASTOffsetRight(AST *head, int offset) {
+    ASTOffset *ret = (ASTOffset *)hmalloc(sizeof(ASTOffset));
+    ret->tag = ASTOFFSETRIGHT;
+    ret->right = head;
+    ret->offset = offset;
     return ret;
 }
 
@@ -2845,7 +2894,7 @@ mung_single_type(const char **pdecls, const int **plexemes, int len, int haltsta
         if((idx + 1) < len && lexemes[idx + 1] != TOF) {
             tmp = (AST *)hmalloc(sizeof(AST));
             tmp->tag = TUSERT;
-            tmp->value = hstrdup(pdecls[idx];
+            tmp->value = hstrdup(pdecls[idx]);
             return ASTOffsetRight(tmp, idx);
         }
     }
@@ -2864,7 +2913,7 @@ mung_single_type(const char **pdecls, const int **plexemes, int len, int haltsta
                     return ASTOffsetRight(tmp, idx);
                 } else {
                     if(substate == 1) {
-                    } else if(substate = 2) {
+                    } else if(substate == 2) {
                         break;
                     } else {
                         substate = 99;
