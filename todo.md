@@ -5,6 +5,7 @@ A quick list of the current `TODO`s.
 1. **DONE** Add complex types to `val`
 1. **DONE** Add complex types to records
 1. **DONE** Add complex types to `let` 
+1. Review switch to Scala-style `[]` for types.
 1. Parse `@`/`declare` forms
 1. Update `val`, `let`, records to use the new `declare` type parser
 1. Make function definitions & `let` forms accept `begin` style function calls (i.e. avoid using `()`)
@@ -61,6 +62,37 @@ Additionally, I want the repl to be able to handle those sorts of calls as well:
     >>> def f x = sum x 10 # secretly returns void
     >>> f (f 10)
     _ : Int = 30
+
+ Also, this is broken:
+
+     >>> def foo x = { sum x x }
+    (define foo (parameter-list (identifier x))
+        (begin
+            (identifier sum)
+            (identifier x)
+            (identifier x)))
+    >>> def foo x = {
+    sum x x
+    }
+    (define foo (parameter-list (identifier x))
+        (begin
+            (call (identifier sum) (identifier x) (identifier x))))
+
+# Scala-style types
+
+ It's pretty appealing to me to use Scala-style type declarations... this would mean `@` would be freed from
+declaring types to simply adding annotations like in Scala... Furthermore, it would make parsing a bit easier 
+to boot. This would imply that:
+
+    @declare foo Array of Int => Int
+    def foo x = ...
+
+Would become:
+
+    def foo x: Array[Int] = ...
+
+I also wonder if we can still use `[]` for `indexGet` because the type language & the term language need-not
+be 1 to 1...
 
 # Syntax Updates
 
