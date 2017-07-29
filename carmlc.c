@@ -2100,7 +2100,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
              * and parse them as a collection of type declarations.
              */
 
-            tmp = mung_declare(decls, lexemes, curoffset, TNEWL);
+            tmp = mung_declare((const char **)decls, (const int **)lexemes, curoffset, TNEWL);
 
             head->children[0] = tmp;
 
@@ -2876,7 +2876,8 @@ mung_declare(const char **pdecls, const int **plexemes, int len, int haltstate) 
  */
 ASTOffset *
 mung_single_type(const char **pdecls, const int **plexemes, int len, int haltstate, int offset) {
-    int substate = 0, flag = -1, *lexemes = *plexemes, stackptr = 0, idx = 0;
+    int substate = 0, flag = -1, stackptr = 0, idx = 0;
+    const int *lexemes = *plexemes;
     AST *tmp = nil, *stack[128] = {nil};
 
     if(issimpletypeast(lexemes[idx])) {
