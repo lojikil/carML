@@ -5,6 +5,7 @@ A quick list of the current `TODO`s.
 1. **DONE** Add complex types to `val`
 1. **DONE** Add complex types to records
 1. **DONE** Add complex types to `let` 
+1. **DONE** Add `var` form
 1. Review switch to Scala-style `[]` for types.
 1. Parse `@`/`declare` forms
 1. Update `val`, `let`, records to use the new `declare` type parser

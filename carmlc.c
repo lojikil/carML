@@ -40,7 +40,7 @@ typedef enum {
     LB0, LI0, LUSE0, LF0, LC0, LR0, LW0, LOF0, LOF1,
     LDEQ0, LDEQ1, LDEQ2, LDEQ3, LDEC0, LDEC1, LDEC2, LDEC3,
     LDE0, LBOOL0, LBOOL1, LBOOL2, LREF0, LELSE0, LRE0, LTRUE2,
-    LWITH0, LWITH1, LWITH2, LDEC4, LUSE1, LUSE2
+    LWITH0, LWITH1, LWITH2, LDEC4, LUSE1, LUSE2, LVAR2
 } LexStates;
 
 /* AST tag enum.
@@ -64,7 +64,7 @@ typedef enum {
     TCOMPLEXTYPE, TCOMMA, TOARR, TCARR, // 56
     TARRAYLITERAL, TBIN, TOCT, THEX, // 60
     TARROW, TFATARROW, TCUT, TDOLLAR, // 64
-    TPIPEARROW, TUSERT // 66
+    TPIPEARROW, TUSERT, TVAR // 67
 } TypeTag;
 
 struct _AST {
@@ -1677,6 +1677,8 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LVAL1: 
                             if(cur == 'l') {
                                 substate = LVAL2;
+                            } else if(cur == 'r') {
+                                substate = LVAR2;
                             } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
                                 ungetc(cur, fdin);
                                 buf[idx - 1] = '\0';
@@ -1693,6 +1695,19 @@ next(FILE *fdin, char *buf, int buflen) {
                                 //debugln;
                                 ungetc(cur, fdin);
                                 return TVAL;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LVAR2:
+                            if(isident(cur)) {
+                                //debugln;
+                                substate = LIDENT0;
+                            } else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                //debugln;
+                                ungetc(cur, fdin);
+                                return TVAR;
                             } else {
                                 strncpy(buf, "malformed identifier", 512);
                                 return TERROR;
@@ -2460,8 +2475,9 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
         case TPOLY:
             break;
         case TVAL:
+        case TVAR:
             head = (AST *)hmalloc(sizeof(AST));
-            head->tag = TVAL;
+            head->tag = ltype;
             
             sometmp = readexpression(fdin);
 
@@ -3014,7 +3030,12 @@ walk(AST *head, int level) {
             printf(")");
             break;
         case TVAL:
-            printf("(define-value %s ", head->value);
+        case TVAR:
+            if(head->tag == TVAL) {
+                printf("(define-value %s ", head->value);
+            } else {
+                printf("(define-mutable-value %s ", head->value);
+            }
             walk(head->children[0], 0);
             if(head->lenchildren == 2) {
                 printf(" ");
