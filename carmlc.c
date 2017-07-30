@@ -2150,6 +2150,19 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 tmp = sometmp->right;
             }
 
+            /*
+             * so, we have to change this a bit. Instead of reading
+             * in just a list of idents, we need to accept that there
+             * can be : and => in here as well. Basically, we want to
+             * be able to parse this:
+             * 
+             * def foo x : int bar : array of int => int = {
+             *     # ...
+             * }
+             * 
+             * this same code could then be used to make @ work, even
+             * if the current stream idea in @ is nicer
+             */
             while(tmp->tag == TIDENT) {
                 vectmp[idx++] = tmp;
                 sometmp = readexpression(fdin);
@@ -2886,6 +2899,7 @@ mung_declare(const char **pdecls, const int **plexemes, int len, int haltstate) 
             
         }
     }
+    return nil;
 }
 
 /* read in a single type, and return it as an AST node
@@ -3001,6 +3015,7 @@ mung_single_type(const char **pdecls, const int **plexemes, int len, int haltsta
                 break;
         }
     }
+    return ASTOffsetRight(tmp, idx);
 }
 
 void
