@@ -2122,6 +2122,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             return ASTRight(head);
         case TFN:
         case TDEF:
+            int defstate = 0;
             head = (AST *) hmalloc(sizeof(AST));
             head->tag = ltype;
 
@@ -2164,6 +2165,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
              * if the current stream idea in @ is nicer
              */
             while(tmp->tag == TIDENT) {
+
                 vectmp[idx++] = tmp;
                 sometmp = readexpression(fdin);
 
@@ -2171,6 +2173,65 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                     return sometmp;
                 } else {
                     tmp = sometmp->right;
+                }
+
+                switch(defstate) {
+                    case 0: // state state
+                        if(tmp->tag != TIDENT) {
+                            return ASTLeft(0, 0, "parser error: a `DEF` parameter list must begin with an IDENT");
+                        } else {
+                            defstate = 1;
+                        }
+                        break;
+                    case 1: // identifier
+                        if(tmp->tag == TCOLON) {
+                            // specify a type
+                            defstate = 2;
+                        } else if(tmp->tag == TFATARROW) {
+                            // specify a return type
+                            defstate = 6;
+                        } else if(tmp->tag == TEQ) {
+                            // start definition
+                            defstate = 7;
+                        } else {
+                            // parser error
+                            return ASTLeft(0, 0, "parser error: a `DEF` parameter list IDENT must be followed by another IDENT, :, =>, or = ");
+                        }
+                        break;
+                    case 2: // colon (type specifier)
+                        /* this is where it can get murky, because indentifiers
+                         * can be types too. It would be easy to say "types must
+                         * be capitialised," but I feel like that would be cheating
+                         * (although, honestly, not the worst idea; it would make
+                         * types easily identified visually... ah, but then how would
+                         * modules on those types work? Lower case?)
+                         */
+                        if(issimpletype(tmp->tag)) {
+                            // simple types can never have a TOF
+                            defstate = 1; 
+                        } else if(iscomplextype(tmp->tag)) {
+                            // check for a TOF
+                            // gonna get messy here
+                            defstate = 3;
+                        } else {
+                            // parser error
+                            return ASTLeft(0, 0, "parser error: a `DEF` parameter list : must be followed by a type");
+                        }
+                        break;
+                    case 3: // complex type
+                        /* interestingly, because types can have
+                         * any case, the grammar becomes context dependent
+                         * right here. I think this will need some consideration
+                         */
+                        break;
+                    case 4: // of
+                        break;
+                    case 5: // next word
+                        break;
+                    case 6: // fatarrow
+                        break;
+                    case 7: // =
+                        break;
                 }
 
             }
