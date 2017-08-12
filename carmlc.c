@@ -40,7 +40,7 @@ typedef enum {
     LB0, LI0, LUSE0, LF0, LC0, LR0, LW0, LOF0, LOF1,
     LDEQ0, LDEQ1, LDEQ2, LDEQ3, LDEC0, LDEC1, LDEC2, LDEC3,
     LDE0, LBOOL0, LBOOL1, LBOOL2, LREF0, LELSE0, LRE0, LTRUE2,
-    LWITH0, LWITH1, LWITH2, LDEC4, LUSE1, LUSE2, LVAR2
+    LWITH0, LWITH1, LWITH2, LDEC4, LUSE1, LUSE2, LVAR2, LTAG0
 } LexStates;
 
 /* AST tag enum.
@@ -680,6 +680,9 @@ next(FILE *fdin, char *buf, int buflen) {
                                     substate = LW0;
                                     break;
                                 default:
+                                    if(cur >= 'A' && cur <= 'Z') {
+                                        substate = LTAG0;
+                                    }
                                     substate = LIDENT0;
                                     break;
                             }
@@ -1834,18 +1837,26 @@ next(FILE *fdin, char *buf, int buflen) {
                                 return TERROR;
                             }
                             break;
+                        case LTAG0:
+                            tagoident = TTAG;
+                            substate = LTAGIDENT;
+                            break;
                         case LIDENT0:
+                            tagorident = TIDENT;
+                            substate = LTAGIDENT;
+                            break;
+                        case LTAGIDENT:
                             //printf("cur == %c\n", cur);
                             if(idx > 0 && (iswhite(buf[idx - 1]) || buf[idx - 1] == '\n' || isbrace(buf[idx - 1]))) {
                                 //debugln;
                                 ungetc(cur, fdin);
                                 buf[idx - 1] = '\0';
                                 //printf("idx: %d, buffer: %s\n", idx - 1, buf);
-                                return TIDENT;
+                                return tagorident;
                             } else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
                                 ungetc(cur, fdin);
                                 buf[idx - 1] = '\0';
-                                return TIDENT;
+                                return tagorident;
                             } else if(!isident(cur)) {
                                 strncpy(buf, "malformed identifier", 512);
                                 return TERROR;
