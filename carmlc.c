@@ -40,7 +40,8 @@ typedef enum {
     LB0, LI0, LUSE0, LF0, LC0, LR0, LW0, LOF0, LOF1,
     LDEQ0, LDEQ1, LDEQ2, LDEQ3, LDEC0, LDEC1, LDEC2, LDEC3,
     LDE0, LBOOL0, LBOOL1, LBOOL2, LREF0, LELSE0, LRE0, LTRUE2,
-    LWITH0, LWITH1, LWITH2, LDEC4, LUSE1, LUSE2, LVAR2, LTAG0
+    LWITH0, LWITH1, LWITH2, LDEC4, LUSE1, LUSE2, LVAR2, LTAG0,
+    LTAGIDENT
 } LexStates;
 
 /* AST tag enum.
@@ -64,7 +65,7 @@ typedef enum {
     TCOMPLEXTYPE, TCOMMA, TOARR, TCARR, // 56
     TARRAYLITERAL, TBIN, TOCT, THEX, // 60
     TARROW, TFATARROW, TCUT, TDOLLAR, // 64
-    TPIPEARROW, TUSERT, TVAR // 67
+    TPIPEARROW, TUSERT, TVAR, TTAG // 68
 } TypeTag;
 
 struct _AST {
@@ -336,7 +337,8 @@ next(FILE *fdin, char *buf, int buflen) {
      * item, so that we can return identifiers or
      * numbers.
      */
-    int state = 0, rc = 0, cur = 0, idx = 0, substate = 0;
+    int state = 0, rc = 0, cur = 0, idx = 0, substate = 0, tagorident = TIDENT;
+    int defstate = 0;
     cur = fgetc(fdin);
 
     /* we don't really care about whitespace other than
@@ -682,8 +684,9 @@ next(FILE *fdin, char *buf, int buflen) {
                                 default:
                                     if(cur >= 'A' && cur <= 'Z') {
                                         substate = LTAG0;
+                                    } else {
+                                        substate = LIDENT0;
                                     }
-                                    substate = LIDENT0;
                                     break;
                             }
                             break;
@@ -1838,7 +1841,7 @@ next(FILE *fdin, char *buf, int buflen) {
                             }
                             break;
                         case LTAG0:
-                            tagoident = TTAG;
+                            tagorident = TTAG;
                             substate = LTAGIDENT;
                             break;
                         case LIDENT0:
@@ -2133,7 +2136,6 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             return ASTRight(head);
         case TFN:
         case TDEF:
-            int defstate = 0;
             head = (AST *) hmalloc(sizeof(AST));
             head->tag = ltype;
 
@@ -2175,6 +2177,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
              * this same code could then be used to make @ work, even
              * if the current stream idea in @ is nicer
              */
+            #ifdef NEVERDEF
             while(tmp->tag == TIDENT) {
 
                 vectmp[idx++] = tmp;
@@ -2246,6 +2249,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 }
 
             }
+            #endif
 
             if(tmp->tag != TEQ) {
                 return ASTLeft(0, 0, "parser error: a `DEF` parameter list *must* be followed by `=`");
@@ -2436,10 +2440,11 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             return ASTRight(head);
         case TCOREFORM:
             break;
+        case TTAG:
         case TIDENT:
             head = (AST *)hmalloc(sizeof(AST));
             head->value = hstrdup(buffer);
-            head->tag = TIDENT;
+            head->tag = ltype;
             return ASTRight(head);
         case TCALL:
             break;
@@ -3216,6 +3221,9 @@ walk(AST *head, int level) {
             break;
         case TIDENT:
             printf("(identifier %s)", head->value);
+            break;
+        case TTAG:
+            printf("(tag %s)", head->value);
             break;
         case TBOOL:
             printf("(bool ");
