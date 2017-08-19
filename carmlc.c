@@ -2367,7 +2367,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 if(tmp->tag == TEND) {
                     //debugln;
                     break;
-                } else if(tmp->tag == TIDENT) {
+                } else if(tmp->tag == TIDENT || tmp->tag == TTAG) {
                     /* NOTE: general strategy for emitting a CALL
                      * read values into vectmp, but mark the start
                      * of the TCALL (flag == 0), and when we hit
