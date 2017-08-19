@@ -295,7 +295,7 @@ istypeast(int tag) {
         case TDEQUET:
         case TFLOATT:
         case TSTRT:
-        case TIDENT: // user types :|
+        case TTAG: // user types 
         case TBOOLT:
             return 1;
         default:
@@ -2175,6 +2175,9 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
              * 
              * this same code could then be used to make @ work, even
              * if the current stream idea in @ is nicer
+             * actually, should just steal the code from records for 
+             * here... besides, the same code could then be used for
+             * declare... 
              */
             #ifdef NEVERDEF
             while(tmp->tag == TIDENT) {
@@ -2212,13 +2215,6 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         }
                         break;
                     case 2: // colon (type specifier)
-                        /* this is where it can get murky, because indentifiers
-                         * can be types too. It would be easy to say "types must
-                         * be capitialised," but I feel like that would be cheating
-                         * (although, honestly, not the worst idea; it would make
-                         * types easily identified visually... ah, but then how would
-                         * modules on those types work? Lower case?)
-                         */
                         if(issimpletype(tmp->tag)) {
                             // simple types can never have a TOF
                             defstate = 1; 
