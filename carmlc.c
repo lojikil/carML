@@ -310,7 +310,6 @@ issimpletypeast(int tag) {
         case TCHART:
         case TFLOATT:
         case TSTRT:
-        case TIDENT: // user types :|
         case TBOOLT:
             return 1;
         default:
@@ -323,7 +322,7 @@ iscomplextypeast(int tag) {
     switch(tag) {
         case TARRAY:
         case TDEQUET:
-        case TIDENT: // user types :|
+        case TTAG: // user types :|
             return 1;
         default:
             return 0;
@@ -2223,9 +2222,9 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         if(issimpletype(tmp->tag)) {
                             // simple types can never have a TOF
                             defstate = 1; 
+                            // need to collapse state here
                         } else if(iscomplextype(tmp->tag)) {
                             // check for a TOF
-                            // gonna get messy here
                             defstate = 3;
                         } else {
                             // parser error
@@ -2464,7 +2463,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 tmp = (AST *)hmalloc(sizeof(AST));
                 tmp->tag = TUNIT;
                 return ASTRight(tmp);
-            } else if(tmp->tag != TIDENT) {
+            } else if(tmp->tag != TIDENT && tmp->tag != TTAG) {
                 return ASTLeft(0, 0, "cannot call non-identifier object");
             }
 
