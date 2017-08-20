@@ -65,7 +65,8 @@ typedef enum {
     TCOMPLEXTYPE, TCOMMA, TOARR, TCARR, // 56
     TARRAYLITERAL, TBIN, TOCT, THEX, // 60
     TARROW, TFATARROW, TCUT, TDOLLAR, // 64
-    TPIPEARROW, TUSERT, TVAR, TTAG // 68
+    TPIPEARROW, TUSERT, TVAR, TTAG, // 68
+    TPARAMDEF, // 69
 } TypeTag;
 
 struct _AST {
@@ -2180,14 +2181,14 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
              * declare... 
              */
 
-            while(tmp->tag != TEND) {
+            while(tmp->tag != TEQ) {
                 sometmp = llreadexpression(fdin, 1);
                 
                 if(sometmp->tag == ASTLEFT) {
                     return sometmp;
-                } else if(sometmp->right->tag == TNEWL || sometmp->right->tag == TSEMI) {
+                } else if(sometmp->right->tag == TCOMMA) {
                     continue;
-                } else if(sometmp->right->tag != TIDENT && sometmp->right->tag != TEND) {
+                } else if(sometmp->right->tag != TIDENT && sometmp->right->tag != TCOLON) {
                     printf("%d", sometmp->right->tag);
                     return ASTLeft(0, 0, "a `def`'s members *must* be identifiers: `name (: type)`"); 
                 } else if(sometmp->right->tag == TEND) {
@@ -2300,7 +2301,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             }
                         }
                     }
-                } else if(sometmp->right->tag == TNEWL || sometmp->right->tag == TSEMI) {
+                } else if(sometmp->right->tag == TCOMMA) {
                     tmp = (AST *)hmalloc(sizeof(AST));
                     tmp->tag = TPARAMDEF;
                     tmp->lenchildren = 1;
@@ -2311,7 +2312,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                     /* we didn't see a `:` or a #\n, so that's
                      * an error.
                      */
-                    return ASTLeft(0, 0, "malformed record definition.");
+                    return ASTLeft(0, 0, "malformed parameter list");
                 }
 
             }
