@@ -2179,72 +2179,151 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
              * here... besides, the same code could then be used for
              * declare... 
              */
-            #ifdef NEVERDEF
-            while(tmp->tag == TIDENT) {
 
-                vectmp[idx++] = tmp;
-                sometmp = readexpression(fdin);
-
+            while(tmp->tag != TEND) {
+                sometmp = llreadexpression(fdin, 1);
+                
                 if(sometmp->tag == ASTLEFT) {
                     return sometmp;
+                } else if(sometmp->right->tag == TNEWL || sometmp->right->tag == TSEMI) {
+                    continue;
+                } else if(sometmp->right->tag != TIDENT && sometmp->right->tag != TEND) {
+                    printf("%d", sometmp->right->tag);
+                    return ASTLeft(0, 0, "a `def`'s members *must* be identifiers: `name (: type)`"); 
+                } else if(sometmp->right->tag == TEND) {
+                    break;
                 } else {
                     tmp = sometmp->right;
                 }
+                vectmp[idx++] = tmp;
 
-                switch(defstate) {
-                    case 0: // state state
-                        if(tmp->tag != TIDENT) {
-                            return ASTLeft(0, 0, "parser error: a `DEF` parameter list must begin with an IDENT");
-                        } else {
-                            defstate = 1;
+                sometmp = llreadexpression(fdin, 1);
+                if(sometmp->tag == ASTLEFT) {
+                    return sometmp;
+                } else if(sometmp->right->tag == TCOLON) {
+                    sometmp = llreadexpression(fdin, 1);
+                    if(sometmp->tag == ASTLEFT) {
+                        return sometmp;
+                    } if(!istypeast(sometmp->right->tag)) {
+                        return ASTLeft(0, 0, "a `:` form *must* be followed by a type definition...");
+                    } else if(issimpletypeast(sometmp->right->tag)) {
+                        vectmp[idx] = sometmp->right;
+                        sometmp = llreadexpression(fdin, 1);
+                        if(sometmp->tag == ASTLEFT) {
+                            return sometmp;
+                        } else if(sometmp->right->tag != TCOMMA) {
+                            return ASTLeft(0, 0, "a simple type *must* be followed by a new line or semi-colon...");
                         }
-                        break;
-                    case 1: // identifier
-                        if(tmp->tag == TCOLON) {
-                            // specify a type
-                            defstate = 2;
-                        } else if(tmp->tag == TFATARROW) {
-                            // specify a return type
-                            defstate = 6;
-                        } else if(tmp->tag == TEQ) {
-                            // start definition
-                            defstate = 7;
-                        } else {
-                            // parser error
-                            return ASTLeft(0, 0, "parser error: a `DEF` parameter list IDENT must be followed by another IDENT, :, =>, or = ");
-                        }
-                        break;
-                    case 2: // colon (type specifier)
-                        if(issimpletype(tmp->tag)) {
-                            // simple types can never have a TOF
-                            defstate = 1; 
-                            // need to collapse state here
-                        } else if(iscomplextype(tmp->tag)) {
-                            // check for a TOF
-                            defstate = 3;
-                        } else {
-                            // parser error
-                            return ASTLeft(0, 0, "parser error: a `DEF` parameter list : must be followed by a type");
-                        }
-                        break;
-                    case 3: // complex type
-                        /* interestingly, because types can have
-                         * any case, the grammar becomes context dependent
-                         * right here. I think this will need some consideration
+                        /* we have determined a `val <name> : <simple-type>` form
+                         * here, so store them in the record's definition.
                          */
-                        break;
-                    case 4: // of
-                        break;
-                    case 5: // next word
-                        break;
-                    case 6: // fatarrow
-                        break;
-                    case 7: // =
-                        break;
+                        tmp = (AST *)hmalloc(sizeof(AST));
+                        tmp->tag = TPARAMDEF;
+                        tmp->lenchildren = 2;
+                        tmp->children = (AST **)hmalloc(sizeof(AST *) * 2);
+                        tmp->children[0] = vectmp[idx - 1];
+                        tmp->children[1] = vectmp[idx];
+                        vectmp[idx - 1] = tmp;
+                    } else {
+                        /* complex type...
+                         h*/
+                        flag = idx;
+                        /* we hit a complex type,
+                         * now we're looking for 
+                         * either `of` or `=`.
+                         */
+                        vectmp[idx++] = sometmp->right;
+                        typestate = 1; 
+                        while(sometmp->right->tag != TEQ) {
+
+                            sometmp = llreadexpression(fdin, 1);
+                            if(sometmp->right->tag == ASTLEFT) {
+                                return sometmp;
+                            }
+
+                            switch(typestate) {
+                                case 0: // awaiting a type
+                                    if(!istypeast(sometmp->right->tag)) {
+                                        return ASTLeft(0, 0, "expected type in `:` form");
+                                    } else if(issimpletypeast(sometmp->right->tag)) {
+                                        typestate = 2;
+                                    } else {
+                                        typestate = 1;
+                                    }
+                                    vectmp[idx++] = sometmp->right;
+                                    break;
+                                case 1: // awaiting either TOF or an end
+                                    if(sometmp->right->tag == TOF) {
+                                        typestate = 0;
+                                    } else if(sometmp->right->tag == TCOMMA) {
+                                        typestate = 3;
+                                    } else {
+                                        return ASTLeft(0, 0, "expected either a comma or an `of`");
+                                    }
+                                    break;
+                                case 2:
+                                case 3:
+                                    break;
+                            }
+                            if(typestate == 2 || typestate == 3) {
+                                break;
+                            }
+                        }
+
+                        /* collapse the above type states here... */
+                        AST *ctmp = (AST *) hmalloc(sizeof(AST));
+                        ctmp->tag = TCOMPLEXTYPE;
+                        ctmp->lenchildren = idx - flag;
+                        ctmp->children = (AST **) hmalloc(sizeof(AST *) * ctmp->lenchildren);
+                        for(int cidx = 0, tidx = flag, tlen = ctmp->lenchildren; cidx < tlen; cidx++, tidx++) {
+                            ctmp->children[cidx] = vectmp[tidx];
+                        }
+
+                        /* create the record field defition holder */
+                        tmp = (AST *)hmalloc(sizeof(AST));
+                        tmp->tag = TPARAMDEF;
+                        tmp->lenchildren = 2;
+                        tmp->children = (AST **)hmalloc(sizeof(AST *) * 2);
+                        tmp->children[0] = vectmp[flag - 1];
+                        tmp->children[1] = ctmp;
+                        vectmp[flag - 1] = tmp;
+                        idx = flag;
+                        flag = 0;
+                        if(typestate != 3) {
+
+                            sometmp = llreadexpression(fdin, 1);
+
+                            if(sometmp->tag == ASTLEFT) {
+                                return sometmp;
+                            } else if(sometmp->right->tag != TCOMMA && sometmp->right->tag != TFATARROW && sometmp->right->tag != TEQ) {
+                                return ASTLeft(0, 0, "a `parameter` type definition *must* be followed by a comma, a fat-arrow or an equal");
+                            }
+                        }
+                    }
+                } else if(sometmp->right->tag == TNEWL || sometmp->right->tag == TSEMI) {
+                    tmp = (AST *)hmalloc(sizeof(AST));
+                    tmp->tag = TPARAMDEF;
+                    tmp->lenchildren = 1;
+                    tmp->children = (AST **)hmalloc(sizeof(AST *));
+                    tmp->children[0] = vectmp[idx - 1];
+                    vectmp[idx - 1] = tmp;
+                } else {
+                    /* we didn't see a `:` or a #\n, so that's
+                     * an error.
+                     */
+                    return ASTLeft(0, 0, "malformed record definition.");
                 }
 
             }
-            #endif
+            /* so, we've constructed a list of parameter members.
+             * now, we just need to actually _make_ the parameter
+             * structure now.
+             */
+            head->lenchildren = idx;
+            head->children = (AST **)hmalloc(sizeof(AST *) * idx);
+            for(int i = 0; i < idx; i++){
+                head->children[i] = vectmp[i];
+            }
 
             if(tmp->tag != TEQ) {
                 return ASTLeft(0, 0, "parser error: a `DEF` parameter list *must* be followed by `=`");
@@ -2880,7 +2959,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             }
                         }
                     }
-                } else if(sometmp->right->tag == TNEWL) {
+                } else if(sometmp->right->tag == TNEWL || sometmp->right->tag == TSEMI) {
                     tmp = (AST *)hmalloc(sizeof(AST));
                     tmp->tag = TRECDEF;
                     tmp->lenchildren = 1;
