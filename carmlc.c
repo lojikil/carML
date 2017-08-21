@@ -2182,20 +2182,49 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
              */
 
             while(tmp->tag != TEQ) {
-                sometmp = llreadexpression(fdin, 1);
-                
-                if(sometmp->tag == ASTLEFT) {
-                    return sometmp;
-                } else if(sometmp->right->tag == TCOMMA) {
-                    continue;
-                } else if(sometmp->right->tag != TIDENT && sometmp->right->tag != TCOLON) {
-                    printf("%d", sometmp->right->tag);
-                    return ASTLeft(0, 0, "a `def`'s members *must* be identifiers: `name (: type)`"); 
-                } else if(sometmp->right->tag == TEND) {
-                    break;
-                } else {
-                    tmp = sometmp->right;
+
+                switch(typestate) {
+                    case 0:
+                        sometmp = readexpression(fdin);
+
+                        if(sometmp->tag == ASTLEFT) {
+                            return sometmp;
+                        } else if(sometmp->right->tag == TIDENT) {
+                            // name
+                            typestate = 1;
+                        } else if(sometmp->right->tag == TFATARROW) {
+                            // return type
+                            typestate = 2;
+                        } else if(sometmp->right->tag == TEQ) {
+                            // body
+                            typestate = 3;
+                        } else {
+                            return ASTLeft(0, 0, "`def` must have either a parameter list, a fat-arrow, or an equals sign.");
+                        } 
+                        break;
+                    case 1: // TIDENT
+                        sometmp = readexpression(fdin);
+                        flag = idx;
+                        if(sometmp->tag == ASTLEFT) {
+                            return sometmp;
+                        } else if(sometmp->right->tag == TIDENT) {
+                            typestate = 1;
+                            flag = idx;
+                            vectmp[idx] = sometmp->right;
+                            idx++;
+                        } else if(sometmp->right->tag == FATARROW) {
+                            typestate = 2;
+                        } else if(sometmp->right->tag == TEQ) {
+                            typestate = 3;
+                        } else if(sometmp->right->tag == TCOLON) {
+                            typestate = 4;
+                        } else {
+                            return ASTLeft(0, 0, "`def` identifiers *must* be followed by `:`, `=>`, or `=`");
+                        }
+                        break;
+                    case 2: // TFATARROW, return
                 }
+
                 vectmp[idx++] = tmp;
 
                 sometmp = llreadexpression(fdin, 1);
@@ -2212,8 +2241,8 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         sometmp = llreadexpression(fdin, 1);
                         if(sometmp->tag == ASTLEFT) {
                             return sometmp;
-                        } else if(sometmp->right->tag != TCOMMA) {
-                            return ASTLeft(0, 0, "a simple type *must* be followed by a new line or semi-colon...");
+                        } else if(sometmp->right->tag != TCOMMA && sometmp->right->tag != TFATARROW && sometmp->right->tag != TEQ) {
+                            return ASTLeft(0, 0, "a simple type *must* be followed by a comma, a fat-arrow or an equals sign...");
                         }
                         /* we have determined a `val <name> : <simple-type>` form
                          * here, so store them in the record's definition.
