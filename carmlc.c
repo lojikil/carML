@@ -2203,8 +2203,10 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         } 
                         break;
                     case 1: // TIDENT
-                        sometmp = readexpression(fdin);
+                        vectmp[idx] = sometmp->right;
                         flag = idx;
+                        idx++;
+                        sometmp = readexpression(fdin);
                         if(sometmp->tag == ASTLEFT) {
                             return sometmp;
                         } else if(sometmp->right->tag == TIDENT) {
@@ -2223,6 +2225,11 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         }
                         break;
                     case 2: // TFATARROW, return
+                        break;
+                    case 3: // TEQ, start function
+                        break;
+                    case 4: // type
+                        break;
                 }
 
                 vectmp[idx++] = tmp;

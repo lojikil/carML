@@ -34,6 +34,7 @@ A quick list of the current `TODO`s.
 1. Error handling: `Either`
 1. Lexer-as-stream
 1. in the base C compiler & carML self-hosting one, include a defined list of compiler errors with friendly data
+1. add line numbers
 
 # Begin-style function calls
 
