@@ -2138,6 +2138,8 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
         case TDEF:
             head = (AST *) hmalloc(sizeof(AST));
             head->tag = ltype;
+            int loopflag = 1;
+            AST *params = nil;
 
             if(ltype == TDEF){
                 ltmp = next(fdin, &buffer[0], 512);
@@ -2155,7 +2157,8 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
              * functions. I wonder if there should be a specific 
              * syntax for side-effecting functions...
              */
-
+            
+            #ifdef NEVERDEF
             sometmp = readexpression(fdin);
 
             if(sometmp->tag == ASTLEFT) {
@@ -2163,6 +2166,8 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             } else {
                 tmp = sometmp->right;
             }
+            #endif
+
 
             /*
              * so, we have to change this a bit. Instead of reading
@@ -2181,57 +2186,94 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
              * declare... 
              */
 
-            while(tmp->tag != TEQ) {
+            while(loopflag) {
 
                 switch(typestate) {
                     case 0:
                         sometmp = readexpression(fdin);
-
+                        debugln;
                         if(sometmp->tag == ASTLEFT) {
                             return sometmp;
                         } else if(sometmp->right->tag == TIDENT) {
                             // name
+                            debugln;
                             typestate = 1;
                         } else if(sometmp->right->tag == TFATARROW) {
                             // return type
+                            debugln;
                             typestate = 2;
                         } else if(sometmp->right->tag == TEQ) {
                             // body
+                            debugln;
                             typestate = 3;
                         } else {
+                            debugln;
+                            printf("tag == %d\n", sometmp->right->tag);
                             return ASTLeft(0, 0, "`def` must have either a parameter list, a fat-arrow, or an equals sign.");
                         } 
+                        debugln;
+                        printf("typestate == %d\n", typestate);
                         break;
                     case 1: // TIDENT
+                        debugln;
                         vectmp[idx] = sometmp->right;
                         flag = idx;
                         idx++;
                         sometmp = readexpression(fdin);
+                        debugln;
                         if(sometmp->tag == ASTLEFT) {
+                            debugln;
                             return sometmp;
                         } else if(sometmp->right->tag == TIDENT) {
+                            debugln;
                             typestate = 1;
-                            flag = idx;
-                            vectmp[idx] = sometmp->right;
-                            idx++;
-                        } else if(sometmp->right->tag == FATARROW) {
+                            //flag = idx;
+                            //vectmp[idx] = sometmp->right;
+                            //idx++;
+                        } else if(sometmp->right->tag == TFATARROW) {
+                            debugln;
                             typestate = 2;
                         } else if(sometmp->right->tag == TEQ) {
+                            debugln;
                             typestate = 3;
                         } else if(sometmp->right->tag == TCOLON) {
+                            debugln;
                             typestate = 4;
                         } else {
+                            debugln;
+                            printf("tag == %d\n", sometmp->right->tag);
                             return ASTLeft(0, 0, "`def` identifiers *must* be followed by `:`, `=>`, or `=`");
                         }
                         break;
                     case 2: // TFATARROW, return
                         break;
                     case 3: // TEQ, start function
+                        /* mark the parameter list loop as closed,
+                         * and begin to process the elements on the
+                         * stack as a parameter list.
+                         */
+                        debugln;
+                        loopflag = 0;
+                        if(idx > 0) {
+                            debugln;
+                            params = (AST *) hmalloc(sizeof(AST));
+                            params->children = (AST **) hmalloc(sizeof(AST *) * idx);
+                            for(int i = 0; i < idx; i++) {
+                                params->children[i] = vectmp[i];
+                            }
+                            debugln;
+
+                            params->tag = TPARAMLIST;
+                            params->lenchildren = idx;
+                            debugln;
+                        }
                         break;
                     case 4: // type
                         break;
                 }
+            }
 
+                #ifdef NEVERDEF
                 vectmp[idx++] = tmp;
 
                 sometmp = llreadexpression(fdin, 1);
@@ -2366,6 +2408,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 return ASTLeft(0, 0, "parser error: a `DEF` parameter list *must* be followed by `=`");
             }
 
+
             /* convert `vectmp` into a TPARAMLIST AST node.
              */
 
@@ -2383,6 +2426,8 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 params->lenchildren = idx;
                 //debugln;
             }
+
+            #endif
 
             /* ok, now that we have the parameter list and the syntactic `=` captured,
              * we read a single expression, which is the body of the procedure we're
