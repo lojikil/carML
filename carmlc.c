@@ -2227,9 +2227,6 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         } else if(sometmp->right->tag == TIDENT) {
                             debugln;
                             typestate = 1;
-                            //flag = idx;
-                            //vectmp[idx] = sometmp->right;
-                            //idx++;
                         } else if(sometmp->right->tag == TFATARROW) {
                             debugln;
                             typestate = 2;
@@ -2244,8 +2241,6 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             printf("tag == %d\n", sometmp->right->tag);
                             return ASTLeft(0, 0, "`def` identifiers *must* be followed by `:`, `=>`, or `=`");
                         }
-                        break;
-                    case 2: // TFATARROW, return
                         break;
                     case 3: // TEQ, start function
                         /* mark the parameter list loop as closed,
@@ -2268,7 +2263,31 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             debugln;
                         }
                         break;
+                    case 2: // TFATARROW, return
                     case 4: // type
+
+                        sometmp = readexpression(fdin, 1);
+
+                        if(sometmp->tag == ASTLEFT) {
+                            return sometmp;
+                        } else if(!istypeast(sometmp->right->tag)) {
+                            return ASTLeft(0, 0, "a `:` form *must* be followed by a type definition...");
+                        } else if(issimpletypeast(sometmp->right->tag)) { // simple type
+                            tmp = (AST *)hmalloc(sizeof(AST));
+                            tmp->tag = TPARAMDEF;
+                            tmp->lenchildren = 2;
+                            tmp->children = (AST **)hmalloc(sizeof(AST *) * 2);
+                            tmp->children[0] = vectmp[idx - 1];
+                            tmp->children[1] = sometmp->right;
+                            if(typestate == 2) {
+                                vectmp[idx - 1] = tmp;
+                            } else {
+                                returntype = tmp;
+                            }
+                        } else { // complex type
+                            vectmp[idx] = sometmp->right;
+                            typestate = 5;
+                        }
                         break;
                 }
             }
