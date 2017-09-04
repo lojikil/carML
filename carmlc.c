@@ -4,7 +4,14 @@
 #include <gc.h>
 
 #define hmalloc GC_MALLOC
+
+#ifndef NODEBUG
 #define debugln printf("dying here on line %d?\n", __LINE__);
+#define dprintf(...) printf(__VA_ARGS__)
+#else
+#define debugln
+#define dprintf(...)
+#endif
 
 #define nil NULL
 #define nul '\0'
@@ -2209,11 +2216,11 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             typestate = 3;
                         } else {
                             debugln;
-                            printf("tag == %d\n", sometmp->right->tag);
+                            dprintf("tag == %d\n", sometmp->right->tag);
                             return ASTLeft(0, 0, "`def` must have either a parameter list, a fat-arrow, or an equals sign.");
                         } 
                         debugln;
-                        printf("typestate == %d\n", typestate);
+                        dprintf("typestate == %d\n", typestate);
                         break;
                     case 1: // TIDENT
                         debugln;
@@ -2236,11 +2243,11 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             typestate = 3;
                         } else if(sometmp->right->tag == TCOLON) {
                             debugln;
-                            printf("sometmp type: %d\n", sometmp->right->tag);
+                            dprintf("sometmp type: %d\n", sometmp->right->tag);
                             typestate = 4;
                         } else {
                             debugln;
-                            printf("tag == %d\n", sometmp->right->tag);
+                            dprintf("tag == %d\n", sometmp->right->tag);
                             return ASTLeft(0, 0, "`def` identifiers *must* be followed by `:`, `=>`, or `=`");
                         }
                         break;
@@ -2267,14 +2274,14 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         break;
                     case 2: // TFATARROW, return
                     case 4: // type
-                        printf("%%debug: typestate = %d, sometmp->right->tag = %d\n", typestate, sometmp->right->tag);
+                        dprintf("%%debug: typestate = %d, sometmp->right->tag = %d\n", typestate, sometmp->right->tag);
 
                         sometmp = readexpression(fdin);
 
                         if(sometmp->tag == ASTLEFT) {
                             return sometmp;
                         } else if(!istypeast(sometmp->right->tag)) {
-                            printf("type: %d\n", sometmp->right->tag);
+                            dprintf("type: %d\n", sometmp->right->tag);
                             return ASTLeft(0, 0, "a `:` form *must* be followed by a type definition...");
                         } else if(issimpletypeast(sometmp->right->tag)) { // simple type
                             tmp = (AST *)hmalloc(sizeof(AST));
