@@ -13,5 +13,5 @@ then
     esac
 fi
 
-echo -n "building carML/c carmlc.c"
-cc $EXTRAFLAGS -o carmlc carmlc.c -L ~/homebrew/lib/ -I ~/homebrew/include/ -lgc && echo " done" || echo " failed"
+echo "building carML/c carmlc.c"
+cc $EXTRAFLAGS -o carmlc carmlc.c -L ~/homebrew/lib/ -I ~/homebrew/include/ -lgc && echo "[build success]" || echo "[build failed]"

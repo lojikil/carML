@@ -2284,22 +2284,33 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             dprintf("type: %d\n", sometmp->right->tag);
                             return ASTLeft(0, 0, "a `:` form *must* be followed by a type definition...");
                         } else if(issimpletypeast(sometmp->right->tag)) { // simple type
-                            tmp = (AST *)hmalloc(sizeof(AST));
-                            tmp->tag = TPARAMDEF;
-                            tmp->lenchildren = 2;
-                            tmp->children = (AST **)hmalloc(sizeof(AST *) * 2);
-                            tmp->children[0] = vectmp[idx - 1];
-                            tmp->children[1] = sometmp->right;
                             if(typestate == 4) {
+                                tmp = (AST *)hmalloc(sizeof(AST));
+                                tmp->tag = TPARAMDEF;
+                                tmp->lenchildren = 2;
+                                tmp->children = (AST **)hmalloc(sizeof(AST *) * 2);
+                                tmp->children[0] = vectmp[idx - 1];
+                                tmp->children[1] = sometmp->right;
                                 vectmp[idx - 1] = tmp;
                                 typestate = 0;
                             } else {
-                                returntype = tmp;
+                                returntype = sometmp->right;
                                 typestate = 6;
                             }
                         } else { // complex type
                             vectmp[idx] = sometmp->right;
                             typestate = 5;
+                        }
+                        break;
+                    case 6:
+                        sometmp = readexpression(fdin);
+
+                        if(sometmp->tag == ASTLEFT) {
+                            return sometmp;
+                        } else if(sometmp->right->tag != TEQ) {
+                            return ASTLeft(0, 0, "a `=>` return type must be followed by an `=`");
+                        } else {
+                            typestate = 3;
                         }
                         break;
                 }
@@ -2479,8 +2490,14 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
              * - TPARAMLIST that holds our parameter names
              * - and some TExpression that represents our body
              */
-            head->children = (AST **)hmalloc(sizeof(AST *) * 2);
-            head->lenchildren = 2;
+            if(returntype != nil) {
+                head->children = (AST **)hmalloc(sizeof(AST *) * 3);
+                head->lenchildren = 3;
+                head->children[2] = returntype;
+            } else {
+                head->children = (AST **)hmalloc(sizeof(AST *) * 2);
+                head->lenchildren = 2;
+            }
             head->children[0] = params;
             head->children[1] = tmp;
             return ASTRight(head);
@@ -3099,14 +3116,6 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             }
             return ASTRight(head);
             break;
-        case TFALSE:
-            head = (AST *)hmalloc(sizeof(AST));
-            head->tag = TFALSE;
-            return ASTRight(head);
-        case TTRUE:
-            head = (AST *)hmalloc(sizeof(AST));
-            head->tag = TTRUE;
-            return ASTRight(head);
         case THEX:
         case TOCT:
         case TBIN:
@@ -3119,10 +3128,6 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             head->tag = ltype;
             head->value = hstrdup(buffer);
             return ASTRight(head);
-        case TEQ:
-            head = (AST *)hmalloc(sizeof(AST));
-            head->tag = TEQ;
-            return ASTRight(head);
         case TNEWL:
             if(!nltreatment) {
                 return llreadexpression(fdin, nltreatment);
@@ -3131,20 +3136,18 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 head->tag = TNEWL;
                 return ASTRight(head);
             }
+        case TFALSE:
+        case TTRUE:
+        case TEQ:
         case TCHART:
         case TSTRT:
         case TINTT:
         case TBOOLT:
+        case TCOLON:
+        case TSEMI:
+        case TFATARROW:
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = ltype;
-            return ASTRight(head);
-        case TCOLON:
-            head = (AST *)hmalloc(sizeof(AST));
-            head->tag = TCOLON;
-            return ASTRight(head);
-        case TSEMI:
-            head = (AST *)hmalloc(sizeof(AST));
-            head->tag = TSEMI;
             return ASTRight(head);
     }
     return ASTLeft(0, 0, "unable to parse statement"); 
@@ -3304,6 +3307,18 @@ walk(AST *head, int level) {
             }
             if(head->children[0] != nil) {
                 walk(head->children[0], level);
+            }
+
+            if(head->lenchildren == 3) {
+                // indent nicely
+                printf("\n");
+                for(; idx < level + 1; idx++) {
+                    printf("    ");
+                }
+
+                printf("(returns ");
+                walk(head->children[2], 0);
+                printf(")");
             }
             printf("\n");
             walk(head->children[1], level + 1);
