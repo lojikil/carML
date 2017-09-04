@@ -211,7 +211,6 @@ main(int ac, char **al) {
                 } else if(tmp->tag == TIDENT && !strncmp(tmp->value, "quit", 4)) {
                     break;
                 } else if(tmp->tag != TNEWL) {
-                    printf("tag number: %d\n", tmp->tag);
                     walk(tmp, 0);
                 }
                 printf("\n");
@@ -620,7 +619,7 @@ next(FILE *fdin, char *buf, int buflen) {
                     buf[idx++] = cur;
 
                     if(substate == LIDENT0 && (iswhite(cur) || cur == '\n' || isbrace(cur))) {
-                        debugln;
+                        //debugln;
                         ungetc(cur, fdin);
                         buf[idx - 1] = '\0';
                         return TIDENT;
