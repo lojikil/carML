@@ -204,6 +204,7 @@ main(int ac, char **al) {
                 } else if(tmp->tag == TIDENT && !strncmp(tmp->value, "quit", 4)) {
                     break;
                 } else if(tmp->tag != TNEWL) {
+                    printf("tag number: %d\n", tmp->tag);
                     walk(tmp, 0);
                 }
                 printf("\n");
@@ -2139,7 +2140,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             head = (AST *) hmalloc(sizeof(AST));
             head->tag = ltype;
             int loopflag = 1;
-            AST *params = nil;
+            AST *params = nil, *returntype = nil;
 
             if(ltype == TDEF){
                 ltmp = next(fdin, &buffer[0], 512);
@@ -2235,6 +2236,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             typestate = 3;
                         } else if(sometmp->right->tag == TCOLON) {
                             debugln;
+                            printf("sometmp type: %d\n", sometmp->right->tag);
                             typestate = 4;
                         } else {
                             debugln;
@@ -2265,12 +2267,14 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         break;
                     case 2: // TFATARROW, return
                     case 4: // type
+                        printf("%%debug: typestate = %d, sometmp->right->tag = %d\n", typestate, sometmp->right->tag);
 
-                        sometmp = readexpression(fdin, 1);
+                        sometmp = readexpression(fdin);
 
                         if(sometmp->tag == ASTLEFT) {
                             return sometmp;
                         } else if(!istypeast(sometmp->right->tag)) {
+                            printf("type: %d\n", sometmp->right->tag);
                             return ASTLeft(0, 0, "a `:` form *must* be followed by a type definition...");
                         } else if(issimpletypeast(sometmp->right->tag)) { // simple type
                             tmp = (AST *)hmalloc(sizeof(AST));
@@ -2279,10 +2283,12 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             tmp->children = (AST **)hmalloc(sizeof(AST *) * 2);
                             tmp->children[0] = vectmp[idx - 1];
                             tmp->children[1] = sometmp->right;
-                            if(typestate == 2) {
+                            if(typestate == 4) {
                                 vectmp[idx - 1] = tmp;
+                                typestate = 0;
                             } else {
                                 returntype = tmp;
+                                typestate = 6;
                             }
                         } else { // complex type
                             vectmp[idx] = sometmp->right;
@@ -3350,6 +3356,13 @@ walk(AST *head, int level) {
                     printf(" ");
                 }
             }
+            printf(") ");
+            break;
+        case TPARAMDEF:
+            printf("(parameter-definition ");
+            walk(head->children[0], 0);
+            printf(" ");
+            walk(head->children[1], 0);
             printf(") ");
             break;
         case TARRAY:

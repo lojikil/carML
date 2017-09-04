@@ -1,0 +1,11 @@
+import unix
+var data = [""]
+
+def main ac : int al : array of string => int = {
+    let fh = (unix.open "./foo.txt" "r") in 
+    let lines = (unix.readlines fh) in {
+        vector.append data lines
+        unix.close fh
+    }
+    0        
+}
