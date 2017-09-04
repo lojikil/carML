@@ -2199,55 +2199,55 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 switch(typestate) {
                     case 0:
                         sometmp = readexpression(fdin);
-                        debugln;
+                        //debugln;
                         if(sometmp->tag == ASTLEFT) {
                             return sometmp;
                         } else if(sometmp->right->tag == TIDENT) {
                             // name
-                            debugln;
+                            //debugln;
                             typestate = 1;
                         } else if(sometmp->right->tag == TFATARROW) {
                             // return type
-                            debugln;
+                            //debugln;
                             typestate = 2;
                         } else if(sometmp->right->tag == TEQ) {
                             // body
-                            debugln;
+                            //debugln;
                             typestate = 3;
                         } else {
-                            debugln;
-                            dprintf("tag == %d\n", sometmp->right->tag);
+                            //debugln;
+                            //dprintf("tag == %d\n", sometmp->right->tag);
                             return ASTLeft(0, 0, "`def` must have either a parameter list, a fat-arrow, or an equals sign.");
                         } 
-                        debugln;
-                        dprintf("typestate == %d\n", typestate);
+                        //debugln;
+                        //dprintf("typestate == %d\n", typestate);
                         break;
                     case 1: // TIDENT
-                        debugln;
+                        //debugln;
                         vectmp[idx] = sometmp->right;
                         flag = idx;
                         idx++;
                         sometmp = readexpression(fdin);
-                        debugln;
+                        //debugln;
                         if(sometmp->tag == ASTLEFT) {
-                            debugln;
+                            //debugln;
                             return sometmp;
                         } else if(sometmp->right->tag == TIDENT) {
-                            debugln;
+                            //debugln;
                             typestate = 1;
                         } else if(sometmp->right->tag == TFATARROW) {
-                            debugln;
+                            //debugln;
                             typestate = 2;
                         } else if(sometmp->right->tag == TEQ) {
-                            debugln;
+                            //debugln;
                             typestate = 3;
                         } else if(sometmp->right->tag == TCOLON) {
-                            debugln;
-                            dprintf("sometmp type: %d\n", sometmp->right->tag);
+                            //debugln;
+                            //dprintf("sometmp type: %d\n", sometmp->right->tag);
                             typestate = 4;
                         } else {
-                            debugln;
-                            dprintf("tag == %d\n", sometmp->right->tag);
+                            //debugln;
+                            //dprintf("tag == %d\n", sometmp->right->tag);
                             return ASTLeft(0, 0, "`def` identifiers *must* be followed by `:`, `=>`, or `=`");
                         }
                         break;
@@ -2256,32 +2256,32 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                          * and begin to process the elements on the
                          * stack as a parameter list.
                          */
-                        debugln;
+                        //debugln;
                         loopflag = 0;
                         if(idx > 0) {
-                            debugln;
+                            //debugln;
                             params = (AST *) hmalloc(sizeof(AST));
                             params->children = (AST **) hmalloc(sizeof(AST *) * idx);
                             for(int i = 0; i < idx; i++) {
                                 params->children[i] = vectmp[i];
                             }
-                            debugln;
+                            //debugln;
 
                             params->tag = TPARAMLIST;
                             params->lenchildren = idx;
-                            debugln;
+                            //debugln;
                         }
                         break;
                     case 2: // TFATARROW, return
                     case 4: // type
-                        dprintf("%%debug: typestate = %d, sometmp->right->tag = %d\n", typestate, sometmp->right->tag);
+                        //dprintf("%%debug: typestate = %d, sometmp->right->tag = %d\n", typestate, sometmp->right->tag);
 
                         sometmp = readexpression(fdin);
 
                         if(sometmp->tag == ASTLEFT) {
                             return sometmp;
                         } else if(!istypeast(sometmp->right->tag)) {
-                            dprintf("type: %d\n", sometmp->right->tag);
+                            //dprintf("type: %d\n", sometmp->right->tag);
                             return ASTLeft(0, 0, "a `:` form *must* be followed by a type definition...");
                         } else if(issimpletypeast(sometmp->right->tag)) { // simple type
                             if(typestate == 4) {
@@ -3385,7 +3385,7 @@ walk(AST *head, int level) {
             walk(head->children[0], 0);
             printf(" ");
             walk(head->children[1], 0);
-            printf(") ");
+            printf(")");
             break;
         case TARRAY:
             printf("(type array)");
