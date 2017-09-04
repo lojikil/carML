@@ -1,1 +1,6 @@
-def fact number : int => int = if (num< number 0) then (fact (abs number)) else if (num= number 0) then 1 else (mul number (fact (sub number 1)))
+def fact n : int => int = if (< n 0) then
+        (fact (abs n))
+    else if (num= n 0) then
+        1
+    else
+        (mul n (fact (sub n 1)))

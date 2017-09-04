@@ -619,13 +619,12 @@ next(FILE *fdin, char *buf, int buflen) {
 
                     buf[idx++] = cur;
 
-                    // so close to being what we want, but...
-                    /*if(substate == LIDENT0 && (iswhite(cur) || cur == '\n' || isbrace(cur))) {
+                    if(substate == LIDENT0 && (iswhite(cur) || cur == '\n' || isbrace(cur))) {
                         debugln;
                         ungetc(cur, fdin);
                         buf[idx - 1] = '\0';
                         return TIDENT;
-                    }*/
+                    }
 
                     /* the vast majority of the code below is
                      * generated... that still doesn't mean it's
