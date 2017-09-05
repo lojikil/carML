@@ -2272,6 +2272,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         break;
                     case 2: // TFATARROW, return
                     case 4: // type
+                    case 7: // of
                         //dprintf("%%debug: typestate = %d, sometmp->right->tag = %d\n", typestate, sometmp->right->tag);
 
                         sometmp = readexpression(fdin);
@@ -2291,6 +2292,9 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                                 tmp->children[1] = sometmp->right;
                                 vectmp[idx - 1] = tmp;
                                 typestate = 0;
+                            } else if(typestate == 7) {
+                                tmp = (AST *)hamlloc(sizeof(AST));
+                                // need to collapse from flag -> idx
                             } else {
                                 returntype = sometmp->right;
                                 typestate = 6;
@@ -2324,8 +2328,6 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         } else {
                             return ASTLeft(0, 0, "a complex type most be followed by an `of`, an ident, an array, a `=` or a `=>`");
                         }
-                        break;
-                    case 7: // have actually seen an of.
                         break;
                     case 6: // post-fatarrow
                         sometmp = readexpression(fdin);
