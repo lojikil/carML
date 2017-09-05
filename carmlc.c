@@ -2297,10 +2297,37 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             }
                         } else { // complex type
                             vectmp[idx] = sometmp->right;
+                            idx++;
                             typestate = 5;
                         }
                         break;
-                    case 6:
+                    case 5: // complex type "of" game
+
+                        sometmp = readexpression(fdin);
+
+                        // need to collapse the complex type in 
+                        // the state transforms below, not just
+                        // dispatch. It's close tho.
+                        if(sometmp->tag == ASTLEFT) {
+                            return sometmp;
+                        } else if(sometmp->right->tag == TOF) {
+                            typestate = 4;
+                        } else if(sometmp->right->tag == TIDENT) {
+                            typestate = 1;
+                        } else if(sometmp->right->tag == TEQ) {
+                            typestate = 3;
+                        } else if(sometmp->right->tag == TARRAY) {
+                            // which state here? need to check that the
+                            // array only has types in it...
+                        } else if(sometmp->right->tag == TFATARROW) {
+                            typestate = 2;
+                        } else {
+                            return ASTLeft(0, 0, "a complex type most be followed by an `of`, an ident, an array, a `=` or a `=>`");
+                        }
+                        break;
+                    case 7: // have actually seen an of.
+                        break;
+                    case 6: // post-fatarrow
                         sometmp = readexpression(fdin);
 
                         if(sometmp->tag == ASTLEFT) {
