@@ -2284,6 +2284,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             return ASTLeft(0, 0, "a `:` form *must* be followed by a type definition...");
                         } else if(issimpletypeast(sometmp->right->tag)) { // simple type
                             if(typestate == 4) {
+                                //debugln;
                                 tmp = (AST *)hmalloc(sizeof(AST));
                                 tmp->tag = TPARAMDEF;
                                 tmp->lenchildren = 2;
@@ -2293,7 +2294,24 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                                 vectmp[idx - 1] = tmp;
                                 typestate = 0;
                             } else if(typestate == 7) {
-                                tmp = (AST *)hamlloc(sizeof(AST));
+                                //debugln;
+                                vectmp[idx] = sometmp->right;
+                                AST *ctmp = (AST *)hmalloc(sizeof(AST));
+                                tmp = (AST *)hmalloc(sizeof(AST));
+                                tmp->tag = TPARAMDEF;
+                                tmp->lenchildren = 2;
+                                tmp->children = (AST **)hmalloc(sizeof(AST *) * 2);
+                                tmp->children[0] = vectmp[flag];
+                                ctmp->tag = TCOMPLEXTYPE;
+                                ctmp->lenchildren = idx - flag;
+                                ctmp->children = (AST **)hmalloc(sizeof(AST *) * ctmp->lenchildren); 
+                                for(int tidx = flag + 1, cidx = 0; cidx < idx; cidx++, tidx++) {
+                                    ctmp->children[cidx] = vectmp[tidx];
+                                }
+                                tmp->children[1] = ctmp;
+                                idx = flag + 1;
+                                vectmp[flag] = tmp;
+                                typestate = 0;
                                 // need to collapse from flag -> idx
                             } else {
                                 returntype = sometmp->right;
@@ -2315,7 +2333,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         if(sometmp->tag == ASTLEFT) {
                             return sometmp;
                         } else if(sometmp->right->tag == TOF) {
-                            typestate = 4;
+                            typestate = 7;
                         } else if(sometmp->right->tag == TIDENT) {
                             typestate = 1;
                         } else if(sometmp->right->tag == TEQ) {
