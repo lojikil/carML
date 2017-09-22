@@ -296,6 +296,7 @@ istypeast(int tag) {
      * perhaps we should just use 
      * idents?
      */
+    debugln;
     switch(tag) {
         case TARRAY:
         case TINTT:
@@ -313,6 +314,7 @@ istypeast(int tag) {
 
 int
 issimpletypeast(int tag) {
+    debugln;
     switch(tag) {
         case TINTT:
         case TCHART:
@@ -327,10 +329,11 @@ issimpletypeast(int tag) {
 
 int
 iscomplextypeast(int tag) {
+    debugln;
     switch(tag) {
         case TARRAY:
         case TDEQUET:
-        case TTAG: // user types :|
+        case TTAG: // user types 
             return 1;
         default:
             return 0;
@@ -2278,13 +2281,15 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         sometmp = readexpression(fdin);
 
                         if(sometmp->tag == ASTLEFT) {
+                            debugln;
                             return sometmp;
                         } else if(!istypeast(sometmp->right->tag)) {
                             //dprintf("type: %d\n", sometmp->right->tag);
+                            debugln;
                             return ASTLeft(0, 0, "a `:` form *must* be followed by a type definition...");
                         } else if(issimpletypeast(sometmp->right->tag)) { // simple type
                             if(typestate == 4) {
-                                //debugln;
+                                debugln;
                                 tmp = (AST *)hmalloc(sizeof(AST));
                                 tmp->tag = TPARAMDEF;
                                 tmp->lenchildren = 2;
@@ -2294,7 +2299,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                                 vectmp[idx - 1] = tmp;
                                 typestate = 0;
                             } else if(typestate == 7) {
-                                //debugln;
+                                debugln;
                                 vectmp[idx] = sometmp->right;
                                 AST *ctmp = (AST *)hmalloc(sizeof(AST));
                                 tmp = (AST *)hmalloc(sizeof(AST));
@@ -2318,13 +2323,15 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                                 typestate = 6;
                             }
                         } else { // complex type
+                            debugln
                             vectmp[idx] = sometmp->right;
                             idx++;
                             typestate = 5;
                         }
                         break;
                     case 5: // complex type "of" game
-
+                        walk(sometmp->right, 0);
+                        debugln;
                         sometmp = readexpression(fdin);
 
                         // need to collapse the complex type in 
@@ -2333,8 +2340,10 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         if(sometmp->tag == ASTLEFT) {
                             return sometmp;
                         } else if(sometmp->right->tag == TOF) {
+                            debugln;
                             typestate = 7;
                         } else if(sometmp->right->tag == TIDENT) {
+                            debugln;
                             typestate = 1;
                         } else if(sometmp->right->tag == TEQ) {
                             typestate = 3;
@@ -2982,7 +2991,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
              */
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
-            } else if(sometmp->right->tag != TIDENT) {
+            } else if(sometmp->right->tag != TTAG) {
                 return ASTLeft(0, 0, "record's name *must* be an identifier: `record IDENTIFIER record-definition`");
             } else {
                 tmp = sometmp->right;
