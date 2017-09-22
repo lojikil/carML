@@ -2330,6 +2330,10 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         // need to collapse the complex type in 
                         // the state transforms below, not just
                         // dispatch. It's close tho.
+                        // this is why complex types aren't working in
+                        // certain states (like `URL` as a stand alone)
+                        // also need to trace down why other areas are 
+                        // failing too (like after `=>`). Very close
                         if(sometmp->tag == ASTLEFT) {
                             return sometmp;
                         } else if(sometmp->right->tag == TOF) {

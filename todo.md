@@ -34,7 +34,9 @@ A quick list of the current `TODO`s.
 1. Error handling: `Either`
 1. Lexer-as-stream
 1. in the base C compiler & carML self-hosting one, include a defined list of compiler errors with friendly data
-1. add line numbers
+1. add line numbers to errors
+1. Fix type state transition, which fails for Tagged types (`Url`)
+1. Fix parsing of single line `begin`: `{sum x 10}` fails to parse properly
 
 # Begin-style function calls
 
