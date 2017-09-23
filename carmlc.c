@@ -703,6 +703,7 @@ next(FILE *fdin, char *buf, int buflen) {
                             if(cur == 'e') {
                                 substate = LBEGIN0;
                             } else if(cur == 'o') {
+                                debugln;
                                 substate = LBOOL0;
                             } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
                                 ungetc(cur, fdin);
@@ -757,7 +758,9 @@ next(FILE *fdin, char *buf, int buflen) {
                             }
                             break;
                         case LBOOL0: 
+                            debugln;
                             if(cur == 'o') {
+                                debugln;
                                 substate = LBOOL1;
                             } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
                                 ungetc(cur, fdin);
@@ -769,6 +772,7 @@ next(FILE *fdin, char *buf, int buflen) {
                             break;
                         case LBOOL1: 
                             if(cur == 'l') {
+                                debugln;
                                 substate = LBOOL2;
                             } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
                                 ungetc(cur, fdin);
@@ -777,14 +781,15 @@ next(FILE *fdin, char *buf, int buflen) {
                             } else {
                                 substate = LIDENT0;
                             }
+                            debugln;
                             break;
                         case LBOOL2:
                             if(isident(cur)) {
                                 substate = LIDENT0;
-                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                            /*} else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
                                 ungetc(cur, fdin);
                                 buf[idx - 1] = '\0';
-                                return TIDENT;
+                                return TIDENT;*/
                             }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
                                 ungetc(cur, fdin);
                                 return TBOOLT;
@@ -804,6 +809,40 @@ next(FILE *fdin, char *buf, int buflen) {
                                 substate = LCASE0;
                             } else {
                                 substate = LIDENT0;
+                            }
+                            break;
+                        case LCHAR0:
+                            if(cur == 'a') {
+                                substate = LCHAR1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LCHAR1:
+                            if(cur == 'r') {
+                                substate = LCHAR2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LCHAR2:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            } else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                buf[idx] = '\0';
+                                return TCHART;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
                             }
                             break;
                         case LD0:
@@ -1901,7 +1940,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
      */
     AST *head = nil, *tmp = nil, *vectmp[128];
     ASTEither *sometmp = nil;
-    int ltype = 0, ltmp = 0, idx = 0, flag = -1, typestate = 0;
+    int ltype = 0, ltmp = 0, idx = 0, flag = -1, typestate = 0, fatflag = 0;
     char buffer[512] = {0};
     char name[8] = {0};
     char errbuf[512] = {0};
@@ -2210,6 +2249,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         } else if(sometmp->right->tag == TFATARROW) {
                             // return type
                             //debugln;
+                            fatflag = 1;
                             typestate = 2;
                         } else if(sometmp->right->tag == TEQ) {
                             // body
@@ -2238,6 +2278,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             typestate = 1;
                         } else if(sometmp->right->tag == TFATARROW) {
                             //debugln;
+                            fatflag = 1;
                             typestate = 2;
                         } else if(sometmp->right->tag == TEQ) {
                             //debugln;
@@ -2302,20 +2343,27 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                                 debugln;
                                 vectmp[idx] = sometmp->right;
                                 AST *ctmp = (AST *)hmalloc(sizeof(AST));
-                                tmp = (AST *)hmalloc(sizeof(AST));
-                                tmp->tag = TPARAMDEF;
-                                tmp->lenchildren = 2;
-                                tmp->children = (AST **)hmalloc(sizeof(AST *) * 2);
-                                tmp->children[0] = vectmp[flag];
                                 ctmp->tag = TCOMPLEXTYPE;
                                 ctmp->lenchildren = idx - flag;
                                 ctmp->children = (AST **)hmalloc(sizeof(AST *) * ctmp->lenchildren); 
+
                                 for(int tidx = flag + 1, cidx = 0; cidx < idx; cidx++, tidx++) {
                                     ctmp->children[cidx] = vectmp[tidx];
                                 }
-                                tmp->children[1] = ctmp;
-                                idx = flag + 1;
-                                vectmp[flag] = tmp;
+
+                                if(fatflag) {
+                                    returntype = ctmp;
+                                } else {
+                                    tmp = (AST *)hmalloc(sizeof(AST));
+                                    tmp->tag = TPARAMDEF;
+                                    tmp->lenchildren = 2;
+                                    tmp->children = (AST **)hmalloc(sizeof(AST *) * 2);
+                                    tmp->children[0] = vectmp[flag];
+                                    tmp->children[1] = ctmp;
+                                    idx = flag + 1;
+                                    vectmp[flag] = tmp;
+                                }
+
                                 typestate = 0;
                                 // need to collapse from flag -> idx
                             } else {
@@ -2355,9 +2403,38 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             // which state here? need to check that the
                             // array only has types in it...
                         } else if(sometmp->right->tag == TFATARROW) {
+                            fatflag = 1;
                             typestate = 2;
                         } else {
                             return ASTLeft(0, 0, "a complex type most be followed by an `of`, an ident, an array, a `=` or a `=>`");
+                        }
+
+                        // ok we have dispatched, now collapse
+                        if(typestate != 7) {
+                            debugln;
+                            AST *ctmp = (AST *)hmalloc(sizeof(AST));
+                            ctmp->tag = TCOMPLEXTYPE;
+                            ctmp->lenchildren = idx - flag - 1;
+                            ctmp->children = (AST **)hmalloc(sizeof(AST *) * ctmp->lenchildren); 
+                            dprintf("len of children should be: %d\n", ctmp->lenchildren);
+                            for(int tidx = flag + 1, cidx = 0; tidx < idx ; cidx++, tidx++) {
+                                debugln;
+                                ctmp->children[cidx] = vectmp[tidx];
+                            }
+
+                            if(fatflag) {
+                                returntype = ctmp;
+                            } else {
+                                tmp = (AST *)hmalloc(sizeof(AST));
+                                tmp->tag = TPARAMDEF;
+                                tmp->lenchildren = 2;
+                                tmp->children = (AST **)hmalloc(sizeof(AST *) * 2);
+                                tmp->children[0] = vectmp[flag];
+                                tmp->children[1] = ctmp;
+                                idx = flag + 1;
+                                vectmp[flag] = tmp;
+                            }
+                            debugln;
                         }
                         break;
                     case 6: // post-fatarrow
@@ -2373,162 +2450,6 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         break;
                 }
             }
-
-                #ifdef NEVERDEF
-                vectmp[idx++] = tmp;
-
-                sometmp = llreadexpression(fdin, 1);
-                if(sometmp->tag == ASTLEFT) {
-                    return sometmp;
-                } else if(sometmp->right->tag == TCOLON) {
-                    sometmp = llreadexpression(fdin, 1);
-                    if(sometmp->tag == ASTLEFT) {
-                        return sometmp;
-                    } if(!istypeast(sometmp->right->tag)) {
-                        return ASTLeft(0, 0, "a `:` form *must* be followed by a type definition...");
-                    } else if(issimpletypeast(sometmp->right->tag)) {
-                        vectmp[idx] = sometmp->right;
-                        sometmp = llreadexpression(fdin, 1);
-                        if(sometmp->tag == ASTLEFT) {
-                            return sometmp;
-                        } else if(sometmp->right->tag != TCOMMA && sometmp->right->tag != TFATARROW && sometmp->right->tag != TEQ) {
-                            return ASTLeft(0, 0, "a simple type *must* be followed by a comma, a fat-arrow or an equals sign...");
-                        }
-                        /* we have determined a `val <name> : <simple-type>` form
-                         * here, so store them in the record's definition.
-                         */
-                        tmp = (AST *)hmalloc(sizeof(AST));
-                        tmp->tag = TPARAMDEF;
-                        tmp->lenchildren = 2;
-                        tmp->children = (AST **)hmalloc(sizeof(AST *) * 2);
-                        tmp->children[0] = vectmp[idx - 1];
-                        tmp->children[1] = vectmp[idx];
-                        vectmp[idx - 1] = tmp;
-                    } else {
-                        /* complex type...
-                         h*/
-                        flag = idx;
-                        /* we hit a complex type,
-                         * now we're looking for 
-                         * either `of` or `=`.
-                         */
-                        vectmp[idx++] = sometmp->right;
-                        typestate = 1; 
-                        while(sometmp->right->tag != TEQ) {
-
-                            sometmp = llreadexpression(fdin, 1);
-                            if(sometmp->right->tag == ASTLEFT) {
-                                return sometmp;
-                            }
-
-                            switch(typestate) {
-                                case 0: // awaiting a type
-                                    if(!istypeast(sometmp->right->tag)) {
-                                        return ASTLeft(0, 0, "expected type in `:` form");
-                                    } else if(issimpletypeast(sometmp->right->tag)) {
-                                        typestate = 2;
-                                    } else {
-                                        typestate = 1;
-                                    }
-                                    vectmp[idx++] = sometmp->right;
-                                    break;
-                                case 1: // awaiting either TOF or an end
-                                    if(sometmp->right->tag == TOF) {
-                                        typestate = 0;
-                                    } else if(sometmp->right->tag == TCOMMA) {
-                                        typestate = 3;
-                                    } else {
-                                        return ASTLeft(0, 0, "expected either a comma or an `of`");
-                                    }
-                                    break;
-                                case 2:
-                                case 3:
-                                    break;
-                            }
-                            if(typestate == 2 || typestate == 3) {
-                                break;
-                            }
-                        }
-
-                        /* collapse the above type states here... */
-                        AST *ctmp = (AST *) hmalloc(sizeof(AST));
-                        ctmp->tag = TCOMPLEXTYPE;
-                        ctmp->lenchildren = idx - flag;
-                        ctmp->children = (AST **) hmalloc(sizeof(AST *) * ctmp->lenchildren);
-                        for(int cidx = 0, tidx = flag, tlen = ctmp->lenchildren; cidx < tlen; cidx++, tidx++) {
-                            ctmp->children[cidx] = vectmp[tidx];
-                        }
-
-                        /* create the record field defition holder */
-                        tmp = (AST *)hmalloc(sizeof(AST));
-                        tmp->tag = TPARAMDEF;
-                        tmp->lenchildren = 2;
-                        tmp->children = (AST **)hmalloc(sizeof(AST *) * 2);
-                        tmp->children[0] = vectmp[flag - 1];
-                        tmp->children[1] = ctmp;
-                        vectmp[flag - 1] = tmp;
-                        idx = flag;
-                        flag = 0;
-                        if(typestate != 3) {
-
-                            sometmp = llreadexpression(fdin, 1);
-
-                            if(sometmp->tag == ASTLEFT) {
-                                return sometmp;
-                            } else if(sometmp->right->tag != TCOMMA && sometmp->right->tag != TFATARROW && sometmp->right->tag != TEQ) {
-                                return ASTLeft(0, 0, "a `parameter` type definition *must* be followed by a comma, a fat-arrow or an equal");
-                            }
-                        }
-                    }
-                } else if(sometmp->right->tag == TCOMMA) {
-                    tmp = (AST *)hmalloc(sizeof(AST));
-                    tmp->tag = TPARAMDEF;
-                    tmp->lenchildren = 1;
-                    tmp->children = (AST **)hmalloc(sizeof(AST *));
-                    tmp->children[0] = vectmp[idx - 1];
-                    vectmp[idx - 1] = tmp;
-                } else {
-                    /* we didn't see a `:` or a #\n, so that's
-                     * an error.
-                     */
-                    return ASTLeft(0, 0, "malformed parameter list");
-                }
-
-            }
-            /* so, we've constructed a list of parameter members.
-             * now, we just need to actually _make_ the parameter
-             * structure now.
-             */
-            head->lenchildren = idx;
-            head->children = (AST **)hmalloc(sizeof(AST *) * idx);
-            for(int i = 0; i < idx; i++){
-                head->children[i] = vectmp[i];
-            }
-
-            if(tmp->tag != TEQ) {
-                return ASTLeft(0, 0, "parser error: a `DEF` parameter list *must* be followed by `=`");
-            }
-
-
-            /* convert `vectmp` into a TPARAMLIST AST node.
-             */
-
-            AST *params = nil;
-            if(idx > 0) {    
-                //debugln;
-                params = (AST *) hmalloc(sizeof(AST));
-                params->children = (AST **) hmalloc(sizeof(AST *) * idx);
-                for(int i = 0; i < idx; i++) {
-                    params->children[i] = vectmp[i];
-                }
-                //debugln;
-
-                params->tag = TPARAMLIST;
-                params->lenchildren = idx;
-                //debugln;
-            }
-
-            #endif
 
             /* ok, now that we have the parameter list and the syntactic `=` captured,
              * we read a single expression, which is the body of the procedure we're
@@ -3200,6 +3121,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
         case TCHART:
         case TSTRT:
         case TINTT:
+        case TFLOATT:
         case TBOOLT:
         case TCOLON:
         case TSEMI:
@@ -3557,6 +3479,9 @@ walk(AST *head, int level) {
             break;
         case TFLOATT:
             printf("(type float)");
+            break;
+        case TBOOLT:
+            printf("(type boolean)");
             break;
         case TCHART:
             printf("(type char)");
