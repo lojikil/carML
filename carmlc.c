@@ -2249,7 +2249,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         } else if(sometmp->right->tag == TFATARROW) {
                             // return type
                             //debugln;
-                            fatflag = 1;
+                            fatflag = idx;
                             typestate = 2;
                         } else if(sometmp->right->tag == TEQ) {
                             // body
@@ -2278,7 +2278,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             typestate = 1;
                         } else if(sometmp->right->tag == TFATARROW) {
                             //debugln;
-                            fatflag = 1;
+                            fatflag = idx;
                             typestate = 2;
                         } else if(sometmp->right->tag == TEQ) {
                             //debugln;
@@ -2353,6 +2353,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
 
                                 if(fatflag) {
                                     returntype = ctmp;
+                                    idx = fatflag;
                                 } else {
                                     tmp = (AST *)hmalloc(sizeof(AST));
                                     tmp->tag = TPARAMDEF;
@@ -2403,7 +2404,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             // which state here? need to check that the
                             // array only has types in it...
                         } else if(sometmp->right->tag == TFATARROW) {
-                            fatflag = 1;
+                            fatflag = idx;
                             typestate = 2;
                         } else {
                             return ASTLeft(0, 0, "a complex type most be followed by an `of`, an ident, an array, a `=` or a `=>`");
@@ -2424,6 +2425,21 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
 
                             if(fatflag) {
                                 returntype = ctmp;
+                                /*
+                                 * so the "correct" way of doing this would be to actually
+                                 * break out the state for return, and then duplicate the
+                                 * code there. It would be context-free, and would work
+                                 * nicely. I didn't do that tho. I chose to de-dupe the
+                                 * code, and just use flags. Best idea? Dunno, but the
+                                 * code is smaller, and means I have to change fewer
+                                 * locations. Honestly, this stuff should all be added
+                                 * to *ONE* location that I can pull around to the various
+                                 * places; right now records may not handle tags correctly,
+                                 * for example. However, I think adding a "streaming" interface
+                                 * in carML/carML (that is, self-hosting carML) would make
+                                 * this a lot nicer looking internally.
+                                 */
+                                idx = fatflag;
                             } else {
                                 tmp = (AST *)hmalloc(sizeof(AST));
                                 tmp->tag = TPARAMDEF;
