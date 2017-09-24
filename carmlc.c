@@ -3565,45 +3565,50 @@ ccwalk(AST *head, int level) {
         case TFN:
         case TDEF:
             if(head->tag == TFN) {
+                // need to lift lambdas...
                 printf("(fn ");
             } else {
-                printf("(define %s ", head->value);
+                if(head->lenchildren == 3) {
+                    cwalk(head->children[2], "0");
+                } else {
+                    printf("void");
+                }
+                printf("\n%s", head->value);
             }
             if(head->children[0] != nil) {
                 cwalk(head->children[0], level);
+            } else {
+                printf("()");
             }
 
-            if(head->lenchildren == 3) {
-                // indent nicely
-                printf("\n");
-                for(; idx < level + 1; idx++) {
-                    printf("    ");
-                }
+            printf("{\n");
 
-                printf("(returns ");
-                cwalk(head->children[2], 0);
-                printf(")");
-            }
-            printf("\n");
             cwalk(head->children[1], level + 1);
-            printf(")");
+            printf("}");
             break;
         case TVAL:
         case TVAR:
             if(head->tag == TVAL) {
-                printf("(define-value %s ", head->value);
-            } else {
-                printf("(define-mutable-value %s ", head->value);
+                printf("const");
             }
-            cwalk(head->children[0], 0);
+
             if(head->lenchildren == 2) {
-                printf(" ");
                 cwalk(head->children[1], 0);
+            } else {
+                printf("void *");
             }
-            printf(")");
+
+            printf("%s = ", head->value);
+
+            cwalk(head->children[0], 0);
+
+            printf(";");
             break;
         case TLET:
         case TLETREC:
+            // need to do name rebinding...
+            // but I think that's best meant
+            // for a nanopass...
             if(head->tag == TLET) {
                 printf("(let ");
             } else {

@@ -43,6 +43,7 @@ A quick list of the current `TODO`s.
 1. add nano-pass: a-normal form (ANF)
 1. add nano-pass: lambda lifting
 1. add nano-pass: ANF => SSA
+1. add nano-pass: rewrite `let`/`letrec` => `val` + temporary binding
 1. Investigate: method of determining effects, and how that could make ANF easier (lift once for two calls)
 
 # Begin-style function calls
