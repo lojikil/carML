@@ -40,6 +40,10 @@ A quick list of the current `TODO`s.
 1. **DONE** Fix `float`, `bool`, and `char` parsing
 1. Add sized ints/uints/floats (e.g. `uint8`) as types
 1. Fix edge case: complex type right before `=>` fails `def foo bar : Url => int = ...` fails
+1. add nano-pass: a-normal form (ANF)
+1. add nano-pass: lambda lifting
+1. add nano-pass: ANF => SSA
+1. Investigate: method of determining effects, and how that could make ANF easier (lift once for two calls)
 
 # Begin-style function calls
 

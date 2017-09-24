@@ -80,7 +80,7 @@ letrec loop = fn x = {
 val yar = fn x = (sum x 32)
 
 # simple record definition
-record foo {
+record Foo {
     blah : int
     bar : int
     baz

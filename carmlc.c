@@ -152,6 +152,7 @@ ASTEither *ASTRight(AST *);
 ASTOffset *ASTOffsetLeft(int, int, char *, int);
 ASTOffset *ASTOffsetRight(AST *, int);
 void walk(AST *, int);
+void cwalk(AST *, int);
 int compile(FILE *, FILE *);
 int iswhite(int);
 int isident(int);
@@ -296,7 +297,7 @@ istypeast(int tag) {
      * perhaps we should just use 
      * idents?
      */
-    debugln;
+    //debugln;
     switch(tag) {
         case TARRAY:
         case TINTT:
@@ -314,7 +315,7 @@ istypeast(int tag) {
 
 int
 issimpletypeast(int tag) {
-    debugln;
+    //debugln;
     switch(tag) {
         case TINTT:
         case TCHART:
@@ -329,7 +330,7 @@ issimpletypeast(int tag) {
 
 int
 iscomplextypeast(int tag) {
-    debugln;
+    //debugln;
     switch(tag) {
         case TARRAY:
         case TDEQUET:
@@ -703,7 +704,7 @@ next(FILE *fdin, char *buf, int buflen) {
                             if(cur == 'e') {
                                 substate = LBEGIN0;
                             } else if(cur == 'o') {
-                                debugln;
+                                //debugln;
                                 substate = LBOOL0;
                             } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
                                 ungetc(cur, fdin);
@@ -758,9 +759,9 @@ next(FILE *fdin, char *buf, int buflen) {
                             }
                             break;
                         case LBOOL0: 
-                            debugln;
+                            //debugln;
                             if(cur == 'o') {
-                                debugln;
+                                //debugln;
                                 substate = LBOOL1;
                             } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
                                 ungetc(cur, fdin);
@@ -772,7 +773,7 @@ next(FILE *fdin, char *buf, int buflen) {
                             break;
                         case LBOOL1: 
                             if(cur == 'l') {
-                                debugln;
+                                //debugln;
                                 substate = LBOOL2;
                             } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
                                 ungetc(cur, fdin);
@@ -781,7 +782,7 @@ next(FILE *fdin, char *buf, int buflen) {
                             } else {
                                 substate = LIDENT0;
                             }
-                            debugln;
+                            //debugln;
                             break;
                         case LBOOL2:
                             if(isident(cur)) {
@@ -2322,15 +2323,15 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         sometmp = readexpression(fdin);
 
                         if(sometmp->tag == ASTLEFT) {
-                            debugln;
+                            //debugln;
                             return sometmp;
                         } else if(!istypeast(sometmp->right->tag)) {
                             //dprintf("type: %d\n", sometmp->right->tag);
-                            debugln;
+                            //debugln;
                             return ASTLeft(0, 0, "a `:` form *must* be followed by a type definition...");
                         } else if(issimpletypeast(sometmp->right->tag)) { // simple type
                             if(typestate == 4) {
-                                debugln;
+                                //debugln;
                                 tmp = (AST *)hmalloc(sizeof(AST));
                                 tmp->tag = TPARAMDEF;
                                 tmp->lenchildren = 2;
@@ -2340,7 +2341,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                                 vectmp[idx - 1] = tmp;
                                 typestate = 0;
                             } else if(typestate == 7) {
-                                debugln;
+                                //debugln;
                                 vectmp[idx] = sometmp->right;
                                 AST *ctmp = (AST *)hmalloc(sizeof(AST));
                                 ctmp->tag = TCOMPLEXTYPE;
@@ -2372,15 +2373,15 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                                 typestate = 6;
                             }
                         } else { // complex type
-                            debugln
+                            //debugln
                             vectmp[idx] = sometmp->right;
                             idx++;
                             typestate = 5;
                         }
                         break;
                     case 5: // complex type "of" game
-                        walk(sometmp->right, 0);
-                        debugln;
+                        //walk(sometmp->right, 0);
+                        //debugln;
                         sometmp = readexpression(fdin);
 
                         // need to collapse the complex type in 
@@ -2393,10 +2394,10 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         if(sometmp->tag == ASTLEFT) {
                             return sometmp;
                         } else if(sometmp->right->tag == TOF) {
-                            debugln;
+                            //debugln;
                             typestate = 7;
                         } else if(sometmp->right->tag == TIDENT) {
-                            debugln;
+                            //debugln;
                             typestate = 1;
                         } else if(sometmp->right->tag == TEQ) {
                             typestate = 3;
@@ -2412,14 +2413,14 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
 
                         // ok we have dispatched, now collapse
                         if(typestate != 7) {
-                            debugln;
+                            //debugln;
                             AST *ctmp = (AST *)hmalloc(sizeof(AST));
                             ctmp->tag = TCOMPLEXTYPE;
                             ctmp->lenchildren = idx - flag - 1;
                             ctmp->children = (AST **)hmalloc(sizeof(AST *) * ctmp->lenchildren); 
-                            dprintf("len of children should be: %d\n", ctmp->lenchildren);
+                            //dprintf("len of children should be: %d\n", ctmp->lenchildren);
                             for(int tidx = flag + 1, cidx = 0; tidx < idx ; cidx++, tidx++) {
-                                debugln;
+                                //debugln;
                                 ctmp->children[cidx] = vectmp[tidx];
                             }
 
@@ -2450,7 +2451,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                                 idx = flag + 1;
                                 vectmp[flag] = tmp;
                             }
-                            debugln;
+                            //debugln;
                         }
                         break;
                     case 6: // post-fatarrow
@@ -3536,6 +3537,256 @@ walk(AST *head, int level) {
                 }
             }
             printf(")");
+            break;
+        case TEND:
+            break;
+        case TUNIT:
+            printf("()");
+            break;
+        default:
+            printf("(tag %d)", head->tag);
+            break;
+    }
+    return;
+}
+
+void
+ccwalk(AST *head, int level) {
+    int idx = 0;
+
+    for(; idx < level; idx++) {
+        printf("    ");
+    }
+    if(head == nil) {
+        printf("(nil)\n");
+        return;
+    }
+    switch(head->tag) {
+        case TFN:
+        case TDEF:
+            if(head->tag == TFN) {
+                printf("(fn ");
+            } else {
+                printf("(define %s ", head->value);
+            }
+            if(head->children[0] != nil) {
+                cwalk(head->children[0], level);
+            }
+
+            if(head->lenchildren == 3) {
+                // indent nicely
+                printf("\n");
+                for(; idx < level + 1; idx++) {
+                    printf("    ");
+                }
+
+                printf("(returns ");
+                cwalk(head->children[2], 0);
+                printf(")");
+            }
+            printf("\n");
+            cwalk(head->children[1], level + 1);
+            printf(")");
+            break;
+        case TVAL:
+        case TVAR:
+            if(head->tag == TVAL) {
+                printf("(define-value %s ", head->value);
+            } else {
+                printf("(define-mutable-value %s ", head->value);
+            }
+            cwalk(head->children[0], 0);
+            if(head->lenchildren == 2) {
+                printf(" ");
+                cwalk(head->children[1], 0);
+            }
+            printf(")");
+            break;
+        case TLET:
+        case TLETREC:
+            if(head->tag == TLET) {
+                printf("(let ");
+            } else {
+                printf("(letrec ");
+            }
+
+            printf("%s ", head->value);
+
+            cwalk(head->children[0], 0);
+            
+            if(head->lenchildren == 3) {
+                /* if we have a type,
+                 * go ahead and print it.
+                 */
+                printf(" ");
+                cwalk(head->children[2], 0);
+            }
+
+            printf("\n");
+            cwalk(head->children[1], level + 1);
+
+            printf(")");
+            break;
+        case TWHEN:
+            printf("if(");
+            cwalk(head->children[0], 0);
+            printf("){\n");
+            cwalk(head->children[1], level + 1);
+            printf("}");
+            break;
+        case TPARAMLIST:
+            printf("(parameter-list ");
+            for(;idx < head->lenchildren; idx++) {
+                cwalk(head->children[idx], 0); 
+                if(idx < (head->lenchildren - 1)){
+                    printf(" ");
+                }
+            }
+            printf(") ");
+            break;
+        case TPARAMDEF:
+            printf("(parameter-definition ");
+            cwalk(head->children[0], 0);
+            printf(" ");
+            cwalk(head->children[1], 0);
+            printf(")");
+            break;
+        case TARRAY:
+            printf("(type array)");
+            break;
+        case TCOMPLEXTYPE:
+            printf("(complex-type ");
+            for(;idx < head->lenchildren; idx++) {
+                cwalk(head->children[idx], 0); 
+                if(idx < (head->lenchildren - 1)){
+                    printf(" ");
+                }
+            }
+            printf(") ");
+            break;
+        case TARRAYLITERAL:
+            printf("[");
+            for(;idx < head->lenchildren; idx++) {
+                cwalk(head->children[idx], 0); 
+                if(idx < (head->lenchildren - 1)){
+                    printf(", ");
+                }
+            }
+            printf("]");
+            break;
+        case TCALL:
+            printf("(call ");
+            for(int i = 0; i < head->lenchildren; i++) {
+                cwalk(head->children[i], 0);
+                if(i < (head->lenchildren - 1)) {
+                    printf(" ");
+                }
+            }
+            printf(")");
+            break;
+        case TIF:
+            printf("if(");
+            cwalk(head->children[0], 0);
+            printf("){\n");
+            cwalk(head->children[1], level + 1);
+            printf("\n}\n else {\n");
+            cwalk(head->children[2], level + 1);
+            printf("}");
+            break;
+        case TIDENT:
+            printf("%s", head->value);
+            break;
+        case TTAG:
+            printf("%s", head->value);
+            break;
+        case TBOOL:
+            /* really, would love to introduce a higher-level
+             * boolean type, but not sure I care all that much
+             * for the initial go-around in C...
+             */
+            if(head->value[0] == 0) {
+                printf("1"); 
+            } else {
+                printf("0");
+            }
+            break;
+        case TCHAR:
+            printf("'%c'", head->value[0]);
+            break;
+        case TFLOAT:
+            printf("%sf", head->value);
+            break;
+        case TFALSE:
+        case TTRUE:
+            if(head->tag == TFALSE) {
+                printf("false");
+            } else {
+                printf("true");
+            }
+            break;
+        case THEX:
+            printf("0x%s", head->value);
+            break;
+        case TOCT:
+            printf("0%s", head->value);
+            break;
+        case TBIN:
+            /* convert to hex... */
+            printf("(binary-integer %s)", head->value);
+            break;
+        case TINT:
+            printf("%s", head->value);
+            break;
+        case TINTT:
+            printf("int");
+            break;
+        case TFLOATT:
+            printf("float");
+            break;
+        case TBOOLT:
+            printf("bool");
+            break;
+        case TCHART:
+            printf("char");
+            break;
+        case TSTRT:
+            /* make a fat version of this?
+             * or just track the length every
+             * where?
+             */
+            printf("char *");
+            break;
+        case TSTRING:
+            printf("\"%s\"", head->value);
+            break;
+        case TRECORD:
+            printf("typedef struct {\n", head->value);
+            for(int i = 0; i < head->lenchildren; i++) {
+                cwalk(head->children[i], level + 1);
+                if(i < (head->lenchildren - 1)) {
+                    printf("\n");
+                }
+            }
+            printf("} %s;", head->value);
+            break;
+        case TRECDEF:
+            printf("(record-member ");
+            cwalk(head->children[0], 0);
+            if(head->lenchildren == 2) {
+                printf(" ");
+                cwalk(head->children[1], 0);
+            }
+            printf(")");
+            break;
+        case TBEGIN:
+            printf("{\n");
+            for(idx = 0; idx < head->lenchildren; idx++){
+                cwalk(head->children[idx], level + 1);
+                if(idx < (head->lenchildren - 1)) {
+                    printf("\n");
+                }
+            }
+            printf("}");
             break;
         case TEND:
             break;
