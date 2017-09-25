@@ -3551,7 +3551,7 @@ walk(AST *head, int level) {
 }
 
 void
-ccwalk(AST *head, int level) {
+cwalk(AST *head, int level) {
     int idx = 0;
 
     for(; idx < level; idx++) {
@@ -3569,7 +3569,7 @@ ccwalk(AST *head, int level) {
                 printf("(fn ");
             } else {
                 if(head->lenchildren == 3) {
-                    cwalk(head->children[2], "0");
+                    cwalk(head->children[2], 0);
                 } else {
                     printf("void");
                 }
@@ -3765,7 +3765,7 @@ ccwalk(AST *head, int level) {
             printf("\"%s\"", head->value);
             break;
         case TRECORD:
-            printf("typedef struct {\n", head->value);
+            printf("typedef struct {\n");
             for(int i = 0; i < head->lenchildren; i++) {
                 cwalk(head->children[i], level + 1);
                 if(i < (head->lenchildren - 1)) {
@@ -3775,13 +3775,13 @@ ccwalk(AST *head, int level) {
             printf("} %s;", head->value);
             break;
         case TRECDEF:
-            printf("(record-member ");
-            cwalk(head->children[0], 0);
             if(head->lenchildren == 2) {
-                printf(" ");
                 cwalk(head->children[1], 0);
+            } else {
+                printf("void *");
             }
-            printf(")");
+            cwalk(head->children[0], 0);
+            printf(";");
             break;
         case TBEGIN:
             printf("{\n");
