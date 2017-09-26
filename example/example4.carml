@@ -1,0 +1,18 @@
+def unix.open path : string mode : string => int {
+
+}
+
+def unix.close fd : int = {
+
+}
+
+def unix.readlines fd : int => array of string = {
+
+}
+
+def main ac : int al : array of string => int = {
+    val fh = (unix.open "./foo.txt" "r") 
+    val lines = (unix.readlines fh)
+    unix.close fh
+    0        
+}

@@ -166,12 +166,16 @@ main(int ac, char **al) {
     ASTEither *ret = nil;
     AST *tmp = nil;
     FILE *fdin = nil;
+    int walkflag = 0;
     GC_INIT();
 
     if(ac > 1) {
         if((fdin = fopen(al[1], "r")) == nil) {
             printf("cannot open file \"%s\"\n", al[1]);
             return 1;
+        }
+        if(ac > 2 && !strncmp(al[2], "+c", 2)) {
+            walkflag = 1;
         }
         do {
             ret = readexpression(fdin);
@@ -182,7 +186,11 @@ main(int ac, char **al) {
 
             tmp = ret->right;
             if(tmp->tag != TNEWL && tmp->tag != TEOF) {
-                walk(tmp, 0);
+                if(walkflag) {
+                    cwalk(tmp, 0);
+                } else {
+                    walk(tmp, 0);
+                }
                 printf("\n");
             }
         } while(tmp->tag != TEOF);
@@ -211,8 +219,15 @@ main(int ac, char **al) {
                     break;
                 } else if(tmp->tag == TIDENT && !strncmp(tmp->value, "quit", 4)) {
                     break;
+                } else if(tmp->tag == TIDENT && !strncmp(tmp->value, "%c", 2)) {
+                    walkflag = !walkflag;
+                    printf("[!] C generation is: %s", (walkflag ? "on" : "off"));
                 } else if(tmp->tag != TNEWL) {
-                    walk(tmp, 0);
+                    if(walkflag) {
+                        cwalk(tmp, 0);
+                    } else {
+                        walk(tmp, 0);
+                    }
                 }
                 printf("\n");
             }
@@ -3640,21 +3655,19 @@ cwalk(AST *head, int level) {
             printf("}");
             break;
         case TPARAMLIST:
-            printf("(parameter-list ");
+            printf("(");
             for(;idx < head->lenchildren; idx++) {
                 cwalk(head->children[idx], 0); 
                 if(idx < (head->lenchildren - 1)){
-                    printf(" ");
+                    printf(", ");
                 }
             }
-            printf(") ");
+            printf(")");
             break;
         case TPARAMDEF:
-            printf("(parameter-definition ");
-            cwalk(head->children[0], 0);
-            printf(" ");
             cwalk(head->children[1], 0);
-            printf(")");
+            printf(" ");
+            cwalk(head->children[0], 0);
             break;
         case TARRAY:
             printf("(type array)");
