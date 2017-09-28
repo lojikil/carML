@@ -365,8 +365,8 @@ isprimitivevalue(int tag) {
     switch(tag) {
         case TINT:
         case TFLOAT:
-        case TARRAYLIT:
-        case TSTR:
+        case TARRAY:
+        case TSTRING:
         case TCHAR:
             return 1;
 
@@ -382,7 +382,7 @@ issyntacticform(int tag) {
         case TVAR:
         case TLET:
         case TLETREC:
-        case TWHILE:
+        case TWHEN:
         case TDO:
         case TIF:
             return 1;
@@ -3638,7 +3638,7 @@ llcwalk(AST *head, int level, int final) {
 
             if(isprimitivevalue(head->children[1]->tag) || head->children[1]->tag == TCALL) {
                 printf("return ");
-                cwalk(head->children[1], 0, NO);
+                cwalk(head->children[1], 0);
                 printf(";\n");
             } else if(issyntacticform(head->children[1]->tag)) {
                 // does this need to be a thing? can we just pass
