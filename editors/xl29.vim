@@ -12,6 +12,7 @@ endif
 
 syn keyword basicLanguageKeywords val def let letrec in when if then else
 syn keyword basicLanguageKeywords do match case with of use record type poly
+syn keyword basicLanguageKeywords and var for while import use open load
 syn keyword xl29BlockCmd begin end 
 
 " Integer with - + or nothing in front

@@ -3,8 +3,6 @@
 #include <string.h>
 #include <gc.h>
 
-#define hmalloc GC_MALLOC
-
 #ifndef NODEBUG
 #define debugln printf("dying here on line %d?\n", __LINE__);
 #define dprintf(...) printf(__VA_ARGS__)
@@ -15,6 +13,10 @@
 
 #define nil NULL
 #define nul '\0'
+#define YES 1
+#define NO  0
+#define hmalloc GC_MALLOC
+#define cwalk(head, level) llcwalk(head, level, NO)
 
 /* Lexical analysis states.
  * basically, the tokenizer is a 
@@ -152,7 +154,7 @@ ASTEither *ASTRight(AST *);
 ASTOffset *ASTOffsetLeft(int, int, char *, int);
 ASTOffset *ASTOffsetRight(AST *, int);
 void walk(AST *, int);
-void cwalk(AST *, int);
+void llcwalk(AST *, int, int);
 int compile(FILE *, FILE *);
 int iswhite(int);
 int isident(int);
@@ -160,6 +162,8 @@ int isbrace(int);
 int istypeast(int);
 int issimpletypeast(int);
 int iscomplextypeast(int);
+int issyntacticform(int);
+int isprimitivevalue(int);
 
 int
 main(int ac, char **al) {
@@ -350,6 +354,37 @@ iscomplextypeast(int tag) {
         case TARRAY:
         case TDEQUET:
         case TTAG: // user types 
+            return 1;
+        default:
+            return 0;
+    }
+}
+
+int
+isprimitivevalue(int tag) {
+    switch(tag) {
+        case TINT:
+        case TFLOAT:
+        case TARRAYLIT:
+        case TSTR:
+        case TCHAR:
+            return 1;
+
+        default:
+            return 0;
+    }
+}
+
+int
+issyntacticform(int tag) {
+    switch(tag) {
+        case TVAL:
+        case TVAR:
+        case TLET:
+        case TLETREC:
+        case TWHILE:
+        case TDO:
+        case TIF:
             return 1;
         default:
             return 0;
@@ -3566,7 +3601,7 @@ walk(AST *head, int level) {
 }
 
 void
-cwalk(AST *head, int level) {
+llcwalk(AST *head, int level, int final) {
     int idx = 0;
 
     for(; idx < level; idx++) {
@@ -3597,8 +3632,21 @@ cwalk(AST *head, int level) {
             }
 
             printf("{\n");
+            // we need to check if we have a primitive 
+            // value or a CALL here. Honestly, what does
+            // it mean to have a $() form here tho?
 
-            cwalk(head->children[1], level + 1);
+            if(isprimitivevalue(head->children[1]->tag) || head->children[1]->tag == TCALL) {
+                printf("return ");
+                cwalk(head->children[1], 0, NO);
+                printf(";\n");
+            } else if(issyntacticform(head->children[1]->tag)) {
+                // does this need to be a thing? can we just pass
+                // the YES to llcwalk and let the lower level
+                // forms handle it?
+            } else {
+                llcwalk(head->children[1], level + 1, YES);
+            }
             printf("}");
             break;
         case TVAL:
@@ -3693,14 +3741,22 @@ cwalk(AST *head, int level) {
             printf("]");
             break;
         case TCALL:
-            printf("(call ");
-            for(int i = 0; i < head->lenchildren; i++) {
-                cwalk(head->children[i], 0);
-                if(i < (head->lenchildren - 1)) {
-                    printf(" ");
-                }
+            if(head->children[0]->tag == TIDENT) {
+                printf("%s", head->children[0]->value);
             }
-            printf(")");
+
+            if(head->lenchildren == 1) {
+                printf("()");
+            } else {
+                printf("(");
+                for(int i = 1; i < head->lenchildren; i++) {
+                    cwalk(head->children[i], 0);
+                    if(i < (head->lenchildren - 1)) {
+                        printf(", ");
+                    }
+                }
+                printf(")");
+            }
             break;
         case TIF:
             printf("if(");
