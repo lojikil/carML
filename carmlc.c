@@ -3637,6 +3637,9 @@ llcwalk(AST *head, int level, int final) {
             // it mean to have a $() form here tho?
 
             if(isprimitivevalue(head->children[1]->tag) || head->children[1]->tag == TCALL) {
+                for(; idx < level + 1; idx++) {
+                    printf("    ");
+                }
                 printf("return ");
                 cwalk(head->children[1], 0);
                 printf(";\n");
@@ -3644,6 +3647,7 @@ llcwalk(AST *head, int level, int final) {
                 // does this need to be a thing? can we just pass
                 // the YES to llcwalk and let the lower level
                 // forms handle it?
+                llcwalk(head->children[1], level + 1, YES);
             } else {
                 llcwalk(head->children[1], level + 1, YES);
             }
@@ -3762,10 +3766,47 @@ llcwalk(AST *head, int level, int final) {
             printf("if(");
             cwalk(head->children[0], 0);
             printf("){\n");
-            cwalk(head->children[1], level + 1);
-            printf("\n}\n else {\n");
-            cwalk(head->children[2], level + 1);
-            printf("}");
+
+            // such a hack; I hate doing this at
+            // the compiler level. Should be done as
+            // a pass above.
+            if(final && (isprimitivevalue(head->children[1]->tag) || head->children[1]->tag == TCALL)) {
+                for(idx = 0; idx < level + 1; idx++) {
+                    printf("    ");
+                }
+                printf("return ");
+                cwalk(head->children[1], 0);
+                printf(";\n");
+            } else {
+                cwalk(head->children[1], level + 1);
+            }
+
+            printf("\n");
+
+            for(idx = 0; idx < level; idx++) {
+                printf("    ");
+            }
+
+            printf("} else {\n");
+
+            if(final && (isprimitivevalue(head->children[2]->tag) || head->children[2]->tag == TCALL)) {
+                for(idx = 0; idx < level + 1; idx++) {
+                    printf("    ");
+                }
+                printf("return ");
+                cwalk(head->children[2], 0);
+                printf(";\n");
+            } else if(final) {
+                llcwalk(head->children[2], level + 1, YES);
+            } else {
+                cwalk(head->children[2], level + 1);
+            }
+
+            for(idx = 0; idx < level; idx++) {
+                printf("    ");
+            }
+
+            printf("}\n");
             break;
         case TIDENT:
             printf("%s", head->value);
