@@ -143,6 +143,56 @@ typedef struct _ASTOFFSET {
     AST *right;
 } ASTOffset;
 
+/* probably should track urnary vs binary
+ * but for now I think this is enough...
+ */
+const char *coperators[] = {
+    "sum", "+",
+    "add", "+",
+    "+", "+",
+    "sub", "-",
+    "-", "-",
+    "div", "/",
+    "/", "/",
+    "mul", "*",
+    "*", "*",
+    "mod", "%",
+    "%", "%",
+    "<", "<",
+    ">", ">",
+    "<=", "<=",
+    ">=", ">=",
+    "eq?", "==",
+    "!=", "!=",
+    "/=", "!=",
+    "<>", "!="
+    "lshift", "<<",
+    "<<", "<<",
+    "rshift", ">>",
+    ">>", ">>",
+    "xor", "^",
+    "^", "^",
+    "not", "!",
+    "!", "!",
+    "negate", "~",
+    "~", "~",
+    "land", "&&",
+    "logical-and", "&&",
+    "lor", "||",
+    "logical-or", "||",
+    "&&", "&&",
+    "band", "&",
+    "bitwise-and", "&",
+    "&", "&",
+    "bor", "|",
+    "bitwise-or", "|",
+    "|", "|",
+    0
+};
+
+
+
+
 char *hstrdup(const char *);
 int next(FILE *, char *, int);
 AST *mung_declare(const char **, const int **, int, int);
@@ -164,6 +214,7 @@ int issimpletypeast(int);
 int iscomplextypeast(int);
 int issyntacticform(int);
 int isprimitivevalue(int);
+int iscoperator(const char *);
 
 int
 main(int ac, char **al) {
@@ -373,6 +424,21 @@ isprimitivevalue(int tag) {
         default:
             return 0;
     }
+}
+
+int
+iscoperator(const char *potential) {
+    int idx = 0;
+    size_t sze = strlen(potential);
+
+    while(coperators[idx] != nil) {
+        if(!strncmp(potential, coperators[idx], sze)) {
+            return idx + 1;
+        }
+        idx += 2;
+    }
+
+    return -1;
 }
 
 int
@@ -3602,7 +3668,7 @@ walk(AST *head, int level) {
 
 void
 llcwalk(AST *head, int level, int final) {
-    int idx = 0;
+    int idx = 0, opidx = -1;
 
     for(; idx < level; idx++) {
         printf("    ");
@@ -3745,14 +3811,24 @@ llcwalk(AST *head, int level, int final) {
             printf("]");
             break;
         case TCALL:
-            if(head->children[0]->tag == TIDENT) {
-                printf("%s", head->children[0]->value);
-            }
+            // do the lookup of idents here, and if we have
+            // a C operator, use that instead
 
-            if(head->lenchildren == 1) {
-                printf("()");
+            opidx = iscoperator(head->children[0]->value);
+
+            if(head->children[0]->tag == TIDENT && opidx != -1) {
+                if(head->lenchildren == 1) {
+                    printf("%s", coperators[opidx]);
+                    cwalk(head->children[1], 0);
+                } else {
+                    cwalk(head->children[1], 0);
+                    printf(" %s ", coperators[opidx]);
+                    cwalk(head->children[2], 0);
+                }
+            } else if(head->lenchildren == 1) {
+                printf("%s()", head->children[0]->value);
             } else {
-                printf("(");
+                printf("%s(", head->children[0]->value);
                 for(int i = 1; i < head->lenchildren; i++) {
                     cwalk(head->children[i], 0);
                     if(i < (head->lenchildren - 1)) {
@@ -3776,7 +3852,7 @@ llcwalk(AST *head, int level, int final) {
                 }
                 printf("return ");
                 cwalk(head->children[1], 0);
-                printf(";\n");
+                printf(";");
             } else {
                 cwalk(head->children[1], level + 1);
             }
