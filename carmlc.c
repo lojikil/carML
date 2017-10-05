@@ -3722,7 +3722,7 @@ llcwalk(AST *head, int level, int final) {
         case TVAL:
         case TVAR:
             if(head->tag == TVAL) {
-                printf("const");
+                printf("const ");
             }
 
             if(head->lenchildren == 2) {
@@ -3731,7 +3731,7 @@ llcwalk(AST *head, int level, int final) {
                 printf("void *");
             }
 
-            printf("%s = ", head->value);
+            printf(" %s = ", head->value);
 
             cwalk(head->children[0], 0);
 
@@ -3801,14 +3801,14 @@ llcwalk(AST *head, int level, int final) {
             printf(") ");
             break;
         case TARRAYLITERAL:
-            printf("[");
+            printf("{");
             for(;idx < head->lenchildren; idx++) {
                 cwalk(head->children[idx], 0); 
                 if(idx < (head->lenchildren - 1)){
                     printf(", ");
                 }
             }
-            printf("]");
+            printf("}");
             break;
         case TCALL:
             // do the lookup of idents here, and if we have
@@ -3958,7 +3958,7 @@ llcwalk(AST *head, int level, int final) {
                     printf("\n");
                 }
             }
-            printf("} %s;", head->value);
+            printf("\n} %s;", head->value);
             break;
         case TRECDEF:
             if(head->lenchildren == 2) {
@@ -3966,18 +3966,27 @@ llcwalk(AST *head, int level, int final) {
             } else {
                 printf("void *");
             }
+            printf(" ");
             cwalk(head->children[0], 0);
             printf(";");
             break;
         case TBEGIN:
-            printf("{\n");
+            printf("\n");
             for(idx = 0; idx < head->lenchildren; idx++){
-                cwalk(head->children[idx], level + 1);
                 if(idx < (head->lenchildren - 1)) {
-                    printf("\n");
+                    cwalk(head->children[idx], level);
+                    printf(";\n");
+                } else if((idx < head->lenchildren) && final) {
+                    if(isprimitivevalue(head->children[1]->tag) || head->children[1]->tag == TCALL) {
+                        printf("return ");
+                        cwalk(head->children[idx], 0);
+                        printf(";\n");
+                    } else {
+                        llcwalk(head->children[idx], level, YES);
+                        printf(";\n");
+                    }
                 }
             }
-            printf("}");
             break;
         case TEND:
             break;
