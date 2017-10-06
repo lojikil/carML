@@ -203,6 +203,7 @@ ASTEither *ASTLeft(int, int, char *);
 ASTEither *ASTRight(AST *);
 ASTOffset *ASTOffsetLeft(int, int, char *, int);
 ASTOffset *ASTOffsetRight(AST *, int);
+void indent(int);
 void walk(AST *, int);
 void llcwalk(AST *, int, int);
 int compile(FILE *, FILE *);
@@ -214,6 +215,7 @@ int issimpletypeast(int);
 int iscomplextypeast(int);
 int issyntacticform(int);
 int isprimitivevalue(int);
+int isvalueform(int);
 int iscoperator(const char *);
 
 int
@@ -423,6 +425,19 @@ isprimitivevalue(int tag) {
 
         default:
             return 0;
+    }
+}
+
+int
+isvalueform(int tag) {
+    if(isprimitivevalue(tag)) {
+        return 1;
+    } else if(tag == TCALL) {
+        return 1;
+    } else if(tag == TIDENT) {
+        return 1;
+    } else {
+        return 0;
     }
 }
 
@@ -3400,6 +3415,16 @@ mung_single_type(const char **pdecls, const int **plexemes, int len, int haltsta
 }
 
 void
+indent(int level) {
+    // should probably look to inline this
+    // basically what we are replacing is the
+    // inlined version of the same
+    for(int idx = 0; idx < level; idx++) {
+        printf("    ");
+    }
+}
+
+void
 walk(AST *head, int level) {
     int idx = 0;
 
@@ -3702,7 +3727,7 @@ llcwalk(AST *head, int level, int final) {
             // value or a CALL here. Honestly, what does
             // it mean to have a $() form here tho?
 
-            if(isprimitivevalue(head->children[1]->tag) || head->children[1]->tag == TCALL) {
+            if(isvalueform(head->children[1]->tag)) {
                 for(; idx < level + 1; idx++) {
                     printf("    ");
                 }
@@ -3769,7 +3794,16 @@ llcwalk(AST *head, int level, int final) {
             printf("if(");
             cwalk(head->children[0], 0);
             printf("){\n");
-            cwalk(head->children[1], level + 1);
+            if(final && isvalueform(head->children[1]->tag)) {
+                //indent(level + 1);
+                printf("return ");
+                cwalk(head->children[1], 0);
+                printf(";\n");
+            } else if(final) {
+                llcwalk(head->children[1], level + 1, YES);
+            } else {
+                cwalk(head->children[1], level + 1);
+            }
             printf("}");
             break;
         case TPARAMLIST:
@@ -3846,13 +3880,18 @@ llcwalk(AST *head, int level, int final) {
             // such a hack; I hate doing this at
             // the compiler level. Should be done as
             // a pass above.
-            if(final && (isprimitivevalue(head->children[1]->tag) || head->children[1]->tag == TCALL)) {
-                for(idx = 0; idx < level + 1; idx++) {
+            if(final && isvalueform(head->children[1]->tag)) {
+                // need to extract all of these calls to an
+                // actual indent function
+                /*for(idx = 0; idx < level + 1; idx++) {
                     printf("    ");
-                }
+                }*/
+                indent(level + 1);
                 printf("return ");
                 cwalk(head->children[1], 0);
                 printf(";");
+            } else if(final) {
+                llcwalk(head->children[1], level, YES);
             } else {
                 cwalk(head->children[1], level + 1);
             }
@@ -3865,7 +3904,7 @@ llcwalk(AST *head, int level, int final) {
 
             printf("} else {\n");
 
-            if(final && (isprimitivevalue(head->children[2]->tag) || head->children[2]->tag == TCALL)) {
+            if(final && isvalueform(head->children[2]->tag)) {
                 for(idx = 0; idx < level + 1; idx++) {
                     printf("    ");
                 }
@@ -3971,13 +4010,26 @@ llcwalk(AST *head, int level, int final) {
             printf(";");
             break;
         case TBEGIN:
-            printf("\n");
             for(idx = 0; idx < head->lenchildren; idx++){
-                if(idx < (head->lenchildren - 1)) {
+                if(idx == 0) {
+                    if(head->lenchildren == 1 && final && isvalueform(head->children[0]->tag)) {
+                        printf("return ");
+                        cwalk(head->children[idx], 0);
+                        printf(";\n");
+                    } else if(head->lenchildren == 1 && final) {
+                        llcwalk(head->children[idx], 0, YES);
+                    } else {
+                        cwalk(head->children[idx], 0);
+                        printf(";\n");
+                    }
+                } else if(idx < (head->lenchildren - 1)) {
                     cwalk(head->children[idx], level);
                     printf(";\n");
                 } else if((idx < head->lenchildren) && final) {
-                    if(isprimitivevalue(head->children[1]->tag) || head->children[1]->tag == TCALL) {
+                    if(isvalueform(head->children[idx]->tag)) {
+                        for(int fidx = 0; fidx < level; fidx++) {
+                            printf("    ");
+                        }
                         printf("return ");
                         cwalk(head->children[idx], 0);
                         printf(";\n");
