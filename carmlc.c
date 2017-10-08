@@ -217,6 +217,7 @@ int issyntacticform(int);
 int isprimitivevalue(int);
 int isvalueform(int);
 int iscoperator(const char *);
+char *typespec2c(AST *, char *, int);
 
 int
 main(int ac, char **al) {
@@ -470,6 +471,79 @@ issyntacticform(int tag) {
         default:
             return 0;
     }
+}
+
+// yet another location where I'd rather
+// return Option[String], sigh
+char *
+typespec2c(AST *typespec, char *dst, int len) {
+    int strstart = 0, typeidx = 0;
+
+    if(typespec->lenchildren == 1) {
+        if(typespec->children[0]->tag == TTAG) {
+            snprintf(dst, "%s ", len, typespec->children[0]->value);
+        } else {
+            switch(typespec->children[0]->tag) {
+                case TARRAY:
+                    snprintf(dst, 10, "void * ", len);
+                    break;
+                case TSTRT:
+                    snprintf(dst, 10, "char * ", len);
+                    break;
+                case TDEQUET:
+                    snprintf(dst, 10, "deque ", len);
+                    break;
+            }
+        }
+    } else {
+        /* the type domination algorithm is as follows:
+         * 1. iterate through the type list
+         * 1. if we hit a tag, that's the stop item
+         * 1. if we hit a cardinal type, that's the stop
+         * 1. invert the list from start to stop
+         * 1. snprintf to C.
+         * so, for example:
+         * `array of array of Either of int` would become
+         * Either **; I'd like to make something fat to hold
+         * arrays, but for now we can just do it this way.
+         * Honestly, I'd love to Specialize types, at least
+         * to some degree, but for now...
+         */
+        for(; typeidx < typespec->lenchildren; typeidx++) {
+            if(typespec->children[typeidx]->tag == TTAG || issimpletypeast(typespec->children[typeidx]->tag)) {
+                break;
+            }
+        }
+
+        for(; typeidx >= 0; typeidx--) {
+            switch(typespec->children[typeidx]->tag) {
+                case TTAG:
+                    typeval = typspec->children[typeidx]->value;
+                    break;
+                case TINTT:
+                    typeval = "int";
+                    break;
+                case TFLOATT:
+                    typeval = "double"
+                    break;
+                case TARRAY:
+                    typeval = "*";
+                    break;
+                case TSTRT:
+                    typeval = "char *";
+                    break;
+                case TCHART:
+                    typeval = "char";
+                    break;
+                case TBOOLT:
+                    typeval = "uint8_t";
+                    break;
+            }
+            snprintf(&dst[strstart], (len - strstart), "%s ", typeval);
+            strstart = strnlen(dst, len);
+        }
+    }
+    return dst;
 }
 
 int
