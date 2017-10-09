@@ -475,23 +475,28 @@ issyntacticform(int tag) {
 
 // yet another location where I'd rather
 // return Option[String], sigh
+// this works fine for function declarations, but 
+// not really for variable decs... need to work
+// out what *type* of signature we're generating...
 char *
 typespec2c(AST *typespec, char *dst, int len) {
     int strstart = 0, typeidx = 0;
+    char *typeval = nil;
 
     if(typespec->lenchildren == 1) {
         if(typespec->children[0]->tag == TTAG) {
-            snprintf(dst, "%s ", len, typespec->children[0]->value);
+            snprintf(dst, len, "%s ", typespec->children[0]->value);
         } else {
             switch(typespec->children[0]->tag) {
-                case TARRAY:
-                    snprintf(dst, 10, "void * ", len);
-                    break;
                 case TSTRT:
-                    snprintf(dst, 10, "char * ", len);
+                    snprintf(dst, 10, "char * ");
                     break;
                 case TDEQUET:
-                    snprintf(dst, 10, "deque ", len);
+                    snprintf(dst, 10, "deque ");
+                    break;
+                case TARRAY:
+                default:
+                    snprintf(dst, 10, "void * ");
                     break;
             }
         }
@@ -518,13 +523,13 @@ typespec2c(AST *typespec, char *dst, int len) {
         for(; typeidx >= 0; typeidx--) {
             switch(typespec->children[typeidx]->tag) {
                 case TTAG:
-                    typeval = typspec->children[typeidx]->value;
+                    typeval = typespec->children[typeidx]->value;
                     break;
                 case TINTT:
                     typeval = "int";
                     break;
                 case TFLOATT:
-                    typeval = "double"
+                    typeval = "double";
                     break;
                 case TARRAY:
                     typeval = "*";
@@ -538,8 +543,10 @@ typespec2c(AST *typespec, char *dst, int len) {
                 case TBOOLT:
                     typeval = "uint8_t";
                     break;
+                default:
+                    typeval = "void *";
             }
-            snprintf(&dst[strstart], (len - strstart), "%s ", typeval);
+            snprintf(&dst[strstart], (len - strstart), "%s", typeval);
             strstart = strnlen(dst, len);
         }
     }
@@ -3768,6 +3775,7 @@ walk(AST *head, int level) {
 void
 llcwalk(AST *head, int level, int final) {
     int idx = 0, opidx = -1;
+    char *tbuf = nil, buf[512] = {0};
 
     for(; idx < level; idx++) {
         printf("    ");
@@ -3883,6 +3891,9 @@ llcwalk(AST *head, int level, int final) {
         case TPARAMLIST:
             printf("(");
             for(;idx < head->lenchildren; idx++) {
+                if(head->children[idx]->tag == TIDENT) {
+                    printf("void *");
+                }
                 cwalk(head->children[idx], 0); 
                 if(idx < (head->lenchildren - 1)){
                     printf(", ");
@@ -3899,14 +3910,12 @@ llcwalk(AST *head, int level, int final) {
             printf("(type array)");
             break;
         case TCOMPLEXTYPE:
-            printf("(complex-type ");
-            for(;idx < head->lenchildren; idx++) {
-                cwalk(head->children[idx], 0); 
-                if(idx < (head->lenchildren - 1)){
-                    printf(" ");
-                }
+            tbuf = typespec2c(head, buf, 512); 
+            if(tbuf != nil) {
+                printf("%s", tbuf);
+            } else {
+                printf("void *");
             }
-            printf(") ");
             break;
         case TARRAYLITERAL:
             printf("{");
