@@ -217,7 +217,7 @@ int issyntacticform(int);
 int isprimitivevalue(int);
 int isvalueform(int);
 int iscoperator(const char *);
-char *typespec2c(AST *, char *, int);
+char *typespec2c(AST *, char *, char*, int);
 
 int
 main(int ac, char **al) {
@@ -479,8 +479,8 @@ issyntacticform(int tag) {
 // not really for variable decs... need to work
 // out what *type* of signature we're generating...
 char *
-typespec2c(AST *typespec, char *dst, int len) {
-    int strstart = 0, typeidx = 0;
+typespec2c(AST *typespec, char *dst, char *name, int len) {
+    int strstart = 0, typeidx = 0, rewrite = 0;
     char *typeval = nil;
 
     if(typespec->lenchildren == 1) {
@@ -499,6 +499,11 @@ typespec2c(AST *typespec, char *dst, int len) {
                     snprintf(dst, 10, "void * ");
                     break;
             }
+        }
+
+        if(name != nil) {
+            strstart = strnlen(dst, 512);
+            snprintf(&dst[strstart], 512 - strstart, "%s ", name);
         }
     } else {
         /* the type domination algorithm is as follows:
@@ -532,7 +537,11 @@ typespec2c(AST *typespec, char *dst, int len) {
                     typeval = "double";
                     break;
                 case TARRAY:
-                    typeval = "*";
+                    if(name != nil) {
+                        typeval = "[]";
+                    } else {
+                        typeval = "*";
+                    }
                     break;
                 case TSTRT:
                     typeval = "char *";
@@ -546,8 +555,13 @@ typespec2c(AST *typespec, char *dst, int len) {
                 default:
                     typeval = "void *";
             }
-            snprintf(&dst[strstart], (len - strstart), "%s", typeval);
+            snprintf(&dst[strstart], (len - strstart), "%s ", typeval);
             strstart = strnlen(dst, len);
+            if(name != nil && !rewrite) {
+                snprintf(&dst[strstart], (len - strstart), "%s", name);
+                strstart = strnlen(dst, len);
+                rewrite = 1;
+            }
         }
     }
     return dst;
@@ -3833,12 +3847,18 @@ llcwalk(AST *head, int level, int final) {
             }
 
             if(head->lenchildren == 2) {
-                cwalk(head->children[1], 0);
+                if(head->children[1]->tag == TCOMPLEXTYPE) {
+                    tbuf = typespec2c(head->children[1], buf, head->value, 512);
+                    printf("%s= ", tbuf);
+                } else {
+                    cwalk(head->children[1], 0);
+                    printf(" %s = ", head->value);
+                }
             } else {
                 printf("void *");
+                printf(" %s = ", head->value);
             }
 
-            printf(" %s = ", head->value);
 
             cwalk(head->children[0], 0);
 
@@ -3910,7 +3930,7 @@ llcwalk(AST *head, int level, int final) {
             printf("(type array)");
             break;
         case TCOMPLEXTYPE:
-            tbuf = typespec2c(head, buf, 512); 
+            tbuf = typespec2c(head, buf, nil, 512); 
             if(tbuf != nil) {
                 printf("%s", tbuf);
             } else {
