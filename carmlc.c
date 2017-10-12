@@ -165,7 +165,7 @@ const char *coperators[] = {
     "eq?", "==",
     "!=", "!=",
     "/=", "!=",
-    "<>", "!="
+    "<>", "!=",
     "lshift", "<<",
     "<<", "<<",
     "rshift", ">>",
@@ -187,6 +187,9 @@ const char *coperators[] = {
     "bor", "|",
     "bitwise-or", "|",
     "|", "|",
+    "set!", "=",
+    ".", ".",
+    "get", "get",
     0
 };
 
@@ -3959,8 +3962,17 @@ llcwalk(AST *head, int level, int final) {
                     cwalk(head->children[1], 0);
                 } else {
                     cwalk(head->children[1], 0);
-                    printf(" %s ", coperators[opidx]);
-                    cwalk(head->children[2], 0);
+                    if(!strncmp(head->children[0]->value, ".", 2)) {
+                        printf("%s", coperators[opidx]);
+                        cwalk(head->children[2], 0);
+                    } else if(!strncmp(head->children[0]->value, "get", 3)) {
+                        printf("[");
+                        cwalk(head->children[2], 0);
+                        printf("]");
+                    } else {
+                        printf(" %s ", coperators[opidx]);
+                        cwalk(head->children[2], 0);
+                    }
                 }
             } else if(head->lenchildren == 1) {
                 printf("%s()", head->children[0]->value);

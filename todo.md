@@ -16,7 +16,7 @@ A quick list of the current `TODO`s.
 1. **DONE**: Partial application syntax: `$()`, including `_` as filler
 1. Hoare-logic (pre, post, invariants, &c.)
 1. Runtime, which should be pretty minimal
-1. Compile to C in the style of Enyalios
+1. **DONE** Compile to C in the style of Enyalios
 1. an `extern` or `alien` form for easy FFI
 1. Parsing of variants
 1. Compilation of variants
@@ -39,12 +39,13 @@ A quick list of the current `TODO`s.
 1. Fix parsing of single line `begin`: `{sum x 10}` fails to parse properly
 1. **DONE** Fix `float`, `bool`, and `char` parsing
 1. Add sized ints/uints/floats (e.g. `uint8`) as types
-1. Fix edge case: complex type right before `=>` fails `def foo bar : Url => int = ...` fails
+1. **DONE** Fix edge case: complex type right before `=>` fails `def foo bar : Url => int = ...` fails
 1. add nano-pass: a-normal form (ANF)
 1. add nano-pass: lambda lifting
 1. add nano-pass: ANF => SSA
 1. add nano-pass: rewrite `let`/`letrec` => `val` + temporary binding
 1. Investigate: method of determining effects, and how that could make ANF easier (lift once for two calls)
+1. Investigate: currently there is a syntax ambiguity in `begin` forms: is `t` a unary function call, or an identifier?
 
 # Begin-style function calls
 
@@ -91,6 +92,19 @@ Additionally, I want the repl to be able to handle those sorts of calls as well:
     (define foo (parameter-list (identifier x))
         (begin
             (call (identifier sum) (identifier x) (identifier x))))
+
+ Furthermore, this actually introduces a syntax & semantic ambiguity:
+
+     def foo x : int => int = {
+         var t : int = 10
+         set! t (sum t x)
+         t
+     }
+
+Technically, we want the _value_ of `t`, but the current compiler thinks
+that `t` is actually an unary function application. Need to chew on how 
+to fix that... OCaml requires explicit `()` for unary, so I could do
+the same... not really sure I like that, but it is one solution.
 
 # Scala-style types
 
