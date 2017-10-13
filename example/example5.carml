@@ -1,0 +1,21 @@
+record Test {
+    bar : int
+    baz : int
+}
+
+def main ac : int al : array of string => int = {
+    # var, because we want to assign to it
+    # and technically should be `ref of Test`
+    var f : ref of Test = (malloc (sizeof Test))
+
+    # I dislike having to use `->` at some level, because 
+    # I feel like that's an implementation detail that the
+    # compiler should be tracking, but it works for now...
+    set! (-> f bar) 10
+    set! (-> f baz) 20
+    # the \\n is a bug in the compiler's output of C.
+    # will fix
+    printf "%d + %d is %d\\n" (-> f bar) (-> f baz) (sum (-> f bar) (-> f baz))
+    free f
+    0
+}

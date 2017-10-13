@@ -189,6 +189,7 @@ const char *coperators[] = {
     "|", "|",
     "set!", "=",
     ".", ".",
+    "->", "->",
     "get", "get",
     0
 };
@@ -383,6 +384,7 @@ istypeast(int tag) {
         case TSTRT:
         case TTAG: // user types 
         case TBOOLT:
+        case TREF:
             return 1;
         default:
             return 0;
@@ -410,6 +412,7 @@ iscomplextypeast(int tag) {
     switch(tag) {
         case TARRAY:
         case TDEQUET:
+        case TREF:
         case TTAG: // user types 
             return 1;
         default:
@@ -498,6 +501,7 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
                     snprintf(dst, 10, "deque ");
                     break;
                 case TARRAY:
+                case TREF:
                 default:
                     snprintf(dst, 10, "void * ");
                     break;
@@ -545,6 +549,9 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
                     } else {
                         typeval = "*";
                     }
+                    break;
+                case TREF:
+                    typeval = "*";
                     break;
                 case TSTRT:
                     typeval = "char *";
@@ -3372,6 +3379,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
         case TCOLON:
         case TSEMI:
         case TFATARROW:
+        case TREF:
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = ltype;
             return ASTRight(head);
@@ -3625,6 +3633,9 @@ walk(AST *head, int level) {
             break;
         case TARRAY:
             printf("(type array)");
+            break;
+        case TREF:
+            printf("(type ref)");
             break;
         case TCOMPLEXTYPE:
             printf("(complex-type ");
@@ -3963,6 +3974,9 @@ llcwalk(AST *head, int level, int final) {
                 } else {
                     cwalk(head->children[1], 0);
                     if(!strncmp(head->children[0]->value, ".", 2)) {
+                        printf("%s", coperators[opidx]);
+                        cwalk(head->children[2], 0);
+                    } else if(!strncmp(head->children[0]->value, "->", 2)) {
                         printf("%s", coperators[opidx]);
                         cwalk(head->children[2], 0);
                     } else if(!strncmp(head->children[0]->value, "get", 3)) {
