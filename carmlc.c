@@ -265,8 +265,8 @@ main(int ac, char **al) {
  / __/ _` | '__| |\\/| || |    \n\
 | (_| (_| | |  | |  | || |____\n\
  \\___\\__,_|_|  \\_|  |_/\\_____/\n");
-        printf("\t\tcarML/C 2016.3\n");
-        printf("(c) 2016 lojikil, released under ISC License.\n\n");
+        printf("\t\tcarML/C 2017.3\n");
+        printf("(c) 2016-2017 lojikil, released under ISC License.\n\n");
         do {
             printf(">>> ");
             ret = readexpression(stdin);
@@ -2835,24 +2835,28 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                      * this way to see how much of a problem it actually
                      * is...
                      */
-                    AST *tcall = (AST *)hmalloc(sizeof(AST));
-                    tcall->tag = TCALL;
-                    tcall->lenchildren = idx - flag;
-                    //printf("idx == %d, flag == %d\n", idx, flag);
-                    tcall->children = (AST **)hmalloc(sizeof(AST *) * tcall->lenchildren);
-                    //printf("len == %d\n", tcall->lenchildren);
-                    for(int i = 0; i < tcall->lenchildren; i++) {
-                        //printf("i == %d\n", i);
-                        AST* ttmp = vectmp[flag + i];
-                        /*walk(ttmp, 0);
-                        printf("\n");*/
-                        tcall->children[i] = vectmp[flag + i];
-                        /*walk(tcall->children[i], 0);
-                        printf("\n");*/
+                    if((idx - flag) > 1) {
+                        AST *tcall = (AST *)hmalloc(sizeof(AST));
+                        tcall->tag = TCALL;
+                        tcall->lenchildren = idx - flag;
+                        //printf("idx == %d, flag == %d\n", idx, flag);
+                        tcall->children = (AST **)hmalloc(sizeof(AST *) * tcall->lenchildren);
+                        //printf("len == %d\n", tcall->lenchildren);
+                        for(int i = 0; i < tcall->lenchildren; i++) {
+                            //printf("i == %d\n", i);
+                            AST* ttmp = vectmp[flag + i];
+                            /*walk(ttmp, 0);
+                            printf("\n");*/
+                            tcall->children[i] = vectmp[flag + i];
+                            /*walk(tcall->children[i], 0);
+                            printf("\n");*/
+                        }
+                        tmp = tcall;
+                    } else {
+                        tmp = vectmp[flag];
                     }
                     idx = flag;
                     flag = -1;
-                    tmp = tcall;
                 } else if(tmp->tag == TNEWL) {
                     continue;
                 }

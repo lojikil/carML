@@ -45,7 +45,7 @@ A quick list of the current `TODO`s.
 1. add nano-pass: ANF => SSA
 1. add nano-pass: rewrite `let`/`letrec` => `val` + temporary binding
 1. Investigate: method of determining effects, and how that could make ANF easier (lift once for two calls)
-1. Investigate: currently there is a syntax ambiguity in `begin` forms: is `t` a unary function call, or an identifier?
+1. **DONE** Investigate: currently there is a syntax ambiguity in `begin` forms: is `t` a unary function call, or an identifier? Fix: identifier
 
 # Begin-style function calls
 
