@@ -486,7 +486,7 @@ issyntacticform(int tag) {
 // out what *type* of signature we're generating...
 char *
 typespec2c(AST *typespec, char *dst, char *name, int len) {
-    int strstart = 0, typeidx = 0, rewrite = 0;
+    int strstart = 0, typeidx = 0, rewrite = 0, speclen = 0;
     char *typeval = nil;
 
     if(typespec->lenchildren == 1) {
@@ -513,6 +513,8 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
             snprintf(&dst[strstart], 512 - strstart, "%s ", name);
         }
     } else {
+        speclen = typespec->lenchildren;
+
         /* the type domination algorithm is as follows:
          * 1. iterate through the type list
          * 1. if we hit a tag, that's the stop item
@@ -526,7 +528,7 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
          * Honestly, I'd love to Specialize types, at least
          * to some degree, but for now...
          */
-        for(; typeidx < typespec->lenchildren; typeidx++) {
+        for(; typeidx < speclen; typeidx++) {
             if(typespec->children[typeidx]->tag == TTAG || issimpletypeast(typespec->children[typeidx]->tag)) {
                 break;
             }
@@ -568,9 +570,13 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
             snprintf(&dst[strstart], (len - strstart), "%s ", typeval);
             strstart = strnlen(dst, len);
             if(name != nil && !rewrite) {
-                snprintf(&dst[strstart], (len - strstart), "%s", name);
-                strstart = strnlen(dst, len);
-                rewrite = 1;
+                if(typeidx >= 1 && typespec->children[typeidx - 1]->tag == TREF){
+                    continue;
+                } else {
+                    snprintf(&dst[strstart], (len - strstart), "%s", name);
+                    strstart = strnlen(dst, len);
+                    rewrite = 1;
+                }
             }
         }
     }

@@ -72,7 +72,7 @@ considering that both languages are _not_ derived from existing ML dialects. [Ye
     # use the closure in arrayIota' to
     # capture variables, instead of
     # explicitly passing them in
-    declare arrayIota0 array of Num (Num -> Num) -> ()
+    declare arrayIota0 array of Num (Num => Num) => ()
     def arrayIota0 arr fun = begin
         def arrayIota' idx = begin
             if (< idx (array-length arr)) then {
@@ -86,23 +86,29 @@ considering that both languages are _not_ derived from existing ML dialects. [Ye
     # same as the above, but using `foreachIndex`
     # note, there is no _real_ reason to use begin
     # form here, but it makes it a bit more pretty.
-    @arrayIota1 array of Num (Num -> Num) -> ()
+    @arrayIota1 array of Num (Num => Num) => ()
     def arrayIota1 arr fun = {
         foreachIndex fn x = (set-array-index! arr (fun x) x) arr
     }
 
     # same as the above, but without the `{}` block
-    @arrayIota2 array of Num (Num -> Num) -> ()
+    @arrayIota2 array of Num (Num => Num) => ()
     def arrayIota2 arr fun = (foreachIndex fn x = (set-array-index! arr (fun x) x) arr)
 
     # same as the above, but using `letrec`
-    @arrayIota3 array of Num (Num -> Num) -> ()
+    @arrayIota3 array of Num (Num => Num) => ()
     def arrayIota3 arr fun = {
         letrec internalIota = fn idx = {
             set-array-index! arr (fun idx) x
             internalIota (sum idx 1)
         } in
         internalIota 0
+    }
+
+    # inline type definition style
+    def arrayIota3 arr : array fun : (Num => Num) => () = {
+        let intFn = fn x : int = (set-array-index! arr (fun x) x) in
+            foreachIndex intFn arr
     }
 
     # eventually, `def` forms should work
@@ -117,6 +123,8 @@ considering that both languages are _not_ derived from existing ML dialects. [Ye
 
     # add:
     # ref, make
+
+ See also the _examples_ directory for more indepth & up-to-date examples.
 
 # Implementations
 
