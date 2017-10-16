@@ -14,6 +14,8 @@ A quick list of the current `TODO`s.
 1. `match`/`case` form, with guards.
 1. Figure out a decent backing for Rust-style deques (possibly implemented from records + arrays)
 1. **DONE**: Partial application syntax: `$()`, including `_` as filler
+1. make `$` and `|>` work as they would in Haskell & OCaml/F# respectively.
+1. integrate `$` and `|>` with `$()`
 1. Hoare-logic (pre, post, invariants, &c.)
 1. Runtime, which should be pretty minimal
 1. **DONE** Compile to C in the style of Enyalios
@@ -44,8 +46,11 @@ A quick list of the current `TODO`s.
 1. add nano-pass: lambda lifting
 1. add nano-pass: ANF => SSA
 1. add nano-pass: rewrite `let`/`letrec` => `val` + temporary binding
+1. add nano-pass: constant folding
 1. Investigate: method of determining effects, and how that could make ANF easier (lift once for two calls)
 1. **DONE** Investigate: currently there is a syntax ambiguity in `begin` forms: is `t` a unary function call, or an identifier? Fix: identifier
+1. Tests, both for IR and C
+1. JS, Java, C++ backends, but written in carML itself and using the SExpression output.
 
 # Begin-style function calls
 
