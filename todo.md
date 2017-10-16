@@ -78,7 +78,7 @@ Additionally, I want the repl to be able to handle those sorts of calls as well:
     >>> f (f 10)
     _ : Int = 30
 
- Also, this is broken:
+**DONE, 16OCT2017** Also, this is broken:
 
      >>> def foo x = { sum x x }
     (define foo (parameter-list (identifier x))
@@ -93,7 +93,7 @@ Additionally, I want the repl to be able to handle those sorts of calls as well:
         (begin
             (call (identifier sum) (identifier x) (identifier x))))
 
- Furthermore, this actually introduces a syntax & semantic ambiguity:
+ **DONE, 13OCT2017** Furthermore, this actually introduces a syntax & semantic ambiguity:
 
      def foo x : int => int = {
          var t : int = 10

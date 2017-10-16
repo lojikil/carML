@@ -2808,10 +2808,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 //debugln; 
                 tmp = sometmp->right;
                 //debugln;
-                if(tmp->tag == TEND) {
-                    //debugln;
-                    break;
-                } else if(tmp->tag == TIDENT || tmp->tag == TTAG) {
+                if(tmp->tag == TIDENT || tmp->tag == TTAG) {
                     /* NOTE: general strategy for emitting a CALL
                      * read values into vectmp, but mark the start
                      * of the TCALL (flag == 0), and when we hit
@@ -2826,6 +2823,10 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         flag = idx;
                     }
                 } else if(flag != -1 && (tmp->tag == TSEMI || tmp->tag == TNEWL || tmp->tag == TEND)) {
+                    if(tmp->tag == TEND) {
+                        debugln;
+                        fatflag = 1;
+                    }
                     /* collapse the call into a TCALL
                      * this has some _slight_ problems, since it 
                      * uses the same stack as the TBEGIN itself,
@@ -2860,8 +2861,16 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 } else if(tmp->tag == TNEWL) {
                     continue;
                 }
-                //debugln;
+                walk(tmp, 0);
+                debugln;
+
                 vectmp[idx++] = tmp;
+
+                if(fatflag) {
+                    debugln;
+                    break;
+                } 
+
                 //printf("tmp == nil? %s\n", tmp == nil ? "yes" : "no");
             }
             head = (AST *)hmalloc(sizeof(AST));
