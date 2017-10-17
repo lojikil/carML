@@ -2824,7 +2824,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                     }
                 } else if(flag != -1 && (tmp->tag == TSEMI || tmp->tag == TNEWL || tmp->tag == TEND)) {
                     if(tmp->tag == TEND) {
-                        debugln;
+                        //debugln;
                         fatflag = 1;
                     }
                     /* collapse the call into a TCALL
@@ -2861,15 +2861,19 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 } else if(tmp->tag == TNEWL) {
                     continue;
                 }
-                walk(tmp, 0);
-                debugln;
 
-                vectmp[idx++] = tmp;
+                /*walk(tmp, 0);
+                debugln;
+                printf("tmp->tag == %d\n", tmp->tag);*/
 
                 if(fatflag) {
-                    debugln;
+                    vectmp[idx++] = tmp;
                     break;
-                } 
+                } else if(tmp->tag == TEND) {
+                    break;
+                } else {
+                    vectmp[idx++] = tmp;
+                }
 
                 //printf("tmp == nil? %s\n", tmp == nil ? "yes" : "no");
             }

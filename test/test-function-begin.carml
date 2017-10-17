@@ -1,0 +1,11 @@
+# These should all parse to
+# fairly similar results. The
+# sole difference should be
+# that foo does not have an
+# explicit begin.
+
+def foo x : int => int = (sum x 10)
+def bar x : int => int = { sum x 10 }
+def baz x : int => int = {
+    sum x 10
+}
