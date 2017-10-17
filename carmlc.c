@@ -266,7 +266,7 @@ main(int ac, char **al) {
 | (_| (_| | |  | |  | || |____\n\
  \\___\\__,_|_|  \\_|  |_/\\_____/\n");
         printf("\t\tcarML/C 2017.3\n");
-        printf("(c) 2016-2017 lojikil, released under ISC License.\n\n");
+        printf("(c) 2016-2017 lojikil, released under the ISC License.\n\n");
         do {
             printf(">>> ");
             ret = readexpression(stdin);
@@ -3017,8 +3017,35 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             head->tag = TOF;
             return ASTRight(head);
         case TTYPE:
-            break;
         case TPOLY:
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = ltype;
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else if(sometmp->right->tag != TTAG) {
+                return ASTLeft(0, 0, "type/poly definition *must* be followed by a Tag name");
+            } else {
+                head->value = sometmp->right->value;
+            }
+
+            /* type|poly Tag type-var* {
+             *     (Tag-name type-member*)+
+             * }
+             */
+
+            ltmp = next(fdin, &buffer[0], 512);
+
+            if(ltmp != TBEGIN) {
+                return ASTLeft(0, 0, "record-defitintion *must* begin with BEGIN");
+            }
+
+            /* here, we just need to read:
+             * 1. a Tag name
+             * 2. some number of variables
+             * Honestly, could almost lift the TDEF code instead...
+             */
+
             break;
         case TVAL:
         case TVAR:
