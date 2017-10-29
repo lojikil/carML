@@ -3025,6 +3025,9 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = ltype;
 
+            head->lenchildren = 2;
+            head->children = (AST **)hmalloc(sizeof(AST *) * 2);
+
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
             } else if(sometmp->right->tag != TTAG) {
@@ -3033,22 +3036,90 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 head->value = sometmp->right->value;
             }
 
+            flag = idx;
+
             /* type|poly Tag type-var* {
              *     (Tag-name type-member*)+
              * }
+             * need to put this in a loop, so that
+             * we can read the various idents (typevars)
+             * befor the begin...
              */
+            while(ltmp != TBEGIN) {
+                ltmp = next(fdin, &buffer[0], 512);
 
-            ltmp = next(fdin, &buffer[0], 512);
-
-            if(ltmp != TBEGIN) {
-                return ASTLeft(0, 0, "record-defitintion *must* begin with BEGIN");
+                if(ltmp == TBEGIN) {
+                    break;
+                } else if(ltmp == TTAG) {
+                    tmp = (AST *)hmalloc(sizeof(AST));
+                    tmp->tag = TTAG;
+                    tmp->value = hstrdup(buffer);
+                    vectmp[idx] = tmp;
+                    idx++;
+                } else {
+                    return ASTLeft(0, 0, "record-definition *must* begin with BEGIN");
+                }
             }
+
+            if(idx > flag) {
+
+                tmp = (AST *)hmalloc(sizeof(AST));
+                tmp->tag = TPARAMLIST;
+                tmp->lenchildren = idx - flag;
+                tmp->children = (AST **)hmalloc(sizeof(AST *) * tmp->lenchildren);
+
+                for(int tidx = 0; flag < idx; flag++, tidx++) {
+                    tmp->children[tidx] = vectmp[flag];
+                }
+
+                head->children[0] = tmp;
+
+            } else {
+                // AGAIN with the option types...
+                head->children[0] = nil;
+            }
+
+            typestate = -1;
 
             /* here, we just need to read:
              * 1. a Tag name
              * 2. some number of variables
              * Honestly, could almost lift the TDEF code instead...
              */
+            while(tmp->tag != TEND) {
+
+                sometmp = readexpression(fdin);
+
+                if(sometmp->tag == ASTLEFT) {
+                    return sometmp;
+                }
+
+                switch(typestate) {
+                    case -1:
+                        if(sometmp->right->tag != TTAG) {
+                            return ASTLeft(0, 0, "type/poly constructors must be Tags.");
+                        } else {
+                            typestate = 0;
+                        }
+
+                        break;
+
+                    case 0:
+                        if(sometmp->right->tag == TIDENT) {
+                            typestate = 1;
+                        } else if(istypeast(sometmp->right->tag)) {
+                             
+                        } else {
+
+                        }
+                        break;
+
+                    case 1:
+
+
+                // here, we need to parse function defs, basically
+
+            }
 
             break;
         case TVAL:
@@ -3243,7 +3314,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             ltmp = next(fdin, &buffer[0], 512);
 
             if(ltmp != TBEGIN) {
-                return ASTLeft(0, 0, "record-defitintion *must* begin with BEGIN");
+                return ASTLeft(0, 0, "record-definition *must* begin with BEGIN");
             }
 
             /* here, we just need to read:
