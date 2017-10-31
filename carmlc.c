@@ -3111,10 +3111,10 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
 
                         } else if(iscomplextypeast(sometmp->right->tag)) {
                             typestate = 2;
-                        } else if(tmp->tag == TEND || tmp->tag == TNEWL || tmp->TAG == TSEMI)
+                        } else if(tmp->tag == TEND || tmp->tag == TNEWL || tmp->tag == TSEMI) {
                             typestate = -1;
                         } else {
-
+                            return ASTLeft(0, 0, "constructor's must be followed by a name or a type.");
                         }
                         break;
 
@@ -3127,7 +3127,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         break;
 
                     case 2:
-                        if(issimpleast(sometmp->right->tag)) {
+                        if(issimpletypeast(sometmp->right->tag)) {
                             // need to collapse previous stuff here...
                             typestate = 0;
                         } else if(iscomplextypeast(sometmp->right->tag)) {
@@ -3154,6 +3154,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         } else if(tmp->tag == TEND || tmp->tag == TNEWL || tmp->tag == TSEMI) {
                             typestate = -1;
                         }
+                        break;
                 }
 
                 // ok, we got to the end of *something*
