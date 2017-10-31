@@ -3107,18 +3107,60 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                     case 0:
                         if(sometmp->right->tag == TIDENT) {
                             typestate = 1;
-                        } else if(istypeast(sometmp->right->tag)) {
-                             
+                        } else if(issimpletypeast(sometmp->right->tag)) {
+
+                        } else if(iscomplextypeast(sometmp->right->tag)) {
+                            typestate = 2;
+                        } else if(tmp->tag == TEND || tmp->tag == TNEWL || tmp->TAG == TSEMI)
+                            typestate = -1;
                         } else {
 
                         }
                         break;
 
-                    case 1:
+                    case 1: // we had an ident, now need a type
+                        if(sometmp->right->tag == TCOLON) {
+                            typestate = 2;
+                        } else {
+                            return ASTLeft(0, 0, "constructor named vars must be followed by a colon and a type specifier.");
+                        }
+                        break;
 
+                    case 2:
+                        if(issimpleast(sometmp->right->tag)) {
+                            // need to collapse previous stuff here...
+                            typestate = 0;
+                        } else if(iscomplextypeast(sometmp->right->tag)) {
+                            typestate = 3;
+                        } else if(sometmp->right->tag == TARRAY) {
+                            // need to collapse previous stuff here,
+                            // but also check that we have valid types
+                            // within the array.
+                            typestate = 0;
+                        } else {
 
-                // here, we need to parse function defs, basically
+                        }
+                        break;
+                    case 3:
+                        if(sometmp->right->tag == TOF) {
+                            typestate = 2;
+                        } else if(sometmp->right->tag == TIDENT) {
+                            // need to collapse previous type here...
+                            typestate = 1;
+                        } else if(issimpletypeast(sometmp->right->tag)) {
+                            typestate = 0;
+                        } else if(iscomplextypeast(sometmp->right->tag)) {
+                            typestate = 2;
+                        } else if(tmp->tag == TEND || tmp->tag == TNEWL || tmp->tag == TSEMI) {
+                            typestate = -1;
+                        }
+                }
 
+                // ok, we got to the end of *something*
+                // collapse it here
+                if(typestate == -1) {
+
+                }
             }
 
             break;
