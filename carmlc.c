@@ -75,7 +75,7 @@ typedef enum {
     TARRAYLITERAL, TBIN, TOCT, THEX, // 60
     TARROW, TFATARROW, TCUT, TDOLLAR, // 64
     TPIPEARROW, TUSERT, TVAR, TTAG, // 68
-    TPARAMDEF, // 69
+    TPARAMDEF, TTYPEDEF // 70
 } TypeTag;
 
 struct _AST {
@@ -3160,7 +3160,22 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 // ok, we got to the end of *something*
                 // collapse it here
                 if(typestate == -1) {
+                    params = (AST *) hmalloc(sizeof(AST));
+                    params->lenchildren = idx - flag
+                    params->children = (AST **)hmalloc(sizeof(AST *) * idx);
 
+                    for(int i = 0; i < params->lenchildren; i++, flag++) {
+                        params->children[i] = vectmp[flag];
+                    }
+
+                    params->tag = TTYPEDEF;
+                    vectmp[flag] = params;
+                    flag++;
+                    idx = flag;
+
+                    if(tmp->tag == TEND) {
+                        break;
+                    }
                 }
             }
 
