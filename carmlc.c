@@ -3101,20 +3101,26 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         } else {
                             typestate = 0;
                         }
-
+                        vectmp[idx] = sometmp->right;
+                        idx++;
                         break;
 
                     case 0:
                         if(sometmp->right->tag == TIDENT) {
                             typestate = 1;
                         } else if(issimpletypeast(sometmp->right->tag)) {
-
+                            typestate = 0;
                         } else if(iscomplextypeast(sometmp->right->tag)) {
                             typestate = 2;
                         } else if(tmp->tag == TEND || tmp->tag == TNEWL || tmp->tag == TSEMI) {
                             typestate = -1;
                         } else {
                             return ASTLeft(0, 0, "constructor's must be followed by a name or a type.");
+                        }
+
+                        if(typstate != -1) {
+                            vectmp[idx] = sometmp->right;
+                            idx++;
                         }
                         break;
 
@@ -3149,7 +3155,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             typestate = 1;
                         } else if(issimpletypeast(sometmp->right->tag)) {
                             typestate = 0;
-                        } else if(iscomplextypeast(sometmp->right->tag)) {
+                        } else if(tmp->tag == TARRAY) {
                             typestate = 2;
                         } else if(tmp->tag == TEND || tmp->tag == TNEWL || tmp->tag == TSEMI) {
                             typestate = -1;
