@@ -3028,6 +3028,8 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             head->lenchildren = 2;
             head->children = (AST **)hmalloc(sizeof(AST *) * 2);
 
+            sometmp = readexpression(fdin);
+
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
             } else if(sometmp->right->tag != TTAG) {
@@ -3093,16 +3095,22 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 if(sometmp->tag == ASTLEFT) {
                     return sometmp;
                 }
-
+                debugln; 
+                walk(sometmp->right, 0);
+                dprintf("\n");
+                dprintf("tag == TEND? %s\n", sometmp->right->tag == TEND ? "yes" : "no");
                 switch(typestate) {
                     case -1:
-                        if(sometmp->right->tag != TTAG) {
-                            return ASTLeft(0, 0, "type/poly constructors must be Tags.");
-                        } else {
+                        if(sometmp->right->tag == TTAG) {
                             typestate = 0;
+                            vectmp[idx] = sometmp->right;
+                            idx++;
+                        } else if(sometmp->right->tag == TEND){
+                            typestate = -1;
+                            tmp = sometmp->right;
+                        } else {
+                            return ASTLeft(0, 0, "type/poly constructors must be Tags.");
                         }
-                        vectmp[idx] = sometmp->right;
-                        idx++;
                         break;
 
                     case 0:
@@ -3112,13 +3120,13 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             typestate = 0;
                         } else if(iscomplextypeast(sometmp->right->tag)) {
                             typestate = 2;
-                        } else if(tmp->tag == TEND || tmp->tag == TNEWL || tmp->tag == TSEMI) {
+                        } else if(sometmp->right->tag == TEND || sometmp->right->tag == TNEWL || sometmp->right->tag == TSEMI) {
                             typestate = -1;
                         } else {
                             return ASTLeft(0, 0, "constructor's must be followed by a name or a type.");
                         }
 
-                        if(typstate != -1) {
+                        if(typestate != -1) {
                             vectmp[idx] = sometmp->right;
                             idx++;
                         }
@@ -3167,7 +3175,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 // collapse it here
                 if(typestate == -1) {
                     params = (AST *) hmalloc(sizeof(AST));
-                    params->lenchildren = idx - flag
+                    params->lenchildren = idx - flag;
                     params->children = (AST **)hmalloc(sizeof(AST *) * idx);
 
                     for(int i = 0; i < params->lenchildren; i++, flag++) {
@@ -3179,12 +3187,15 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                     flag++;
                     idx = flag;
 
-                    if(tmp->tag == TEND) {
+                    debugln;
+
+                    if(tmp->tag == TEND || sometmp->right->tag == TEND) {
+                        debugln;
                         break;
                     }
                 }
             }
-
+            return ASTRight(head);
             break;
         case TVAL:
         case TVAR:
