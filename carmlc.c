@@ -3053,6 +3053,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 if(ltmp == TBEGIN) {
                     break;
                 } else if(ltmp == TTAG) {
+                    debugln;
                     tmp = (AST *)hmalloc(sizeof(AST));
                     tmp->tag = TTAG;
                     tmp->value = hstrdup(buffer);
@@ -3069,13 +3070,18 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 tmp->tag = TPARAMLIST;
                 tmp->lenchildren = idx - flag;
                 tmp->children = (AST **)hmalloc(sizeof(AST *) * tmp->lenchildren);
-
+                debugln;
                 for(int tidx = 0; flag < idx; flag++, tidx++) {
+                    printf("%d %d\n", tidx, flag);
                     tmp->children[tidx] = vectmp[flag];
                 }
 
                 head->children[0] = tmp;
-
+                debugln;
+                walk(tmp, 0);
+                printf("\n");
+                flag = 0;
+                idx = 0;
             } else {
                 // AGAIN with the option types...
                 head->children[0] = nil;
@@ -3088,7 +3094,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
              * 2. some number of variables
              * Honestly, could almost lift the TDEF code instead...
              */
-            while(tmp->tag != TEND) {
+            while(sometmp->right->tag != TEND) {
 
                 sometmp = readexpression(fdin);
 
@@ -3189,12 +3195,13 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
 
                     debugln;
 
-                    if(tmp->tag == TEND || sometmp->right->tag == TEND) {
+                    if(sometmp->right->tag == TEND) {
                         debugln;
                         break;
                     }
                 }
             }
+            debugln;
             return ASTRight(head);
             break;
         case TVAL:
@@ -3835,7 +3842,12 @@ walk(AST *head, int level) {
                 printf("(type ");
             }
             printf("%s ", head->value);
-            for(int cidx = 0; cidx < head->lenchildren; cidx++) {
+            if(head->children[0] != nil)
+            {
+                walk(head->children[0], 0);
+            }
+            printf("\n");
+            for(int cidx = 1; cidx < head->lenchildren; cidx++) {
                 walk(head->children[cidx], level + 1);
                 printf("\n");
             }

@@ -1,8 +1,19 @@
 # a simple test of ADTs
-# bug: Shouldn't *need* Bar here
-# bug: parameter-list is malformed 
+# Fixed bug: Shouldn't *need* Bar here
+# Fixed bug: parameter-list is malformed 
 # bug: Left/Right are missing
+
+type Baz {
+    BazOk int
+    BazErr int
+}
+
 type Foo Bar {
     Left int
     Right int
+}
+
+type Result Success Fail {
+    Ok Success
+    Err Fail
 }
