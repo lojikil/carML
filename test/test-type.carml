@@ -1,0 +1,8 @@
+# a simple test of ADTs
+# bug: Shouldn't *need* Bar here
+# bug: parameter-list is malformed 
+# bug: Left/Right are missing
+type Foo Bar {
+    Left int
+    Right int
+}

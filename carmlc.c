@@ -3827,6 +3827,20 @@ walk(AST *head, int level) {
             walk(head->children[1], 0);
             printf(")");
             break;
+        case TTYPE:
+        case TPOLY:
+            if(head->tag == TPOLY) {
+                printf("(polymorphic-type ");
+            } else {
+                printf("(type ");
+            }
+            printf("%s ", head->value);
+            for(int cidx = 0; cidx < head->lenchildren; cidx++) {
+                walk(head->children[cidx], level + 1);
+                printf("\n");
+            }
+            printf(")\n");
+            break;
         case TARRAY:
             printf("(type array)");
             break;
