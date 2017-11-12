@@ -3107,6 +3107,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 dprintf("tag == TEND? %s\n", sometmp->right->tag == TEND ? "yes" : "no");
                 switch(typestate) {
                     case -1:
+                        flag = idx;
                         if(sometmp->right->tag == TTAG) {
                             typestate = 0;
                             vectmp[idx] = sometmp->right;
@@ -3201,6 +3202,23 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                     }
                 }
             }
+            // oh, right
+            // it would be helpful to collect the above
+            // and make them into like... an AST
+            debugln;
+            params = (AST *)hmalloc(sizeof(AST));
+            printf("idx == %d\n", idx);
+            params->lenchildren = idx;
+            params->children = (AST **)hmalloc(sizeof(AST *) * idx);
+
+            for(int cidx = 0; cidx < params->lenchildren; cidx++) {
+                params->children[cidx] = vectmp[cidx];                
+            }
+
+            params->tag = TBEGIN;
+
+            head->children[1] = params;
+
             debugln;
             return ASTRight(head);
             break;
