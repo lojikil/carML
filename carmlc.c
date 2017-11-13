@@ -3101,6 +3101,15 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
              */
             while(sometmp->right->tag != TEND) {
 
+                // so this below fixes the TNEWL
+                // bug noted in test-type, but it 
+                // introduces another bug of blank
+                // constructors. I figured that would
+                // be a problem, because the state
+                // transition below seems a bit off
+                // anyway. So, more to fix there, but
+                // close...
+                //sometmp = llreadexpression(fdin, 1);
                 sometmp = readexpression(fdin);
 
                 if(sometmp->tag == ASTLEFT) {
@@ -3118,7 +3127,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             typestate = 0;
                             vectmp[idx] = sometmp->right;
                             idx++;
-                        } else if(sometmp->right->tag == TEND){
+                        } else if(sometmp->right->tag == TEND || sometmp->right->tag == TNEWL || sometmp->right->tag == TSEMI){
                             typestate = -1;
                             tmp = sometmp->right;
                         } else {
