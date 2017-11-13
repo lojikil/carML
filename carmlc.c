@@ -3,12 +3,14 @@
 #include <string.h>
 #include <gc.h>
 
-#ifndef NODEBUG
+#ifdef DEBUG
 #define debugln printf("dying here on line %d?\n", __LINE__);
 #define dprintf(...) printf(__VA_ARGS__)
+#define dwalk(x, y) walk(x, y)
 #else
 #define debugln
 #define dprintf(...)
+#define dwalk(x, y) 
 #endif
 
 #define nil NULL
@@ -3028,6 +3030,9 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             head->lenchildren = 2;
             head->children = (AST **)hmalloc(sizeof(AST *) * 2);
 
+            AST *nstack[128] = {nil};
+            int nsp = 0;
+
             sometmp = readexpression(fdin);
 
             if(sometmp->tag == ASTLEFT) {
@@ -3072,14 +3077,14 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 tmp->children = (AST **)hmalloc(sizeof(AST *) * tmp->lenchildren);
                 debugln;
                 for(int tidx = 0; flag < idx; flag++, tidx++) {
-                    printf("%d %d\n", tidx, flag);
+                    dprintf("%d %d\n", tidx, flag);
                     tmp->children[tidx] = vectmp[flag];
                 }
 
                 head->children[0] = tmp;
                 debugln;
-                walk(tmp, 0);
-                printf("\n");
+                dwalk(tmp, 0);
+                dprintf("\n");
                 flag = 0;
                 idx = 0;
             } else {
@@ -3102,9 +3107,10 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                     return sometmp;
                 }
                 debugln; 
-                walk(sometmp->right, 0);
+                dwalk(sometmp->right, 0);
                 dprintf("\n");
                 dprintf("tag == TEND? %s\n", sometmp->right->tag == TEND ? "yes" : "no");
+                dprintf("typestate == %d\n", typestate);
                 switch(typestate) {
                     case -1:
                         flag = idx;
@@ -3134,6 +3140,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         }
 
                         if(typestate != -1) {
+                            debugln;
                             vectmp[idx] = sometmp->right;
                             idx++;
                         }
@@ -3190,9 +3197,10 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                     }
 
                     params->tag = TTYPEDEF;
-                    vectmp[flag] = params;
-                    flag++;
+                    nstack[nsp] = params;
+                    flag = 0;
                     idx = flag;
+                    nsp++;
 
                     debugln;
 
@@ -3207,12 +3215,12 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             // and make them into like... an AST
             debugln;
             params = (AST *)hmalloc(sizeof(AST));
-            printf("idx == %d\n", idx);
-            params->lenchildren = idx;
-            params->children = (AST **)hmalloc(sizeof(AST *) * idx);
+            dprintf("idx == %d\n", nsp);
+            params->lenchildren = nsp;
+            params->children = (AST **)hmalloc(sizeof(AST *) * nsp);
 
-            for(int cidx = 0; cidx < params->lenchildren; cidx++) {
-                params->children[cidx] = vectmp[cidx];                
+            for(int cidx = 0; cidx < nsp; cidx++) {
+                params->children[cidx] = nstack[cidx];                
             }
 
             params->tag = TBEGIN;
@@ -3865,11 +3873,23 @@ walk(AST *head, int level) {
                 walk(head->children[0], 0);
             }
             printf("\n");
-            for(int cidx = 1; cidx < head->lenchildren; cidx++) {
-                walk(head->children[cidx], level + 1);
-                printf("\n");
+            for(int cidx = 0; cidx < head->children[1]->lenchildren; cidx++) {
+                walk(head->children[1]->children[cidx], level + 1);
+                if(cidx < (head->children[1]->lenchildren - 1)) {
+                    printf("\n");
+                }
             }
             printf(")\n");
+            break;
+        case TTYPEDEF:
+            printf("(type-constructor ");
+            for(int cidx = 0; cidx < head->lenchildren; cidx++) {
+                walk(head->children[cidx], 0);
+                if(cidx < (head->lenchildren - 1)) {
+                    printf(" ");
+                }
+            }
+            printf(")");
             break;
         case TARRAY:
             printf("(type array)");

@@ -1,19 +1,20 @@
 # a simple test of ADTs
 # Fixed bug: Shouldn't *need* Bar here
 # Fixed bug: parameter-list is malformed 
-# bug: Left/Right are missing
+# Fixed bug: Left/Right are missing
+# bug: newline is not being read
 
 type Baz {
-    BazOk int
+    BazOk int;
     BazErr int
 }
 
 type Foo Bar {
-    Left int
+    Left int;
     Right int
 }
 
 type Result Success Fail {
-    Ok Success
+    Ok Success;
     Err Fail
 }
