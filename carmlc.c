@@ -3109,8 +3109,8 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 // transition below seems a bit off
                 // anyway. So, more to fix there, but
                 // close...
-                //sometmp = llreadexpression(fdin, 1);
-                sometmp = readexpression(fdin);
+                sometmp = llreadexpression(fdin, 1);
+                //sometmp = readexpression(fdin);
 
                 if(sometmp->tag == ASTLEFT) {
                     return sometmp;
@@ -3196,7 +3196,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
 
                 // ok, we got to the end of *something*
                 // collapse it here
-                if(typestate == -1) {
+                if(typestate == -1 && idx > 0) {
                     params = (AST *) hmalloc(sizeof(AST));
                     params->lenchildren = idx - flag;
                     params->children = (AST **)hmalloc(sizeof(AST *) * idx);

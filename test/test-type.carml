@@ -2,7 +2,8 @@
 # Fixed bug: Shouldn't *need* Bar here
 # Fixed bug: parameter-list is malformed 
 # Fixed bug: Left/Right are missing
-# bug: newline is not being read
+# Fixed bug: newline is not being read
+# bug: complex types are not collapsed 
 
 type Baz {
     BazOk int;
