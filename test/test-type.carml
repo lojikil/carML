@@ -5,16 +5,25 @@
 # Fixed bug: newline is not being read
 # bug: complex types are not collapsed 
 
+# Test: tag with single type
 type Baz {
-    BazOk int;
+    BazOk int
     BazErr int
 }
 
-type Foo Bar {
+# Test: tags with multiple types
+type Blah {
+    BlahOk int int int
+    BlahErr int string int
+}
+
+# Test: tags separated with semi-colons
+type Foo {
     Left int;
     Right int
 }
 
+# Test: parameter list
 type Result Success Fail {
     Ok Success;
     Err Fail

@@ -3031,7 +3031,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             head->children = (AST **)hmalloc(sizeof(AST *) * 2);
 
             AST *nstack[128] = {nil};
-            int nsp = 0;
+            int nsp = 0, collapse_complex = 0;
 
             sometmp = readexpression(fdin);
 
@@ -3165,7 +3165,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
 
                     case 2:
                         if(issimpletypeast(sometmp->right->tag)) {
-                            // need to collapse previous stuff here...
+                            collapse_complex = 1;
                             typestate = 0;
                         } else if(iscomplextypeast(sometmp->right->tag)) {
                             typestate = 3;
@@ -3173,6 +3173,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             // need to collapse previous stuff here,
                             // but also check that we have valid types
                             // within the array.
+                            collapse_complex = 1;
                             typestate = 0;
                         } else {
 
@@ -3183,15 +3184,37 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             typestate = 2;
                         } else if(sometmp->right->tag == TIDENT) {
                             // need to collapse previous type here...
+                            collapse_complex = 1;
                             typestate = 1;
                         } else if(issimpletypeast(sometmp->right->tag)) {
+                            collapse_complex = 1;
                             typestate = 0;
+                        } else if(iscomplextypeast(sometmp->right->tag)) {
+                            collapse_complex = 1;
+                            typestate = 3;
                         } else if(tmp->tag == TARRAY) {
+                            collapse_complex = 1;
                             typestate = 2;
                         } else if(tmp->tag == TEND || tmp->tag == TNEWL || tmp->tag == TSEMI) {
                             typestate = -1;
                         }
                         break;
+                }
+
+                if(collapse_complex) {
+                    tmp = (AST *)hmalloc(sizeof(AST));
+                    tmp->tag = TCOMPLEXTYPE;
+                    tmp->lenchildren = idx - flag;
+                    tmp->children = (AST **)hmalloc(sizeof(AST *) * tmp->lenchildren);
+                    for(int cidx = 0, tidx = flag, tlen = tmp->lenchildren; cidx < tlen; cidx++, tidx++) {
+                        tmp->children[cidx] = vectmp[tidx];
+                    }
+                    vectmp[flag] = tmp;
+                    idx = flag;
+                    flag = 0;
+                    nstack[nsp] = tmp;
+                    nsp++;
+                    collapse_complex = 0;
                 }
 
                 // ok, we got to the end of *something*
