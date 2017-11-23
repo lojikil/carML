@@ -17,6 +17,12 @@ type Blah {
     BlahErr int string int
 }
 
+# Test: we can apply constructors to complex types
+type Bloo {
+    BlooOk array of int
+    BlooErr int string
+}
+
 # Test: tags separated with semi-colons
 type Foo {
     Left int;

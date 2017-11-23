@@ -3122,7 +3122,6 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 dprintf("typestate == %d\n", typestate);
                 switch(typestate) {
                     case -1:
-                        flag = idx;
                         if(sometmp->right->tag == TTAG) {
                             typestate = 0;
                             vectmp[idx] = sometmp->right;
@@ -3141,7 +3140,8 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         } else if(issimpletypeast(sometmp->right->tag)) {
                             typestate = 0;
                         } else if(iscomplextypeast(sometmp->right->tag)) {
-                            typestate = 2;
+                            flag = idx; // start of complex type
+                            typestate = 3;
                         } else if(sometmp->right->tag == TEND || sometmp->right->tag == TNEWL || sometmp->right->tag == TSEMI) {
                             typestate = -1;
                         } else {
@@ -3176,8 +3176,11 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             collapse_complex = 1;
                             typestate = 0;
                         } else {
-
+                            return ASTLeft(0, 0, "expecting type in user-type definition");
                         }
+
+                        vectmp[idx] = sometmp->right;
+                        idx++;
                         break;
                     case 3:
                         if(sometmp->right->tag == TOF) {
@@ -3194,9 +3197,14 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             typestate = 3;
                         } else if(tmp->tag == TARRAY) {
                             collapse_complex = 1;
-                            typestate = 2;
+                            typestate = 0;
                         } else if(tmp->tag == TEND || tmp->tag == TNEWL || tmp->tag == TSEMI) {
                             typestate = -1;
+                        }
+
+                        if(typestate != 2 && typestate != -1) {
+                            vectmp[idx] = sometmp->right;
+                            idx++;
                         }
                         break;
                 }
@@ -3210,10 +3218,10 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         tmp->children[cidx] = vectmp[tidx];
                     }
                     vectmp[flag] = tmp;
-                    idx = flag;
+                    idx = flag + 1;
                     flag = 0;
-                    nstack[nsp] = tmp;
-                    nsp++;
+                    /*nstack[nsp] = tmp;
+                    nsp++;*/
                     collapse_complex = 0;
                 }
 
@@ -3221,11 +3229,11 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 // collapse it here
                 if(typestate == -1 && idx > 0) {
                     params = (AST *) hmalloc(sizeof(AST));
-                    params->lenchildren = idx - flag;
+                    params->lenchildren = idx;
                     params->children = (AST **)hmalloc(sizeof(AST *) * idx);
 
                     for(int i = 0; i < params->lenchildren; i++, flag++) {
-                        params->children[i] = vectmp[flag];
+                        params->children[i] = vectmp[i];
                     }
 
                     params->tag = TTYPEDEF;
