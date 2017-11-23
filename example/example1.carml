@@ -1,9 +1,15 @@
-type Option a = Some a | Nothing
+type Option Tx {
+    Some Tx 
+    Nothing
+}
 
 # would be interesting to implement Cons-cells
 # as a generic type here... you'd end up with
 # something... different I think. 
-poly List a = Cons a (List a) | Nil
+type List Tx {
+    Cons Tx List of Tx
+    Nil
+}
 
 # poly Deque a = ... 
 
