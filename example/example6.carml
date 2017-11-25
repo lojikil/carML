@@ -1,0 +1,17 @@
+record Test {
+    bar : int
+    baz : int
+}
+
+def main ac : int al : array of string => int = {
+    # stack-allocate a struct
+    var f : Test = (make-struct 11 20)
+
+    # set the "bar" member to 10
+    set! (. f bar) 10
+
+    # the \\n is a bug in the compiler's output of C.
+    printf "%d + %d is %d\\n" (. f bar) (. f baz) (sum (. f bar) (. f baz))
+
+    0
+}

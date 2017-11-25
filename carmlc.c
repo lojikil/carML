@@ -193,6 +193,7 @@ const char *coperators[] = {
     ".", ".",
     "->", "->",
     "get", "get",
+    "make-struct", "make-struct",
     0
 };
 
@@ -604,6 +605,7 @@ next(FILE *fdin, char *buf, int buflen) {
             cur = fgetc(fdin);
         }
     }
+
     /* honestly, I'm just doing this because
      * it's less ugly than a label + goto's 
      * below. Could just use calculated goto's
@@ -4271,6 +4273,15 @@ llcwalk(AST *head, int level, int final) {
                 if(head->lenchildren == 1) {
                     printf("%s", coperators[opidx]);
                     cwalk(head->children[1], 0);
+                } else if(!strncmp(head->children[0]->value, "make-struct", 11)) {
+                    printf("{ ");
+                    for(int cidx = 1; cidx < head->lenchildren; cidx++) {
+                        cwalk(head->children[cidx], 0);
+                        if(cidx < (head->lenchildren - 1)) {
+                            printf(", ");
+                        }
+                    }
+                    printf("}");
                 } else {
                     cwalk(head->children[1], 0);
                     if(!strncmp(head->children[0]->value, ".", 2)) {
