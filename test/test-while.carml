@@ -1,0 +1,8 @@
+def main ac : int al : array of string => int = {
+    val foo : int = 0
+    while (< foo 10) do {
+        printf "foo: %d\\n" foo
+        set! foo (+ foo 1)
+    }
+    0
+}

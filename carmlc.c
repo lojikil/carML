@@ -52,7 +52,8 @@ typedef enum {
     LDEQ0, LDEQ1, LDEQ2, LDEQ3, LDEC0, LDEC1, LDEC2, LDEC3,
     LDE0, LBOOL0, LBOOL1, LBOOL2, LREF0, LELSE0, LRE0, LTRUE2,
     LWITH0, LWITH1, LWITH2, LDEC4, LUSE1, LUSE2, LVAR2, LTAG0,
-    LTAGIDENT
+    LTAGIDENT, LWHILE1, LWHILE2, LWHILE3, LWHILE4, LWHILE5,
+    LFOR0, LFOR1, LFOR2, LWH0
 } LexStates;
 
 /* AST tag enum.
@@ -77,7 +78,7 @@ typedef enum {
     TARRAYLITERAL, TBIN, TOCT, THEX, // 60
     TARROW, TFATARROW, TCUT, TDOLLAR, // 64
     TPIPEARROW, TUSERT, TVAR, TTAG, // 68
-    TPARAMDEF, TTYPEDEF // 70
+    TPARAMDEF, TTYPEDEF, TWHILE, TFOR // 72
 } TypeTag;
 
 struct _AST {
@@ -270,6 +271,7 @@ main(int ac, char **al) {
  \\___\\__,_|_|  \\_|  |_/\\_____/\n");
         printf("\t\tcarML/C 2017.3\n");
         printf("(c) 2016-2017 lojikil, released under the ISC License.\n\n");
+        printf("%%c - turns on C code generation\n%%quit/%%q - quits\n\n");
         do {
             printf(">>> ");
             ret = readexpression(stdin);
@@ -282,7 +284,9 @@ main(int ac, char **al) {
 
                 if(tmp->tag == TEOF) {
                     break;
-                } else if(tmp->tag == TIDENT && !strncmp(tmp->value, "quit", 4)) {
+                } else if(tmp->tag == TIDENT && !strncmp(tmp->value, "%quit", 4)) {
+                    break;
+                } else if(tmp->tag == TIDENT && !strncmp(tmp->value, "%q", 2)) {
                     break;
                 } else if(tmp->tag == TIDENT && !strncmp(tmp->value, "%c", 2)) {
                     walkflag = !walkflag;
@@ -476,6 +480,8 @@ issyntacticform(int tag) {
         case TWHEN:
         case TDO:
         case TMATCH:
+        case TWHILE:
+        case TFOR:
         case TIF:
             return 1;
         default:
@@ -1303,16 +1309,40 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LF0:
                             if(cur == 'n') {
                                 substate = LFN0;
-                            } else if (cur == 'l') {
+                            } else if(cur == 'l') {
                                 substate = LFLOATT0;
-                            } else if (cur == 'a') {
+                            } else if(cur == 'a') {
                                 substate = LFALSE0;
+                            } else if(cur == 'o') {
+                                substate = LFOR0;
                             } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
                                 ungetc(cur, fdin);
                                 buf[idx - 1] = '\0';
                                 return TIDENT;
                             } else {
                                 substate = LIDENT0;
+                            }
+                            break;
+                        case LFOR0:
+                            if(cur == 'r') {
+                                substate = LFOR1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LFOR1:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TFOR;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
                             }
                             break;
                         case LFALSE0: 
@@ -1789,7 +1819,7 @@ next(FILE *fdin, char *buf, int buflen) {
                             break;
                         case LW0:
                             if(cur == 'h') {
-                                substate = LWHEN0;
+                                substate = LWH0;
                             } else if(cur == 'i') {
                                 substate = LWITH0;
                             } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
@@ -1800,9 +1830,11 @@ next(FILE *fdin, char *buf, int buflen) {
                                 substate = LIDENT0;
                             }
                             break;
-                        case LWHEN0: 
+                        case LWH0:
                             if(cur == 'e') {
                                 substate = LWHEN1;
+                            } else if(cur == 'i') {
+                                substate = LWHILE1;
                             } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
                                 ungetc(cur, fdin);
                                 buf[idx - 1] = '\0';
@@ -1828,6 +1860,39 @@ next(FILE *fdin, char *buf, int buflen) {
                             }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
                                 ungetc(cur, fdin);
                                 return TWHEN;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LWHILE1:
+                            if(cur == 'l') {
+                                substate = LWHILE2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LWHILE2:
+                            if(cur == 'e') {
+                                substate = LWHILE3;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LWHILE3:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TWHILE;
                             } else {
                                 strncpy(buf, "malformed identifier", 512);
                                 return TERROR;
@@ -2745,6 +2810,87 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             head->children[0] = params;
             head->children[1] = tmp;
             return ASTRight(head);
+        case TWHILE:
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TWHILE;
+            head->lenchildren = 2;
+            head->children = (AST **)hmalloc(sizeof(AST *) * 2);
+
+            sometmp = readexpression(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            }
+
+            head->children[0] = sometmp->right;
+
+            sometmp = readexpression(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else if(sometmp->right->tag != TDO) {
+                return ASTLeft(0, 0, "While form conditions *must* be followed by a `do`...");
+            }
+
+            sometmp = readexpression(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            }
+
+            head->children[1] = sometmp->right;
+
+            return ASTRight(head);
+        case TFOR:
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TFOR;
+            head->lenchildren = 2;
+            head->children = (AST **)hmalloc(sizeof(AST *) * 2);
+
+            sometmp = readexpression(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } if(sometmp->right->tag != TIDENT) {
+                return ASTLeft(0, 0, "for-form's name must be an ident");
+            }
+
+            head->value = sometmp->right->value;
+
+            sometmp = readexpression(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else if(sometmp->right->tag != TIN) {
+                return ASTLeft(0, 0, "for-form binding *must* be followed by an `in`...");
+            }
+            sometmp = readexpression(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            }
+
+            head->children[0] = sometmp->right;
+
+            sometmp = readexpression(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else if(sometmp->right->tag != TDO) {
+                return ASTLeft(0, 0, "for-form conditions *must* be followed by a `do`...");
+            }
+
+            sometmp = readexpression(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            }
+
+            head->children[1] = sometmp->right;
+
+            return ASTRight(head);
+            break;
+            break;
         case TMATCH:
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = TMATCH;
@@ -3890,6 +4036,20 @@ walk(AST *head, int level) {
             walk(head->children[1], level + 1);
             printf(")");
             break;
+        case TWHILE:
+            printf("(while ");
+            walk(head->children[0], 0);
+            printf("\n");
+            walk(head->children[1], level + 1);
+            printf(")");
+            break;
+        case TFOR:
+            printf("(for %s ", head->value);
+            walk(head->children[0], 0);
+            printf("\n");
+            walk(head->children[1], level + 1);
+            printf(")");
+            break;
         case TPARAMLIST:
             printf("(parameter-list ");
             for(;idx < head->lenchildren; idx++) {
@@ -4114,6 +4274,7 @@ void
 llcwalk(AST *head, int level, int final) {
     int idx = 0, opidx = -1;
     char *tbuf = nil, buf[512] = {0};
+    AST *ctmp = nil;
 
     for(; idx < level; idx++) {
         printf("    ");
@@ -4231,6 +4392,23 @@ llcwalk(AST *head, int level, int final) {
                 cwalk(head->children[1], level + 1);
             }
             printf("}");
+            break;
+        case TWHILE:
+            printf("while(");
+            cwalk(head->children[0], 0);
+            printf("){\n");
+            if(head->children[1]->tag == TBEGIN) {
+                ctmp = head->children[1];
+                for(int widx = 0; widx < ctmp->lenchildren; widx++) {
+                    cwalk(ctmp->children[widx], level + 1);
+                    printf(";\n");
+                }
+                indent(level);
+                printf("}");
+            } else {
+                cwalk(head->children[1], level + 1);
+                printf(";\n}");
+            }
             break;
         case TPARAMLIST:
             printf("(");
@@ -4477,7 +4655,11 @@ llcwalk(AST *head, int level, int final) {
                     }
                 } else if(idx < (head->lenchildren - 1)) {
                     cwalk(head->children[idx], level);
-                    printf(";\n");
+                    if(!issyntacticform(head->children[idx]->tag)){
+                        printf(";\n");
+                    } else {
+                        printf("\n");
+                    }
                 } else if((idx < head->lenchildren) && final) {
                     if(isvalueform(head->children[idx]->tag)) {
                         for(int fidx = 0; fidx < level; fidx++) {
@@ -4488,7 +4670,11 @@ llcwalk(AST *head, int level, int final) {
                         printf(";\n");
                     } else {
                         llcwalk(head->children[idx], level, YES);
-                        printf(";\n");
+                        if(!issyntacticform(head->children[idx]->tag)){
+                            printf(";\n");
+                        } else {
+                            printf("\n");
+                        }
                     }
                 }
             }
