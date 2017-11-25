@@ -198,8 +198,8 @@ const char *coperators[] = {
 };
 
 
-
-
+char *upcase(const char *, char *, int);
+char *downcase(const char *, char *, int);
 char *hstrdup(const char *);
 int next(FILE *, char *, int);
 AST *mung_declare(const char **, const int **, int, int);
@@ -475,6 +475,7 @@ issyntacticform(int tag) {
         case TLETREC:
         case TWHEN:
         case TDO:
+        case TMATCH:
         case TIF:
             return 1;
         default:
@@ -913,6 +914,7 @@ next(FILE *fdin, char *buf, int buflen) {
                                     break;
                                 case 'm':
                                     substate = LMATCH0;
+                                    break;
                                 case 'o':
                                     substate = LOF0;
                                     break;
@@ -2743,6 +2745,11 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             head->children[0] = params;
             head->children[1] = tmp;
             return ASTRight(head);
+        case TMATCH:
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TMATCH;
+            return ASTRight(head);
+            break;
         case TIF:
             /* this code is surprisingly gross.
              * look to clean this up a bit.
@@ -2969,8 +2976,6 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             head->value = hstrdup(buffer);
             head->tag = TCPAREN;
             return ASTRight(head);
-        case TMATCH:
-            break;
         case TTHEN:
             head = (AST *)hmalloc(sizeof(AST));
             head->value = hstrdup(buffer);
@@ -3969,6 +3974,9 @@ walk(AST *head, int level) {
             }
             printf(")");
             break;
+        case TMATCH:
+            printf("here in match?\n");
+            break;
         case TIF:
             printf("(if ");
             walk(head->children[0], 0);
@@ -4253,6 +4261,11 @@ llcwalk(AST *head, int level, int final) {
                 printf("void *");
             }
             break;
+        case TTYPE:
+        case TPOLY:
+            printf("typedef struct %%s_t {\n");
+            printf("}");
+            break;
         case TARRAYLITERAL:
             printf("{");
             for(;idx < head->lenchildren; idx++) {
@@ -4514,4 +4527,45 @@ hstrdup(const char *s)
             ret[i] = s[i];
         ret[i] = nul; 
         return ret; 
+}
+
+char *
+upcase(const char *src, char *dst, int len) {
+    int idx = 0;
+
+    for(; idx < len; idx++) {
+        if(src[idx] == '\0') {
+            dst[idx] = '\0';
+            break;
+        } else if(idx == (len - 1)) {
+            dst[idx] = '\0';
+            break;
+        } else if(src[idx] >= 'a' && src[idx] <= 'z') {
+            dst[idx] = 'A' + (src[idx] - 'a');
+        } else {
+            dst[idx] = src[idx];
+        }
+    }
+
+    return dst;
+}
+
+char *
+downcase(const char *src, char *dst, int len) {
+    int idx = 0;
+
+    for(; idx < len; idx++) {
+        if(src[idx] == '\0') {
+            dst[idx] = '\0';
+            break;
+        } else if(idx == (len - 1)) {
+            dst[idx] = '\0';
+            break;
+        } else if(src[idx] >= 'A' && src[idx] <= 'Z') {
+            dst[idx] = 'a' + (src[idx] - 'A');
+        } else {
+            dst[idx] = src[idx];
+        }
+    }
+    return dst;
 }
