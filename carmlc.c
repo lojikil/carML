@@ -195,6 +195,7 @@ const char *coperators[] = {
     "->", "->",
     "get", "get",
     "make-struct", "make-struct",
+    "return", "return",
     0
 };
 
@@ -4391,6 +4392,7 @@ llcwalk(AST *head, int level, int final) {
             } else {
                 cwalk(head->children[1], level + 1);
             }
+            indent(level);
             printf("}");
             break;
         case TWHILE:
@@ -4461,8 +4463,8 @@ llcwalk(AST *head, int level, int final) {
             opidx = iscoperator(head->children[0]->value);
 
             if(head->children[0]->tag == TIDENT && opidx != -1) {
-                if(head->lenchildren == 1) {
-                    printf("%s", coperators[opidx]);
+                if(head->lenchildren == 2) {
+                    printf("%s ", coperators[opidx]);
                     cwalk(head->children[1], 0);
                 } else if(!strncmp(head->children[0]->value, "make-struct", 11)) {
                     printf("{ ");
@@ -4641,6 +4643,7 @@ llcwalk(AST *head, int level, int final) {
             printf(";");
             break;
         case TBEGIN:
+            // TODO: this code is super ugly & can be cleaned up
             for(idx = 0; idx < head->lenchildren; idx++){
                 if(idx == 0) {
                     if(head->lenchildren == 1 && final && isvalueform(head->children[0]->tag)) {
@@ -4660,16 +4663,20 @@ llcwalk(AST *head, int level, int final) {
                     } else {
                         printf("\n");
                     }
-                } else if((idx < head->lenchildren) && final) {
+                } else if(idx < head->lenchildren) {
                     if(isvalueform(head->children[idx]->tag)) {
-                        for(int fidx = 0; fidx < level; fidx++) {
-                            printf("    ");
+                        indent(level);
+                        if(final) {
+                            printf("return ");
                         }
-                        printf("return ");
                         cwalk(head->children[idx], 0);
                         printf(";\n");
                     } else {
-                        llcwalk(head->children[idx], level, YES);
+                        if(final) {
+                            llcwalk(head->children[idx], level, YES);
+                        } else {
+                            cwalk(head->children[idx], level);
+                        }
                         if(!issyntacticform(head->children[idx]->tag)){
                             printf(";\n");
                         } else {
