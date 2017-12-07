@@ -500,7 +500,42 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
     int strstart = 0, typeidx = 0, rewrite = 0, speclen = 0;
     char *typeval = nil;
 
-    if(typespec->lenchildren == 1) {
+    if(typespec->lenchildren == 0 && istypeast(typespec->tag)) {
+        switch(typespec->tag) {
+            case TTAG:
+                typeval = typespec->value;
+                break;
+            case TINTT:
+                typeval = "int";
+                break;
+            case TFLOATT:
+                typeval = "double";
+                break;
+            case TARRAY:
+                typeval = "void *";
+                break;
+            case TREF:
+                typeval = "void *";
+                break;
+            case TSTRT:
+                typeval = "char *";
+                break;
+            case TCHART:
+                typeval = "char";
+                break;
+            case TBOOLT:
+                typeval = "uint8_t";
+                break;
+            default:
+                typeval = "void *";
+        }
+        if(name != nil) {
+            snprintf(dst, len, "%s %s", typeval, name);
+        } else {
+            snprintf(dst, len, "%s ", typeval);
+        }
+        return dst;
+    } else if(typespec->lenchildren == 1) {
         if(typespec->children[0]->tag == TTAG) {
             snprintf(dst, len, "%s ", typespec->children[0]->value);
         } else {
@@ -544,7 +579,8 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
                 break;
             }
         }
-
+        dprintf("typespec[%d] == null? %s\n", typeidx, typespec->children[typeidx] == nil ? "yes" : "no");
+        dprintf("here on %d, typeidx: %d, len: %d\n", __LINE__, typeidx, typespec->lenchildren);
         for(; typeidx >= 0; typeidx--) {
             switch(typespec->children[typeidx]->tag) {
                 case TTAG:
@@ -4274,8 +4310,8 @@ walk(AST *head, int level) {
 void
 llcwalk(AST *head, int level, int final) {
     int idx = 0, opidx = -1;
-    char *tbuf = nil, buf[512] = {0};
-    AST *ctmp = nil;
+    char *tbuf = nil, buf[512] = {0}, rbuf[512] = {0}, *rtbuf = nil;
+    AST *ctmp = nil, *htmp = nil;
 
     for(; idx < level; idx++) {
         printf("    ");
@@ -4443,7 +4479,45 @@ llcwalk(AST *head, int level, int final) {
             break;
         case TTYPE:
         case TPOLY:
-            printf("typedef struct %%s_t {\n");
+            tbuf = upcase(head->value, &buf[0], 512);
+            printf("typedef struct %s_t {\n", tbuf);
+            indent(level + 1);
+            printf("int tag;\n");
+            indent(level + 1);
+            printf("union {\n");
+            // first pass: 
+            // - dump all constructors into a union struct.
+            // - upcase the constructor name
+            // TODO: move structs to top-level structs?
+            // TODO: optimization for null members (like None in Optional)
+            // TODO: naming struct members based on names given by users
+            // TODO: inline records
+            htmp = head->children[1];
+            for(int cidx = 0; cidx < htmp->lenchildren; cidx++) {
+                debugln;
+                indent(level + 2);
+                printf("struct {\n");
+                ctmp = htmp->children[cidx];
+                debugln;
+                for(int midx = 1; midx < ctmp->lenchildren; midx++) {
+                    debugln;
+                    dprintf("type tag of ctmp: %d\n", ctmp->tag);
+                    dprintf("midx: %d, len: %d\n", midx, ctmp->lenchildren);
+                    indent(level + 3);
+                    snprintf(buf, 512, "m_%d", cidx);
+                    debugln;
+                    dprintf("walking children...\n");
+                    dwalk(ctmp->children[midx], level);
+                    dprintf("done walking children...\n");
+                    dprintf("ctmp->children[%d] == null? %s\n", midx, ctmp->children[midx] == nil ? "yes" : "no");
+                    rtbuf = typespec2c(ctmp->children[midx], rbuf, buf, 512);
+                    printf("%s;\n", rtbuf);
+                    debugln;
+                }
+                indent(level + 2);
+                tbuf = upcase(ctmp->children[0]->value, buf, 512);
+                printf("} %s_t;\n", buf);
+            }
             printf("}");
             break;
         case TARRAYLITERAL:

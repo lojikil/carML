@@ -1,0 +1,34 @@
+def cmung src : string dst : string len : int => string = {
+    val idx : int = 0
+    while (< idx len) do {
+        # this would be a wonderful place for the match form
+        # honestly, instead of having the above arrays, just 
+        # have a simple match here. The match could also detect
+        # if we have hit end of string (i.e. ASCII NUL).
+        match (get src idx) with 
+            # refactor out all these set!s...
+            case '!' => (set! (get dst idx) 'B')
+            case '%' => (set! (get dst idx) '_')
+            case '$' => (set! (get dst idx) '_')
+            case '?' => (set! (get dst idx) 'p')
+            case '<' => (set! (get dst idx) 'l')
+            case '>' => (set! (get dst idx) 'g')
+            case '=' => (set! (get dst idx) 'e')
+            case '@' => (set! (get dst idx) '_')
+            case '^' => (set! (get dst idx) '_')
+            case '&' => (set! (get dst idx) '_')
+            case '|' => (set! (get dst idx) '_')
+            case '*' => (set! (get dst idx) '_')
+            case '.' => (set! (get dst idx) '_')
+            case _ => (set! (get dst idx) (get src idx))
+        end
+
+        when (eq? (get src idx) '\0') do
+            (return dst)
+    }
+}
+
+def cmung_alloc src : string len : int => string = {
+    val dst : string = (malloc (* (sizeof src) len))
+    cmung src dst len
+}
