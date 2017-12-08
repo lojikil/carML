@@ -215,6 +215,8 @@ ASTOffset *ASTOffsetRight(AST *, int);
 void indent(int);
 void walk(AST *, int);
 void llcwalk(AST *, int, int);
+void generate_type_value(AST *, int); // generate a type/poly constructor
+void generate_type_ref(AST *, int); // generate a type/poly reference constructor
 int compile(FILE *, FILE *);
 int iswhite(int);
 int isident(int);
@@ -4308,6 +4310,16 @@ walk(AST *head, int level) {
 }
 
 void
+generate_type_value(AST *head, int offset) {
+
+}
+
+void
+generate_type_ref(AST *head, int offset) {
+
+}
+
+void
 llcwalk(AST *head, int level, int final) {
     int idx = 0, opidx = -1;
     char *tbuf = nil, buf[512] = {0}, rbuf[512] = {0}, *rtbuf = nil;
@@ -4504,7 +4516,7 @@ llcwalk(AST *head, int level, int final) {
                     dprintf("type tag of ctmp: %d\n", ctmp->tag);
                     dprintf("midx: %d, len: %d\n", midx, ctmp->lenchildren);
                     indent(level + 3);
-                    snprintf(buf, 512, "m_%d", cidx);
+                    snprintf(buf, 512, "m_%d", midx);
                     debugln;
                     dprintf("walking children...\n");
                     dwalk(ctmp->children[midx], level);
@@ -4518,7 +4530,20 @@ llcwalk(AST *head, int level, int final) {
                 tbuf = upcase(ctmp->children[0]->value, buf, 512);
                 printf("} %s_t;\n", buf);
             }
-            printf("}");
+            indent(level + 1);
+            printf("} members;\n");
+            printf("} %s;", head->value);
+
+            // ok, now we have generated the structure, now we
+            // need to generate the constructors.
+            // we need to do two passes at that:
+            // - one pass with values
+            // - one pass with references
+
+            for(int cidx = 0; cidx < htmp->lenchildren; cidx++) {
+                generate_type_value(head, cidx);
+                generate_type_ref(head, cidx);
+            }
             break;
         case TARRAYLITERAL:
             printf("{");
