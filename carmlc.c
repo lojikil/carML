@@ -215,8 +215,8 @@ ASTOffset *ASTOffsetRight(AST *, int);
 void indent(int);
 void walk(AST *, int);
 void llcwalk(AST *, int, int);
-void generate_type_value(AST *, int); // generate a type/poly constructor
-void generate_type_ref(AST *, int); // generate a type/poly reference constructor
+void generate_type_value(AST *, const char *); // generate a type/poly constructor
+void generate_type_ref(AST *, const char *); // generate a type/poly reference constructor
 int compile(FILE *, FILE *);
 int iswhite(int);
 int isident(int);
@@ -4310,13 +4310,73 @@ walk(AST *head, int level) {
 }
 
 void
-generate_type_value(AST *head, int offset) {
+generate_type_value(AST *head, const char *name) {
+    int midx = 0, cidx = 0;
+    char *tbuf = nil, buf[512] = {0}, *rtbuf = nil, rbuf[512] = {0};
+    char *member = nil, membuf[512] = {0};
+    // setup a nice definition...
+    printf("%s\n%s_%s(", name, name, head->children[0]->value);
+    // dump our parameters...
+    for(cidx = 1; cidx < head->lenchildren; cidx++) {
+        snprintf(buf, 512, "m_%d", cidx); 
+        rtbuf = typespec2c(head->children[cidx], rbuf, buf, 512);
+        if(cidx < (head->lenchildren - 1)) {
+            printf("%s, ", rtbuf);
+        } else {
+            printf("%s", rtbuf);
+        }
+    }
+    printf(") {\n");
+    // define our return value...
+    indent(1);
+    printf("%s res;\n", name);
 
+    // grab the constructor name...
+    member = head->children[0]->value;
+    member = upcase(member, membuf, 512);
+    // set all members...
+    for(cidx = 1; cidx < head->lenchildren; cidx++) {
+        indent(1);
+        snprintf(buf, 512, "m_%d", cidx);
+        printf("res.members.%s_t->%s = %s;\n", member, buf, buf);
+    }
+    indent(1);
+    printf("return res;\n}\n");
 }
 
 void
-generate_type_ref(AST *head, int offset) {
+generate_type_ref(AST *head, const char *name) {
+    int midx = 0, cidx = 0;
+    char *tbuf = nil, buf[512] = {0}, *rtbuf = nil, rbuf[512] = {0};
+    char *member = nil, membuf[512] = {0};
+    // setup a nice definition...
+    printf("%s *\n%s_%s(", name, name, head->children[0]->value);
+    // dump our parameters...
+    for(cidx = 1; cidx < head->lenchildren; cidx++) {
+        snprintf(buf, 512, "m_%d", cidx); 
+        rtbuf = typespec2c(head->children[cidx], rbuf, buf, 512);
+        if(cidx < (head->lenchildren - 1)) {
+            printf("%s, ", rtbuf);
+        } else {
+            printf("%s", rtbuf);
+        }
+    }
+    printf(") {\n");
+    // define our return value...
+    indent(1);
+    printf("%s *res = (%s *)malloc(sizeof(%s));\n", name, name, name);
 
+    // grab the constructor name...
+    member = head->children[0]->value;
+    member = upcase(member, membuf, 512);
+    // set all members...
+    for(cidx = 1; cidx < head->lenchildren; cidx++) {
+        indent(1);
+        snprintf(buf, 512, "m_%d", cidx);
+        printf("res->members.%s_t->%s = %s;\n", member, buf, buf);
+    }
+    indent(1);
+    printf("return res;\n}\n");
 }
 
 void
@@ -4532,7 +4592,7 @@ llcwalk(AST *head, int level, int final) {
             }
             indent(level + 1);
             printf("} members;\n");
-            printf("} %s;", head->value);
+            printf("} %s;\n", head->value);
 
             // ok, now we have generated the structure, now we
             // need to generate the constructors.
@@ -4541,8 +4601,8 @@ llcwalk(AST *head, int level, int final) {
             // - one pass with references
 
             for(int cidx = 0; cidx < htmp->lenchildren; cidx++) {
-                generate_type_value(head, cidx);
-                generate_type_ref(head, cidx);
+                generate_type_value(htmp->children[cidx], head->value);
+                generate_type_ref(htmp->children[cidx], head->value);
             }
             break;
         case TARRAYLITERAL:
