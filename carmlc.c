@@ -4327,6 +4327,7 @@ generate_type_value(AST *head, const char *name) {
         }
     }
     printf(") {\n");
+
     // define our return value...
     indent(1);
     printf("%s res;\n", name);
@@ -4334,6 +4335,11 @@ generate_type_value(AST *head, const char *name) {
     // grab the constructor name...
     member = head->children[0]->value;
     member = upcase(member, membuf, 512);
+
+    // tag our type
+    indent(1);
+    printf("res.tag = TAG_%s_%s;\n", name, member);
+
     // set all members...
     for(cidx = 1; cidx < head->lenchildren; cidx++) {
         indent(1);
@@ -4369,6 +4375,11 @@ generate_type_ref(AST *head, const char *name) {
     // grab the constructor name...
     member = head->children[0]->value;
     member = upcase(member, membuf, 512);
+
+    // tag our type
+    indent(1);
+    printf("res->tag = TAG_%s_%s;\n", name, member);
+
     // set all members...
     for(cidx = 1; cidx < head->lenchildren; cidx++) {
         indent(1);
