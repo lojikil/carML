@@ -14,4 +14,4 @@ then
 fi
 
 echo "building carML/c carmlc.c"
-cc $EXTRAFLAGS -o carmlc carmlc.c -L ~/homebrew/lib/ -I ~/homebrew/include/ -lgc && echo "[build success]" || echo "[build failed]"
+cc $EXTRAFLAGS -o carmlc ./src/carmlc.c -L ~/homebrew/lib/ -I ~/homebrew/include/ -lgc && echo "[build success]" || echo "[build failed]"

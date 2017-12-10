@@ -21,10 +21,11 @@ A quick list of the current `TODO`s.
 1. Runtime, which should be pretty minimal
 1. **DONE** Compile to C in the style of Enyalios
 1. an `extern` or `alien` form for easy FFI
-1. Parsing of variants
-1. Compilation of variants
-1. Parsing of polymorphic variants
-1. Compilation of polymorphic variants
+1. **DONE** Parsing of variants
+1. **DONE** Compilation of variants
+1. **DONE** Parsing of polymorphic variants
+1. **DONE** Compilation of polymorphic variants
+1. Make sure types are correct for types/polys 
 1. OCaml/SML-style Modules, and their application to higher-kinded types
 1. Friendlier REPL, with keyboard support, and a simple Logo-style `edit` command
 1. **DONE** Syntax updates: `record`

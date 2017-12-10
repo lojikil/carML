@@ -1,0 +1,44 @@
+# a simple Unix/Posix interaction library
+# just a test to see what it would be like.
+
+type UnixResult {
+    Ok int
+    Err int string # lookup errno 
+}
+
+def unix.open path : string mode : int => UnixResult = {
+    # TODO: let binding rewriting 
+    val res : int = (open path mode)
+    # TODO: match form with guard clauses 
+    if (< res 0) then
+        # TODO: finish $ form, would be so much cleaner:
+        # UnixResult.Err res $ strerror res
+        (UnixResult.Err res (strerror res))
+    else
+        (UnixResult.Ok res)
+}
+
+# TODO: fix single Complex type in parameter to C generation
+def unix.close_res fh : UnixResult => UnixResult = {
+    var hdl : int = 0
+    var res : int = 0
+    # TODO: pattern matching binds
+    if (eq? (. fh tag) TAG_UnixResult_ERR) then
+        fh
+    else {
+        set! hdl (. fh (. members (. OK_t m_1)))
+        set! res (close hdl)
+        if (< res 0) then
+            (UnixResult.Err res (strerror res))
+        else
+            (UnixResult.Ok res)
+    }
+}
+
+def unix.close fh : int => UnixResult = {
+    val res : int = (close fh) 
+    if (< res 0) then
+        (UnixResult.Err res (strerror res))
+    else
+        (UnixResult.Ok res)
+}
