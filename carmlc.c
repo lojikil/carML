@@ -4562,7 +4562,23 @@ llcwalk(AST *head, int level, int final) {
             break;
         case TTYPE:
         case TPOLY:
+            // setup our name
             tbuf = upcase(head->value, &buf[0], 512);
+            htmp = head->children[1];
+
+            // generate our enum for the various tags for this
+            // type/poly (forEach constuctor thereExists |Tag|)
+            printf("enum Tags_%s {\n", tbuf);
+            for(int cidx = 0; cidx < htmp->lenchildren; cidx++) {
+                indent(level + 1);
+                // I hate this, but it works
+                rtbuf = upcase(htmp->children[cidx]->children[0]->value, rbuf, 512);
+                printf("TAG_%s_%s,\n", head->value, rtbuf);
+            }
+            printf("};\n");
+
+            // generate the rough structure to hold all 
+            // constructor members 
             printf("typedef struct %s_t {\n", tbuf);
             indent(level + 1);
             printf("int tag;\n");
@@ -4575,7 +4591,6 @@ llcwalk(AST *head, int level, int final) {
             // TODO: optimization for null members (like None in Optional)
             // TODO: naming struct members based on names given by users
             // TODO: inline records
-            htmp = head->children[1];
             for(int cidx = 0; cidx < htmp->lenchildren; cidx++) {
                 debugln;
                 indent(level + 2);
