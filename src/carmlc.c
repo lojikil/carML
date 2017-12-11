@@ -369,7 +369,7 @@ iswhite(int c){
 
 int
 isbrace(int c) {
-    return (c == '{' || c == '}' || c == '(' || c == ')' || c == '[' || c == ']' || c == ';' || c == ',');
+    return (c == '{' || c == '}' || c == '(' || c == ')' || c == '[' || c == ']' || c == ';' || c == ',' || c == ':');
 }
 
 int
@@ -713,6 +713,7 @@ next(FILE *fdin, char *buf, int buflen) {
                      */
                     ungetc(cur, fdin);
                     buf[idx++] = '=';
+                    return TEQ;
                 }
                 break;
             case '$':
@@ -2244,6 +2245,11 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LTAG0:
                             tagorident = TTAG;
                             substate = LTAGIDENT;
+                            if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TTAG;
+                            }
                             break;
                         case LIDENT0:
                             tagorident = TIDENT;
