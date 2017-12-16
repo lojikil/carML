@@ -2598,16 +2598,16 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 switch(typestate) {
                     case 0:
                         sometmp = readexpression(fdin);
-                        //debugln;
+                        debugln;
                         if(sometmp->tag == ASTLEFT) {
                             return sometmp;
                         } else if(sometmp->right->tag == TIDENT) {
                             // name
-                            //debugln;
+                            debugln;
                             typestate = 1;
                         } else if(sometmp->right->tag == TFATARROW) {
                             // return type
-                            //debugln;
+                            debugln;
                             fatflag = idx;
                             typestate = 2;
                         } else if(sometmp->right->tag == TEQ) {
@@ -2619,11 +2619,11 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             //dprintf("tag == %d\n", sometmp->right->tag);
                             return ASTLeft(0, 0, "`def` must have either a parameter list, a fat-arrow, or an equals sign.");
                         } 
-                        //debugln;
-                        //dprintf("typestate == %d\n", typestate);
+                        debugln;
+                        dprintf("typestate == %d\n", typestate);
                         break;
                     case 1: // TIDENT
-                        //debugln;
+                        debugln;
                         vectmp[idx] = sometmp->right;
                         flag = idx;
                         idx++;
@@ -2636,7 +2636,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             //debugln;
                             typestate = 1;
                         } else if(sometmp->right->tag == TFATARROW) {
-                            //debugln;
+                            debugln;
                             fatflag = idx;
                             typestate = 2;
                         } else if(sometmp->right->tag == TEQ) {
@@ -2651,6 +2651,8 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             //dprintf("tag == %d\n", sometmp->right->tag);
                             return ASTLeft(0, 0, "`def` identifiers *must* be followed by `:`, `=>`, or `=`");
                         }
+                        debugln;
+                        dprintf("tag == %d, typestate == %d\n", sometmp->right->tag, typestate);
                         break;
                     case 3: // TEQ, start function
                         /* mark the parameter list loop as closed,
@@ -2731,7 +2733,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                                 typestate = 6;
                             }
                         } else { // complex type
-                            //debugln
+                            debugln
                             vectmp[idx] = sometmp->right;
                             idx++;
                             typestate = 5;
@@ -2752,10 +2754,10 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         if(sometmp->tag == ASTLEFT) {
                             return sometmp;
                         } else if(sometmp->right->tag == TOF) {
-                            //debugln;
+                            debugln;
                             typestate = 7;
                         } else if(sometmp->right->tag == TIDENT) {
-                            //debugln;
+                            debugln;
                             typestate = 1;
                         } else if(sometmp->right->tag == TEQ) {
                             typestate = 3;
@@ -2763,6 +2765,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             // which state here? need to check that the
                             // array only has types in it...
                         } else if(sometmp->right->tag == TFATARROW) {
+                            debugln;
                             fatflag = idx;
                             typestate = 2;
                         } else {
@@ -2771,14 +2774,15 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
 
                         // ok we have dispatched, now collapse
                         if(typestate != 7) {
-                            //debugln;
+                            debugln;
                             AST *ctmp = (AST *)hmalloc(sizeof(AST));
                             ctmp->tag = TCOMPLEXTYPE;
+                            dprintf("typestate: %d, idx: %d, flag: %d\n", typestate, idx, flag);
                             ctmp->lenchildren = idx - flag - 1;
                             ctmp->children = (AST **)hmalloc(sizeof(AST *) * ctmp->lenchildren); 
-                            //dprintf("len of children should be: %d\n", ctmp->lenchildren);
+                            dprintf("len of children should be: %d\n", ctmp->lenchildren);
                             for(int tidx = flag + 1, cidx = 0; tidx < idx ; cidx++, tidx++) {
-                                //debugln;
+                                debugln;
                                 ctmp->children[cidx] = vectmp[tidx];
                             }
 
@@ -2798,8 +2802,10 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                                  * in carML/carML (that is, self-hosting carML) would make
                                  * this a lot nicer looking internally.
                                  */
+                                debugln;
                                 idx = fatflag;
                             } else {
+                                debugln;
                                 tmp = (AST *)hmalloc(sizeof(AST));
                                 tmp->tag = TPARAMDEF;
                                 tmp->lenchildren = 2;
@@ -2807,7 +2813,8 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                                 tmp->children[0] = vectmp[flag];
                                 tmp->children[1] = ctmp;
                                 idx = flag + 1;
-                                vectmp[flag] = tmp;
+                                flag++;
+                                vectmp[flag - 1] = tmp;
                             }
                             //debugln;
                         }
@@ -3026,7 +3033,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                     }
                 } else if(flag != -1 && (tmp->tag == TSEMI || tmp->tag == TNEWL || tmp->tag == TEND)) {
                     if(tmp->tag == TEND) {
-                        //debugln;
+                        debugln;
                         fatflag = 1;
                     }
                     /* collapse the call into a TCALL
