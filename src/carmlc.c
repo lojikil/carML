@@ -2786,7 +2786,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                                 ctmp->children[cidx] = vectmp[tidx];
                             }
 
-                            if(fatflag) {
+                            if(fatflag && fatflag != idx) {
                                 returntype = ctmp;
                                 /*
                                  * so the "correct" way of doing this would be to actually
@@ -2803,7 +2803,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                                  * this a lot nicer looking internally.
                                  */
                                 debugln;
-                                idx = fatflag;
+                                idx = fatflag + 1;
                             } else {
                                 debugln;
                                 tmp = (AST *)hmalloc(sizeof(AST));
