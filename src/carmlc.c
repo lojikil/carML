@@ -2675,7 +2675,27 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             //debugln;
                         }
                         break;
+                    // part of the problem here is that
+                    // I tried to simplify the states, but
+                    // ended up with messier code and more
+                    // stateful stuff. Undoing some of that
+                    // now, by unwinding the fatflag code
                     case 2: // TFATARROW, return
+                        debugln;
+                        sometmp = readexpression(fdin);
+                        if(sometmp->tag == ASTLEFT) {
+                            return sometmp;
+                        } else if(!istypeast(sometmp->right->tag)) {
+                            return ASTLeft(0, 0, "a `=>` form *must* be followed by a type definition...");
+                        } else if(issimpletypeast(sometmp->right->tag)) {
+                            returntype = sometmp->right;
+                            typestate = 6;
+                        } else { // complex type
+
+                        }
+                        break;
+                    case 21: // OF but for return
+                    case 22: // complex end result, but for return
                     case 4: // type
                     case 7: // of
                         //dprintf("%%debug: typestate = %d, sometmp->right->tag = %d\n", typestate, sometmp->right->tag);
@@ -2804,6 +2824,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                                  */
                                 debugln;
                                 idx = fatflag + 1;
+                                flag = fatflag + 1;
                             } else {
                                 debugln;
                                 tmp = (AST *)hmalloc(sizeof(AST));
@@ -2812,9 +2833,8 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                                 tmp->children = (AST **)hmalloc(sizeof(AST *) * 2);
                                 tmp->children[0] = vectmp[flag];
                                 tmp->children[1] = ctmp;
+                                vectmp[flag] = tmp;
                                 idx = flag + 1;
-                                flag++;
-                                vectmp[flag - 1] = tmp;
                             }
                             //debugln;
                         }
