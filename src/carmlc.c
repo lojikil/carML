@@ -2691,10 +2691,29 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             returntype = sometmp->right;
                             typestate = 6;
                         } else { // complex type
-
+                            vectmp[idx] = sometmp->right;
+                            flag = idx;
+                            idx++;
+                            typestate = 21;
                         }
                         break;
                     case 21: // OF but for return
+                        sometmp = readexpression(fdin);
+
+                        if(sometmp->tag == ASTLEFT) {
+                            return sometmp;
+                        } else if(sometmp->right->tag == TOF) {
+                            typestate = 22;
+                        } else if(sometmp->right->tag == TARRAY) {
+                            vectmp[idx] = sometmp->right;
+                            idx++;
+                            typestate = 6
+                        } else if(sometmp->right->tag == TEQ) {
+                            typestate = 6;
+                        } else {
+                            return ASTLeft(0, 0, "a complex type in `=>` must be followed by `of`, `=`, or an array of types.");
+                        }
+                        break;
                     case 22: // complex end result, but for return
                     case 4: // type
                     case 7: // of
