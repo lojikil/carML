@@ -2686,11 +2686,14 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         if(sometmp->tag == ASTLEFT) {
                             return sometmp;
                         } else if(!istypeast(sometmp->right->tag)) {
+                            dprintf("somehow here, but... %d\n", sometmp->right->tag);
                             return ASTLeft(0, 0, "a `=>` form *must* be followed by a type definition...");
                         } else if(issimpletypeast(sometmp->right->tag)) {
+                            debugln;
                             returntype = sometmp->right;
                             typestate = 6;
                         } else { // complex type
+                            debugln;
                             vectmp[idx] = sometmp->right;
                             flag = idx;
                             idx++;
@@ -2707,9 +2710,9 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         } else if(sometmp->right->tag == TARRAY) {
                             vectmp[idx] = sometmp->right;
                             idx++;
-                            typestate = 6
-                        } else if(sometmp->right->tag == TEQ) {
                             typestate = 6;
+                        } else if(sometmp->right->tag == TEQ) {
+                            typestate = 3;
                         } else {
                             return ASTLeft(0, 0, "a complex type in `=>` must be followed by `of`, `=`, or an array of types.");
                         }
