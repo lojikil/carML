@@ -9,8 +9,9 @@ A quick list of the current `TODO`s.
 1. **DONE** type tags
 1. _BUG_: `Foo Bar int` as type constructor is parsed as `(type-constructor Foo (complex-type Bar Int))` when it should be `(type-constructor Foo Bar Int)` (2 members)
 1. (test case for the above: `Foo Bar int`)
-1. _BUG_: `def bar h:Url => Url` is parsed as `(parameter-list (ident h) (tag Url))` when it should be `(parameter-list (parameter-def h (complex-type (tag Url))))`
-1. (test case for the above: `def foo f:Url => Url = f`)
+1. **FIXED** _BUG_: `def bar h:Url => Url` is parsed as `(parameter-list (ident h) (tag Url))` when it should be `(parameter-list (parameter-def h (complex-type (tag Url))))`
+1. **FIXED** (test case for the above: `def foo f:Url => Url = f`)
+1. _TEST_: add more complex type tests  
 1. add test runner: parse SExpression output...
 1. parse HOFs in declarations
 1. Review switch to Scala-style `[]` for types.
