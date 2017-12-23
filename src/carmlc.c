@@ -2712,6 +2712,15 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             idx++;
                             typestate = 6;
                         } else if(sometmp->right->tag == TEQ) {
+                            returntype = (AST *)hmalloc(sizeof(AST));
+                            returntype->tag = TCOMPLEXTYPE;
+                            returntype->lenchildren = idx - flag;
+                            returntype->children = (AST **)hmalloc(sizeof(AST *) * returntype->lenchildren);
+                            for(int cidx = 0, tidx = flag, tlen = returntype->lenchildren; cidx < tlen; cidx++, tidx++) {
+                                returntype->children[cidx] = vectmp[tidx];
+                            }
+                            idx = flag;
+                            flag = 0;
                             typestate = 3;
                         } else {
                             return ASTLeft(0, 0, "a complex type in `=>` must be followed by `of`, `=`, or an array of types.");
