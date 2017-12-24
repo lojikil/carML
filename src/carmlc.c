@@ -2727,6 +2727,20 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         }
                         break;
                     case 22: // complex end result, but for return
+                        sometmp = readexpression(fdin);
+
+                        if(sometmp->tag == ASTLEFT) {
+                            return sometmp;
+                        } else if(issimpletypeast(sometmp->right->tag)) {
+
+                        } else if(sometmp->right->tag == TARRAY) {
+
+                        } else if(iscomplextypeast(sometmp->right->tag)) {
+
+                        } else {
+
+                        }
+                        break;
                     case 4: // type
                     case 7: // of
                         //dprintf("%%debug: typestate = %d, sometmp->right->tag = %d\n", typestate, sometmp->right->tag);
