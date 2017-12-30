@@ -13,9 +13,9 @@ def fact x : int => int =
 def fact0 x : int => int =
     match x with
         # hmm... how does this work elsewhere? I like it tho...
-        case x, < x 0 => fact $ abs x
+        case x, (< x 0) => (fact $ abs x)
         case 0 => 1
-        else => mul x $ fact $ sub x 1
+        else => (mul x $ fact $ sub x 1)
     end
 
 # for more info on BitC see:

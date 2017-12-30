@@ -2740,7 +2740,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
 
                         if(sometmp->tag == ASTLEFT) {
                             return sometmp;
-                        } else if(issimpletypeast(sometmp->right->tag) || sometmp->right->tag == TARRAY) {
+                        } else if(issimpletypeast(sometmp->right->tag) || sometmp->right->tag == TARRAYLITERAL) {
                             vectmp[idx] = sometmp->right;
                             idx++;
                             returntype = (AST *)hmalloc(sizeof(AST));
