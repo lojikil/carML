@@ -2770,7 +2770,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         if(sometmp->tag == ASTLEFT) {
                             //debugln;
                             return sometmp;
-                        } else if(!istypeast(sometmp->right->tag)) {
+                        } else if(!istypeast(sometmp->right->tag) && sometmp->right->tag != TARRAYLITERAL) {
                             //dprintf("type: %d\n", sometmp->right->tag);
                             //debugln;
                             return ASTLeft(0, 0, "a `:` form *must* be followed by a type definition...");
@@ -2846,7 +2846,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             typestate = 1;
                         } else if(sometmp->right->tag == TEQ) {
                             typestate = 3;
-                        } else if(sometmp->right->tag == TARRAY) {
+                        } else if(sometmp->right->tag == TARRAYLITERAL) {
                             // which state here? need to check that the
                             // array only has types in it...
                         } else if(sometmp->right->tag == TFATARROW) {
@@ -3459,7 +3459,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             typestate = 0;
                         } else if(iscomplextypeast(sometmp->right->tag)) {
                             typestate = 3;
-                        } else if(sometmp->right->tag == TARRAY) {
+                        } else if(sometmp->right->tag == TARRAYLITERAL) {
                             // need to collapse previous stuff here,
                             // but also check that we have valid types
                             // within the array.
@@ -3485,7 +3485,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         } else if(iscomplextypeast(sometmp->right->tag)) {
                             collapse_complex = 1;
                             typestate = 3;
-                        } else if(tmp->tag == TARRAY) {
+                        } else if(tmp->tag == TARRAYLITERAL) {
                             collapse_complex = 1;
                             typestate = 0;
                         } else if(tmp->tag == TEND || tmp->tag == TNEWL || tmp->tag == TSEMI) {
