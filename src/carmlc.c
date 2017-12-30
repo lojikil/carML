@@ -2710,6 +2710,15 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         } else if(sometmp->right->tag == TARRAY) {
                             vectmp[idx] = sometmp->right;
                             idx++;
+                            returntype = (AST *)hmalloc(sizeof(AST));
+                            returntype->tag = TCOMPLEXTYPE;
+                            returntype->lenchildren = idx - flag;
+                            returntype->children = (AST **)hmalloc(sizeof(AST *) * returntype->lenchildren);
+                            for(int cidx = 0, tidx = flag, tlen = returntype->lenchildren; cidx < tlen; cidx++, tidx++) {
+                                returntype->children[cidx] = vectmp[tidx];
+                            }
+                            idx = flag;
+                            flag = 0;
                             typestate = 6;
                         } else if(sometmp->right->tag == TEQ) {
                             returntype = (AST *)hmalloc(sizeof(AST));
@@ -2731,14 +2740,25 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
 
                         if(sometmp->tag == ASTLEFT) {
                             return sometmp;
-                        } else if(issimpletypeast(sometmp->right->tag)) {
-
-                        } else if(sometmp->right->tag == TARRAY) {
-
+                        } else if(issimpletypeast(sometmp->right->tag) || sometmp->right->tag == TARRAY) {
+                            vectmp[idx] = sometmp->right;
+                            idx++;
+                            returntype = (AST *)hmalloc(sizeof(AST));
+                            returntype->tag = TCOMPLEXTYPE;
+                            returntype->lenchildren = idx - flag;
+                            returntype->children = (AST **)hmalloc(sizeof(AST *) * returntype->lenchildren);
+                            for(int cidx = 0, tidx = flag, tlen = returntype->lenchildren; cidx < tlen; cidx++, tidx++) {
+                                returntype->children[cidx] = vectmp[tidx];
+                            }
+                            idx = flag;
+                            flag = 0;
+                            typestate = 6;
                         } else if(iscomplextypeast(sometmp->right->tag)) {
-
+                            vectmp[idx] = sometmp->right;
+                            idx++;
+                            typestate = 21;
                         } else {
-
+                            return ASTLeft(0, 0, "`of` in `=>` complex type *must* be followed by a type or an array of types.");
                         }
                         break;
                     case 4: // type
