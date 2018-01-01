@@ -1,0 +1,42 @@
+def find srcset : array of char dstset : array of char cur : char len : int => char = {
+    var idx : int = 0
+    while (< idx len) do {
+        when (eq? (get srcset idx) cur) do (return dst)
+        set! idx (+ idx 1)
+    }
+    cur
+}
+
+# this code is _so_ imperative
+# but it gets me where I want to go...
+# I need:
+# - HOFs, it's really a must
+# - combinators like any/every would be useful
+# - need to figure out ways to encode variable arguments...
+def cmung src : string dst : string len : int => string = {
+    var idx : int = 0
+    val srcset : array of char = ['!', '%', '$', '?', '<', '>', '=', '@', '^', '&', '|', '*', '.']
+    val dstset : array of char = ['B', '_', '_', 'p', 'l', 'g', 'e', '_', '_', '_', '_', '_', '_']
+
+    # foreach would be great here
+    while (< idx len) do {
+
+        set! cur (get dst idx)
+
+        # would be nicer with `any` or `every`
+        # this is _basically_ an abomination 
+        if (|| (|| (&& (>= cur 'A') (<= cur 'Z')) (&& (>= cur 'a') (<= cur 'z'))) (&& (>= cur '0') (<= cur '9'))) then
+            cur
+        else
+            (set! cur (find srcset dstset cur 13))
+
+        set! idx (+ idx 1)
+        
+        when (eq? (get src idx) '\0') do (return dst)
+    }
+}
+
+def cmung_alloc src : string len : int => string = {
+    val dst : string = (malloc (* (sizeof src) len))
+    cmung src dst len
+}

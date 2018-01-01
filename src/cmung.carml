@@ -1,5 +1,5 @@
 def cmung src : string dst : string len : int => string = {
-    val idx : int = 0
+    var idx : int = 0
     while (< idx len) do {
         # this would be a wonderful place for the match form
         # honestly, instead of having the above arrays, just 
@@ -22,6 +22,9 @@ def cmung src : string dst : string len : int => string = {
             case '.' => (set! (get dst idx) '_')
             case _ => (set! (get dst idx) (get src idx))
         end
+
+        # probably should make an `inc!` form
+        set! idx (+ idx 1)
 
         when (eq? (get src idx) '\0') do
             (return dst)
