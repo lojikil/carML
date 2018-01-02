@@ -4608,6 +4608,7 @@ llcwalk(AST *head, int level, int final) {
                 llcwalk(head->children[1], level + 1, YES);
             } else {
                 cwalk(head->children[1], level + 1);
+                printf(";\n");
             }
             indent(level);
             printf("}");
@@ -4810,6 +4811,7 @@ llcwalk(AST *head, int level, int final) {
                 llcwalk(head->children[1], level, YES);
             } else {
                 cwalk(head->children[1], level + 1);
+                printf(";\n");
             }
 
             printf("\n");
@@ -4831,6 +4833,7 @@ llcwalk(AST *head, int level, int final) {
                 llcwalk(head->children[2], level + 1, YES);
             } else {
                 cwalk(head->children[2], level + 1);
+                printf(";\n");
             }
 
             for(idx = 0; idx < level; idx++) {
