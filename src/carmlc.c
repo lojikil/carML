@@ -750,19 +750,24 @@ next(FILE *fdin, char *buf, int buflen) {
                         cur = fgetc(fdin);
                         switch(cur) {
                             case 'n':
-                                buf[idx++] = '\n';
+                                buf[idx++] = '\\';
+                                buf[idx++] = 'n';
                                 break;
                             case 'r':
-                                buf[idx++] = '\r';
+                                buf[idx++] = '\\';
+                                buf[idx++] = 'r';
                                 break;
                             case 't':
-                                buf[idx++] = '\t';
+                                buf[idx++] = '\\';
+                                buf[idx++] = 't';
                                 break;
                             case 'v':
-                                buf[idx++] = '\v';
+                                buf[idx++] = '\\';
+                                buf[idx++] = 'v';
                                 break;
                             case '0':
-                                buf[idx++] = '\0';
+                                buf[idx++] = '\\';
+                                buf[idx++] = '0';
                                 break;
                             case '"':
                                 buf[idx++] = '"';
@@ -798,8 +803,8 @@ next(FILE *fdin, char *buf, int buflen) {
                         case '0':
                             buf[idx++] = '\0';
                             break;
-                        case '"':
-                            buf[idx++] = '"';
+                        case '\'':
+                            buf[idx++] = '\'';
                             break;
                         default:
                             buf[idx++] = cur;
@@ -4860,7 +4865,29 @@ llcwalk(AST *head, int level, int final) {
             }
             break;
         case TCHAR:
-            printf("'%c'", head->value[0]);
+            switch(head->value[0]) {
+                case '\n':
+                    printf("'\\n'");
+                    break;
+                case '\r':
+                    printf("'\\r'");
+                    break;
+                case '\t':
+                    printf("'\\t'");
+                    break;
+                case '\v':
+                    printf("'\\v'");
+                    break;
+                case '\0':
+                    printf("'\\0'");
+                    break;
+                case '\'':
+                    printf("'\''");
+                    break;
+                default:
+                    printf("'%c'", head->value[0]);
+                    break;
+            }
             break;
         case TFLOAT:
             printf("%sf", head->value);
