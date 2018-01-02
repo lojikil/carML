@@ -184,6 +184,7 @@ const char *coperators[] = {
     "lor", "||",
     "logical-or", "||",
     "&&", "&&",
+    "||", "||",
     "band", "&",
     "bitwise-and", "&",
     "&", "&",
@@ -678,7 +679,7 @@ next(FILE *fdin, char *buf, int buflen) {
                 return TCOMMA;
             case '|':
                 cur = fgetc(fdin);
-                if(iswhite(cur) || isbrace(cur)) {
+                if(iswhite(cur) || isbrace(cur) || cur == '\n') {
                     buf[idx++] = '|';
                     buf[idx] = nul;
                     ungetc(cur, fdin);
@@ -686,7 +687,6 @@ next(FILE *fdin, char *buf, int buflen) {
                 } else if(cur == '>') {
                     return TPIPEARROW;
                 } else {
-                    ungetc(cur, fdin);
                     buf[idx++] = '|';
                 }
                 break;
