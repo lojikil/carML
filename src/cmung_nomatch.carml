@@ -26,9 +26,9 @@ def cmung src : string dst : string len : int => string = {
         # would be nicer with `any` or `every`
         # this is _basically_ an abomination 
         if (|| (|| (&& (>= cur 'A') (<= cur 'Z')) (&& (>= cur 'a') (<= cur 'z'))) (&& (>= cur '0') (<= cur '9'))) then
-            cur
+            (set! cur (get dst idx))
         else
-            (set! cur (find srcset dstset cur 13))
+            (set! cur (find srcset dstset cur 13)) # would be nicer with dynamic length...
 
         set! idx (+ idx 1)
         
