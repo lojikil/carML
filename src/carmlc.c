@@ -692,7 +692,7 @@ next(FILE *fdin, char *buf, int buflen) {
                 break;
             case '=':
                 cur = fgetc(fdin);
-                if(iswhite(cur) || isbrace(cur)) {
+                if(iswhite(cur) || isbrace(cur) || cur == '\n') {
                     return TEQ;
                 } else if(cur == '>') {
                     return TFATARROW;
@@ -711,9 +711,7 @@ next(FILE *fdin, char *buf, int buflen) {
                      * for now, we can just cry if the user wants to
                      * use "==" as an ident.
                      */
-                    ungetc(cur, fdin);
                     buf[idx++] = '=';
-                    return TEQ;
                 }
                 break;
             case '$':
