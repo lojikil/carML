@@ -705,12 +705,11 @@ next(FILE *fdin, char *buf, int buflen) {
 
                 if(cur == '(') {
                     return TCUT;
-                } else if(iswhite(cur) || isbrace(cur)) {
+                } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
                     ungetc(cur, fdin);
                     return TDOLLAR;
                 } else {
                     /* same jazz here as above with '='. */
-                    ungetc(cur, fdin);
                     buf[idx++] = '$';
                 }
                 break;
