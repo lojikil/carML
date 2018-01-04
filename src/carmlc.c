@@ -697,20 +697,6 @@ next(FILE *fdin, char *buf, int buflen) {
                 } else if(cur == '>') {
                     return TFATARROW;
                 } else {
-                    /* this technically introduces a bug:
-                     * because we're not tracking a substate
-                     * in here, we can't see that we've already
-                     * seen a '=' here. There's a few hacks:
-                     * - add a state tracker.
-                     * - handle the ident cases.
-                     * - cry (e.g. just allow the bug).
-                     *
-                     * I *think* what I'll do is add a state
-                     * tracker... but that will require some machinery
-                     * to make sure we get down to the ident case.
-                     * for now, we can just cry if the user wants to
-                     * use "==" as an ident.
-                     */
                     buf[idx++] = '=';
                 }
                 break;
