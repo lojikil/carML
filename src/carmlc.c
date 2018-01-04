@@ -3015,10 +3015,39 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
 
             return ASTRight(head);
             break;
+
+        case TWITH:
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TWITH;
+            head->lenchildren = 0;
+            return ASTRight(head);
             break;
         case TMATCH:
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = TMATCH;
+            head->lenchildren = 2;
+            head->children = (AST **)hmalloc(sizeof(AST *) * 2);
+
+            sometmp = readexpression(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else {
+                head->children[0] = sometmp->right;
+            }
+
+            sometmp = readexpression(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else if(sometmp->right->tag != TWITH) {
+                return ASTLeft(0, 0, "a `match` form's expression *must* be followed by a `with`.");
+            }
+
+            // ok, we have an expression, and with have a WITH, now
+            // we need to read our expressions.
+            // expression => expression
+            // else => expression
             return ASTRight(head);
             break;
         case TIF:
@@ -4260,7 +4289,10 @@ walk(AST *head, int level) {
             printf(")");
             break;
         case TMATCH:
-            printf("here in match?\n");
+            printf("(match ");
+            walk(head->children[0], 0);
+            printf("\n");
+            printf(")");
             break;
         case TIF:
             printf("(if ");
