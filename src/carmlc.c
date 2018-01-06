@@ -3051,10 +3051,10 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             // expression => expression
             // else => expression
             // end $
-
+            debugln;
             while(1) {
                 sometmp = readexpression(fdin);
-
+                debugln;
                 if(sometmp->tag == ASTLEFT) {
                     return sometmp;
                 } else if(sometmp->right->tag == TCALL) {
@@ -3067,7 +3067,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 } else if(sometmp->right->tag == TEND) {
                     break;
                 }
-
+                debugln;
                 sometmp = readexpression(fdin);
 
                 if(sometmp->tag == ASTLEFT) {
@@ -3075,7 +3075,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 } else if(sometmp->right->tag != TFATARROW) {
                     return ASTLeft(0, 0, "match conditions *must* be followed by a fat-arrow `=>`");
                 } 
-
+                debugln;
                 sometmp = readexpression(fdin);
 
                 if(sometmp->tag == ASTLEFT) {
@@ -3083,11 +3083,13 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 } else {
                     mval = sometmp->right;
                 }
+                debugln;
                 mstack[msp] = mcond;
                 mstack[msp + 1] = mval;
                 msp += 2;
+                debugln;
             }
-
+            debugln;
             tmp = (AST *)hmalloc(sizeof(AST));
             tmp->lenchildren = msp;
             tmp->children = (AST **)hmalloc(sizeof(AST *) * msp);
@@ -4340,6 +4342,7 @@ walk(AST *head, int level) {
             printf(")");
             break;
         case TMATCH:
+            debugln;
             printf("(match ");
             walk(head->children[0], 0);
             printf("\n");

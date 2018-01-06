@@ -1,0 +1,7 @@
+var x : int = 10
+
+match x with
+    10 => (printf "ten!\n")
+    11 => (printf "uh... 11?\n")
+    else => (printf "oh goodness...")
+end

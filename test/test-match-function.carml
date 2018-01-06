@@ -1,0 +1,5 @@
+def foo bar:int => string = match bar with
+    10 => "ten"
+    11 => "eleven"
+    else => "something else"
+end
