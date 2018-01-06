@@ -436,7 +436,7 @@ isprimitivevalue(int tag) {
     switch(tag) {
         case TINT:
         case TFLOAT:
-        case TARRAY:
+        case TARRAYLITERAL:
         case TSTRING:
         case TCHAR:
             return 1;
@@ -3027,6 +3027,8 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             head->tag = TMATCH;
             head->lenchildren = 2;
             head->children = (AST **)hmalloc(sizeof(AST *) * 2);
+            AST *mcond = nil, *mval = nil, *mstack[128] = {nil};
+            int msp = 0;
 
             sometmp = readexpression(fdin);
 
@@ -3048,6 +3050,54 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             // we need to read our expressions.
             // expression => expression
             // else => expression
+            // end $
+
+            while(1) {
+                sometmp = readexpression(fdin);
+
+                if(sometmp->tag == ASTLEFT) {
+                    return sometmp;
+                } else if(sometmp->right->tag == TCALL) {
+                    mcond = sometmp->right;
+                    if(mcond->children[0]->tag != TTAG) {
+                        return ASTLeft(0, 0, "match can only decompose sum-types.");
+                    }
+                } else if(isprimitivevalue(sometmp->right->tag) || sometmp->right->tag == TELSE) {
+                    mcond = sometmp->right;
+                } else if(sometmp->right->tag == TEND) {
+                    break;
+                }
+
+                sometmp = readexpression(fdin);
+
+                if(sometmp->tag == ASTLEFT) {
+                    return sometmp;
+                } else if(sometmp->right->tag != TFATARROW) {
+                    return ASTLeft(0, 0, "match conditions *must* be followed by a fat-arrow `=>`");
+                } 
+
+                sometmp = readexpression(fdin);
+
+                if(sometmp->tag == ASTLEFT) {
+                    return sometmp;
+                } else {
+                    mval = sometmp->right;
+                }
+                mstack[msp] = mcond;
+                mstack[msp + 1] = mval;
+                msp += 2;
+            }
+
+            tmp = (AST *)hmalloc(sizeof(AST));
+            tmp->lenchildren = msp;
+            tmp->children = (AST **)hmalloc(sizeof(AST *) * msp);
+
+            for(int cidx = 0; cidx < msp; cidx += 2) {
+                tmp->children[cidx] = mstack[cidx];
+                tmp->children[cidx + 1] = mstack[cidx + 1];
+            }
+            tmp->tag = TBEGIN;
+            head->children[1] = tmp;
             return ASTRight(head);
             break;
         case TIF:
@@ -4109,6 +4159,7 @@ indent(int level) {
 void
 walk(AST *head, int level) {
     int idx = 0;
+    AST *tmp = nil;
 
     for(; idx < level; idx++) {
         printf("    ");
@@ -4292,6 +4343,20 @@ walk(AST *head, int level) {
             printf("(match ");
             walk(head->children[0], 0);
             printf("\n");
+            tmp = head->children[1];
+            for(int cidx = 0; cidx < tmp->lenchildren; cidx += 2) {
+                if(tmp->children[cidx]->tag == TELSE) {
+                    indent(level + 1);
+                    printf("else");
+                } else {
+                    walk(tmp->children[cidx], level + 1);
+                }
+                printf(" => ");
+                walk(tmp->children[cidx + 1], 0);
+                if(cidx < (tmp->lenchildren - 2)) {
+                    printf("\n");
+                }
+            }
             printf(")");
             break;
         case TIF:
