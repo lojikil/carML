@@ -3070,6 +3070,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 debugln;
                 sometmp = readexpression(fdin);
 
+                // need to figure out how to wedge guard clauses in here...
                 if(sometmp->tag == ASTLEFT) {
                     return sometmp;
                 } else if(sometmp->right->tag != TFATARROW) {
@@ -4700,6 +4701,13 @@ llcwalk(AST *head, int level, int final) {
             }
             indent(level);
             printf("}");
+            break;
+        case TMATCH:
+            // there are several different strategies to
+            // use here...
+            // 1. simple if-then-else chain for things like string compares
+            // 2. switch block (can use FNV1a for strings => switch, straight for int/float)
+            // 3. unpacking ADTs means we have to detect tag & collate those cases together
             break;
         case TWHILE:
             printf("while(");
