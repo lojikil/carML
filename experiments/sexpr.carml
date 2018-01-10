@@ -1,0 +1,12 @@
+type SExpression {
+    Nil
+    Cons SExpression SExpression
+    Atom string
+    String string
+    Int int
+    Float float
+    Char char
+    Bool bool
+    List array of SExpression
+    Array array of SExpression
+}
