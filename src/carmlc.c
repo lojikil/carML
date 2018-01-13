@@ -4708,6 +4708,22 @@ llcwalk(AST *head, int level, int final) {
             // 1. simple if-then-else chain for things like string compares
             // 2. switch block (can use FNV1a for strings => switch, straight for int/float)
             // 3. unpacking ADTs means we have to detect tag & collate those cases together
+
+            if(head->children[0]->tag == TIDENT) {
+                ctmp = head->children[0];
+            } else {
+                ctmp = (AST *)hmalloc(sizeof(AST));
+                ctmp->type = TIDENT;
+                snprintf(&buf[0], 512, "l%d", rand());
+
+                // need to demand a type here...
+            }
+
+            // need to:
+            // demand a type from the results
+            // make sure it reifies
+            // generate if/else 
+            // handle bindings
             break;
         case TWHILE:
             printf("while(");
