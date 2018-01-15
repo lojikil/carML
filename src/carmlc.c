@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include <gc.h>
@@ -2695,9 +2696,11 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             return sometmp;
                         } else if(sometmp->right->tag == TOF) {
                             typestate = 22;
-                        } else if(sometmp->right->tag == TARRAY) {
-                            vectmp[idx] = sometmp->right;
-                            idx++;
+                        } else if(sometmp->right->tag == TARRAYLITERAL) {
+                            tmp = sometmp->right;
+                            for(int tidx = 0; tidx < tmp->lenchildren; tidx++, idx++) {
+                                vectmp[idx] = tmp->children[tidx];
+                            }
                             returntype = (AST *)hmalloc(sizeof(AST));
                             returntype->tag = TCOMPLEXTYPE;
                             returntype->lenchildren = idx - flag;
@@ -4713,7 +4716,7 @@ llcwalk(AST *head, int level, int final) {
                 ctmp = head->children[0];
             } else {
                 ctmp = (AST *)hmalloc(sizeof(AST));
-                ctmp->type = TIDENT;
+                ctmp->tag = TIDENT;
                 snprintf(&buf[0], 512, "l%d", rand());
 
                 // need to demand a type here...
