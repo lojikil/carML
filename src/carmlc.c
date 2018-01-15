@@ -4734,8 +4734,10 @@ llcwalk(AST *head, int level, int final) {
                 if(tidx == 0) {
                     printf("if(");
                 } else if(htmp->children[tidx]->tag == TELSE) {
+                    indent(level);
                     printf("} else ");
                 } else {
+                    indent(level);
                     printf("} else if(");
                 }
 
@@ -4760,7 +4762,6 @@ llcwalk(AST *head, int level, int final) {
                     }
                     printf(") ");
                 }
-                indent(level);
                 printf("{\n");
                 if(final && isvalueform(htmp->children[tidx + 1]->tag)) {
                     indent(level + 1);
