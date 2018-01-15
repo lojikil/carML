@@ -4727,6 +4727,54 @@ llcwalk(AST *head, int level, int final) {
             // make sure it reifies
             // generate if/else 
             // handle bindings
+            // for now, just roll with it
+            htmp = head->children[1];
+            for(int tidx = 0; tidx < htmp->lenchildren; tidx+=2) {
+                if(tidx == 0) {
+                    printf("if(");
+                } else if(htmp->children[tidx]->tag == TELSE) {
+                    printf("} else ");
+                } else {
+                    printf("} else if(");
+                }
+
+                if(htmp->children[tidx]->tag != TELSE) {
+                    switch(htmp->children[tidx]->tag) {
+                        // add HEX, OCT, BIN here too
+                        // have to figure out how to encode booleans as well
+                        case TCHAR:
+                        case TFLOAT:
+                        case TINT:
+                            printf("%s == %s", ctmp->value, htmp->children[tidx]->value);
+                            break;
+                        case TSTRING:
+                            printf("!strncmp(%s, \"%s\", %lu)", ctmp->value, htmp->children[tidx]->value, strlen(htmp->children[tidx]->value));
+                            break;
+                        case TTAG:
+                            // to do, but should be able to calculate
+                            // the tag name easily enough...
+                            break;
+                        default:
+                            break;
+                    }
+                    printf(") ");
+                }
+                indent(level);
+                printf("{\n");
+                if(final && isvalueform(htmp->children[tidx + 1]->tag)) {
+                    indent(level + 1);
+                    printf("return ");
+                    cwalk(htmp->children[tidx + 1], 0);
+                    printf(";\n");
+                } else if(final) {
+                    llcwalk(htmp->children[tidx + 1], level, YES);
+                } else {
+                    cwalk(htmp->children[tidx + 1], level + 1);
+                    printf(";\n");
+                }
+            }
+            indent(level);
+            printf("}\n");
             break;
         case TWHILE:
             printf("while(");
@@ -4926,7 +4974,7 @@ llcwalk(AST *head, int level, int final) {
                 llcwalk(head->children[1], level, YES);
             } else {
                 cwalk(head->children[1], level + 1);
-                printf(";\n");
+                printf(";");
             }
 
             printf("\n");
