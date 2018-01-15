@@ -4011,6 +4011,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
         case TCOLON:
         case TSEMI:
         case TFATARROW:
+        case TPIPEARROW:
         case TREF:
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = ltype;
