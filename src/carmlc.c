@@ -89,7 +89,7 @@ struct _AST {
      * breaking down the ASTs into discrete
      * objects, but rather just grouping them
      * into a generic a piece as possible.
-     * so, for exapmple, and IF block would
+     * so, for example, and IF block would
      * have a lenchildren == 3, no matter what
      * whereas a BEGIN block lenchildren == N,
      * where N >= 0. In the real thing, would
@@ -97,8 +97,8 @@ struct _AST {
      * each member broken down, or an SRFI-57-style
      * struct.
      * in fact... if you have row-polymorphism, there's
-     * no need for SRFI-57 inhereitence, save for to
-     * create convience methods... hmm... :thinking_face:
+     * no need for SRFI-57 inheritance, save for to
+     * create convenience methods... hmm... :thinking_face:
      */
     char *value;
     uint32_t lenvalue;
@@ -147,7 +147,7 @@ typedef struct _ASTOFFSET {
     AST *right;
 } ASTOffset;
 
-/* probably should track urnary vs binary
+/* probably should track unary vs binary
  * but for now I think this is enough...
  */
 const char *coperators[] = {
@@ -3413,7 +3413,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
              * }
              * need to put this in a loop, so that
              * we can read the various idents (typevars)
-             * befor the begin...
+             * before the begin...
              */
             while(ltmp != TBEGIN) {
                 ltmp = next(fdin, &buffer[0], 512);
@@ -3933,7 +3933,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             ctmp->children[cidx] = vectmp[tidx];
                         }
 
-                        /* create the record field defition holder */
+                        /* create the record field definition holder */
                         tmp = (AST *)hmalloc(sizeof(AST));
                         tmp->tag = TRECDEF;
                         tmp->lenchildren = 2;
@@ -4831,7 +4831,7 @@ llcwalk(AST *head, int level, int final) {
             htmp = head->children[1];
 
             // generate our enum for the various tags for this
-            // type/poly (forEach constuctor thereExists |Tag|)
+            // type/poly (forEach constructor thereExists |Tag|)
             printf("enum Tags_%s {\n", tbuf);
             for(int cidx = 0; cidx < htmp->lenchildren; cidx++) {
                 indent(level + 1);
