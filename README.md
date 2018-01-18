@@ -13,7 +13,7 @@ with [Digamma](http://lojikil.com/p/digamma/). It's meant to be:
 
 
 This is at least the 3rd time (and probably 5th) time that I've attempted such a thing, so don't mind me at all. This *is* the first time
-I've experimented publically with my PLT designs tho.
+I've experimented publicly with my PLT designs tho.
 
 # Name
 
