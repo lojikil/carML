@@ -3321,6 +3321,34 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             } else {
                 head->tag = TCALL;
             }
+
+            // process these in *reverse*:
+            // each time you hit a $, add it
+            // to the stack...
+            // is it worth it? lemme work it.
+            // I put my stack down, flip it, and reverse it.
+            // Ti esrever dna, ti pilf, nwod kcats ym tup i.
+            // Ti esrever dna, ti pilf, nwod kcats ym tup i.
+            dprintf("idx == %d\n", idx);
+            for(int tidx = idx - 1, flag = idx; tidx > 0; tidx--) {
+                debugln;
+                if(vectmp[tidx]->tag == TDOLLAR) {
+                    debugln;
+                    AST *res = (AST *)hmalloc(sizeof(AST));
+                    res->tag = TCALL;
+                    res->lenchildren = flag - tidx - 1;
+                    res->children = (AST **)hmalloc(sizeof(AST *) * (flag - tidx));
+                    for(int ctidx = tidx + 1, ttidx = 0; ctidx < flag; ctidx++, ttidx++) {
+                        res->children[ttidx] = vectmp[ctidx];
+                    }
+                    debugln;
+                    flag = tidx + 1;
+                    idx = flag;
+                    dprintf("idx == %d, flag == %d\n", idx, flag);
+                    vectmp[tidx] = res;
+                }
+            }
+            dprintf("idx == %d\n", idx);
             head->lenchildren = idx;
             head->children = (AST **)hmalloc(sizeof(AST *) * idx);
             for(int i = 0; i < idx; i++) {
