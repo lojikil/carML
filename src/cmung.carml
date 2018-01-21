@@ -1,30 +1,36 @@
 def cmung src : string dst : string len : int => string = {
     var idx : int = 0
+    var tmp : char = ' '
+    # ideally, this would be great as a 
+    # map or map! form. The below is 
+    # entirely too low level for my tastes,
+    # esp. when I can see the proper direction.
     while (< idx len) do {
         # this would be a wonderful place for the match form
         # honestly, instead of having the above arrays, just 
         # have a simple match here. The match could also detect
         # if we have hit end of string (i.e. ASCII NUL).
-        match (get src idx) with 
+        set! tmp $ get src idx
+        match tmp with 
             # refactor out all these set!s...
-            case '!' => (set! (get dst idx) 'B')
-            case '%' => (set! (get dst idx) '_')
-            case '$' => (set! (get dst idx) '_')
-            case '?' => (set! (get dst idx) 'p')
-            case '<' => (set! (get dst idx) 'l')
-            case '>' => (set! (get dst idx) 'g')
-            case '=' => (set! (get dst idx) 'e')
-            case '@' => (set! (get dst idx) '_')
-            case '^' => (set! (get dst idx) '_')
-            case '&' => (set! (get dst idx) '_')
-            case '|' => (set! (get dst idx) '_')
-            case '*' => (set! (get dst idx) '_')
-            case '.' => (set! (get dst idx) '_')
-            case _ => (set! (get dst idx) (get src idx))
+             '!' => (set! (get dst idx) 'B')
+             '%' => (set! (get dst idx) '_')
+             '$' => (set! (get dst idx) '_')
+             '?' => (set! (get dst idx) 'p')
+             '<' => (set! (get dst idx) 'l')
+             '>' => (set! (get dst idx) 'g')
+             '=' => (set! (get dst idx) 'e')
+             '@' => (set! (get dst idx) '_')
+             '^' => (set! (get dst idx) '_')
+             '&' => (set! (get dst idx) '_')
+             '|' => (set! (get dst idx) '_')
+             '*' => (set! (get dst idx) '_')
+             '.' => (set! (get dst idx) '_')
+             else => (set! (get dst idx) (get src idx))
         end
 
         # probably should make an `inc!` form
-        set! idx (+ idx 1)
+        set! idx $ + idx 1
 
         when (eq? (get src idx) '\0') do
             (return dst)

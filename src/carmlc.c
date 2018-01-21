@@ -4792,10 +4792,12 @@ llcwalk(AST *head, int level, int final) {
                     switch(htmp->children[tidx]->tag) {
                         // add HEX, OCT, BIN here too
                         // have to figure out how to encode booleans as well
-                        case TCHAR:
                         case TFLOAT:
                         case TINT:
                             printf("%s == %s", ctmp->value, htmp->children[tidx]->value);
+                            break;
+                        case TCHAR:
+                            printf("%s == '%s'", ctmp->value, htmp->children[tidx]->value);
                             break;
                         case TSTRING:
                             printf("!strncmp(%s, \"%s\", %lu)", ctmp->value, htmp->children[tidx]->value, strlen(htmp->children[tidx]->value));
