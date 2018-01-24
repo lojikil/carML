@@ -8,6 +8,7 @@ A quick list of the current `TODO`s.
 1. **DONE** Add `var` form
 1. **DONE** type tags
 1. _BUG_: `Foo Bar int` as type constructor is parsed as `(type-constructor Foo (complex-type Bar Int))` when it should be `(type-constructor Foo Bar Int)` (2 members)
+1. _BUG_: look at how the `experiments/sexpr.carml` is being parsed, and note that several constructors are missing
 1. (test case for the above: `Foo Bar int`)
 1. **FIXED** _BUG_: `def bar h:Url => Url` is parsed as `(parameter-list (ident h) (tag Url))` when it should be `(parameter-list (parameter-def h (complex-type (tag Url))))`
 1. **FIXED** (test case for the above: `def foo f:Url => Url = f`)
@@ -36,9 +37,10 @@ A quick list of the current `TODO`s.
 1. OCaml/SML-style Modules, and their application to higher-kinded types
 1. Friendlier REPL, with keyboard support, and a simple Logo-style `edit` command
 1. **DONE** Syntax updates: `record`
-1. Syntax updates: `def`
-1. Syntax updates: `match`
-1. Syntax updates: `fn`
+1. **WONTFIX** Syntax updates: `def`
+1. **WONTFIX** Syntax updates: `match`
+1. **WONTFIX** Syntax updates: `fn`
+1. _REVIEW_ make `let` & `var/var` treat items like a call form (as in `val r : int = sum x 10` instead of `val r : int = (sum x 10)`)
 1. make the types parsing code more modular; could easily extract that out into a function
 1. **DONE** (not in the most elegant way, mind, but...) Finally fix the frakking lexer to not goof up internal states
 1. Csharp-style record parameter unboxing
@@ -47,7 +49,7 @@ A quick list of the current `TODO`s.
 1. in the base C compiler & carML self-hosting one, include a defined list of compiler errors with friendly data
 1. add line numbers to errors
 1. **DONE** Fix type state transition, which fails for Tagged types (`Url`)
-1. Fix parsing of single line `begin`: `{sum x 10}` fails to parse properly
+1. **DONE** Fix parsing of single line `begin`: `{sum x 10}` fails to parse properly
 1. **DONE** Fix `float`, `bool`, and `char` parsing
 1. Add sized ints/uints/floats (e.g. `uint8`) as types
 1. **DONE** Fix edge case: complex type right before `=>` fails `def foo bar : Url => int = ...` fails
@@ -141,10 +143,10 @@ be 1 to 1...
 I've been thinking about certain syntax choices I made originally, and thinking about updating them:
 
 - **DONE** remove the `=` in `record`s: `record foo { x int; y int;}`
-- allow the use of begin blocks directly following parameter lists: `def foo x { println x; sum x x}`
-- allow the use of begin blocks directly following `fn` parameter lists: `fn x { println x; sum x x}`
-- still allow `def foo x = { block stuff ... }`
-- match forms to just directly use begin blocks: `match x { Some y => ... ; None => ... }`
+- **WONTFIX** allow the use of begin blocks directly following parameter lists: `def foo x { println x; sum x x}`
+- **WONTFIX** allow the use of begin blocks directly following `fn` parameter lists: `fn x { println x; sum x x}`
+- **N/A** still allow `def foo x = { block stuff ... }`
+- **WONTFIX** match forms to just directly use begin blocks: `match x { Some y => ... ; None => ... }`
 
 # Pre-requisites, Post-requisites, Invariants
 

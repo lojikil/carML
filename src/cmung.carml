@@ -37,7 +37,35 @@ def cmung src : string dst : string len : int => string = {
     }
 }
 
+def cmung_nicer src:string dst:string len:int => string = {
+    # this is pretty nice, and it hides much of the
+    # actual details about how things are stored and
+    # what not. It's also generally just quite a bit
+    # smaller. I do wonder if it's *too* minimal tho;
+    # I think I'll need to get others reading some
+    # carML at some point soon to see. Probably
+    # Bruce will see this first tho. XD
+    map! src dst fn x:char => char = {
+        match x with
+             '!' => 'B'
+             '%' => '_'
+             '$' => '_'
+             '?' => 'p'
+             '<' => 'l'
+             '>' => 'g'
+             '=' => 'e'
+             '@' => '_'
+             '^' => '_'
+             '&' => '_'
+             '|' => '_'
+             '*' => '_'
+             '.' => '_'
+             else => x
+        end
+    }
+}
+
 def cmung_alloc src : string len : int => string = {
-    val dst : string = (malloc (* (sizeof src) len))
+    var dst : string = (malloc (* (sizeof src) len))
     cmung src dst len
 }
