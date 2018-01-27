@@ -42,8 +42,7 @@ typedef enum {
     LWHEN0, LWHEN1, LWHEN2, LWHEN3, LNEWL, LDO0, LDO1,
     LD0, LTRUE0, LTRUE1, LTRUE3, LTRUE4, LFALSE0,
     LFALSE1, LFALSE2, LFALSE3, LFALSE4, LFALSE5,
-    LFN0, LFN1, LCASE0, LCASE1, LCASE2, LCASE3, LCASE4,
-    LLET0, LLET1, LLET2, LLETREC0, LLETREC1, LLETREC2,
+    LFN0, LFN1, LLET0, LLET1, LLET2, LLETREC0, LLETREC1, LLETREC2,
     LLETREC3, LLETREC4, LLETREC5, LLETREC6, LL0, LCHAR0,
     LCHAR1, LCHAR2, LCHAR3, LSTRT0, LSTRT1, LSTRT2, LSTRT3,
     LSTRT4, LSTRT5, LSTRT6, LINTT0, LINTT1, LINTT2, LFLOATT0,
@@ -1089,8 +1088,6 @@ next(FILE *fdin, char *buf, int buflen) {
                                 ungetc(cur, fdin);
                                 buf[idx - 1] = '\0';
                                 return TIDENT;
-                            } else if(cur == 'a') {
-                                substate = LCASE0;
                             } else {
                                 substate = LIDENT0;
                             }
