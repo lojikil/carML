@@ -426,6 +426,10 @@ iscomplextypeast(int tag) {
         case TREF:
         case TTAG: // user types 
             return 1;
+        case TARRAYLITERAL:
+            // really... need to iterate through
+            // the entire array to be sure here...
+            return 1;
         default:
             return 0;
     }
@@ -3535,7 +3539,6 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             idx++;
                         } else if(sometmp->right->tag == TEND || sometmp->right->tag == TNEWL || sometmp->right->tag == TSEMI){
                             typestate = -1;
-                            tmp = sometmp->right;
                         } else {
                             return ASTLeft(0, 0, "type/poly constructors must be Tags.");
                         }
@@ -3571,6 +3574,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         break;
 
                     case 2:
+                        debugln;
                         if(issimpletypeast(sometmp->right->tag)) {
                             collapse_complex = 1;
                             typestate = 0;
@@ -3602,14 +3606,17 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         } else if(iscomplextypeast(sometmp->right->tag)) {
                             collapse_complex = 1;
                             typestate = 3;
-                        } else if(tmp->tag == TARRAYLITERAL) {
+                        } else if(sometmp->right->tag == TARRAYLITERAL) {
                             collapse_complex = 1;
                             typestate = 0;
-                        } else if(tmp->tag == TEND || tmp->tag == TNEWL || tmp->tag == TSEMI) {
+                        } else if(sometmp->right->tag == TEND || sometmp->right->tag == TNEWL || sometmp->right->tag == TSEMI) {
+                            debugln;
                             typestate = -1;
                         }
 
                         if(typestate != 2 && typestate != -1) {
+                            debugln;
+                            dprintf("typestate == %d\n", typestate);
                             vectmp[idx] = sometmp->right;
                             idx++;
                         }
@@ -4591,7 +4598,7 @@ generate_type_ref(AST *head, const char *name) {
     char *tbuf = nil, buf[512] = {0}, *rtbuf = nil, rbuf[512] = {0};
     char *member = nil, membuf[512] = {0};
     // setup a nice definition...
-    printf("%s *\n%s_%s(", name, name, head->children[0]->value);
+    printf("%s *\n%s_%s_ref(", name, name, head->children[0]->value);
     // dump our parameters...
     for(cidx = 1; cidx < head->lenchildren; cidx++) {
         snprintf(buf, 512, "m_%d", cidx); 
