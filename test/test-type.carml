@@ -23,6 +23,13 @@ type Bloo {
     BlooErr int string
 }
 
+type Frob {
+    FrobOk array of Bloo
+    FrobErr array Bloo
+    FrobWot Bloo int
+    FrobWat int int string array of int
+}
+
 # Test: tags separated with semi-colons
 type Foo {
     Left int;

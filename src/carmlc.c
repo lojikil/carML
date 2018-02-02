@@ -3531,6 +3531,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 dprintf("\n");
                 dprintf("tag == TEND? %s\n", sometmp->right->tag == TEND ? "yes" : "no");
                 dprintf("typestate == %d\n", typestate);
+                dprintf("collapse == %d\n", typestate);
                 switch(typestate) {
                     case -1:
                         if(sometmp->right->tag == TTAG) {
