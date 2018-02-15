@@ -3577,16 +3577,9 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                     case 2:
                         debugln;
                         if(issimpletypeast(sometmp->right->tag)) {
-                            collapse_complex = 1;
                             typestate = 0;
                         } else if(iscomplextypeast(sometmp->right->tag)) {
                             typestate = 3;
-                        } else if(sometmp->right->tag == TARRAYLITERAL) {
-                            // need to collapse previous stuff here,
-                            // but also check that we have valid types
-                            // within the array.
-                            collapse_complex = 1;
-                            typestate = 0;
                         } else {
                             return ASTLeft(0, 0, "expecting type in user-type definition");
                         }
@@ -3596,19 +3589,14 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         break;
                     case 3:
                         if(sometmp->right->tag == TOF) {
-                            typestate = 2;
+                            typestate = 4;
                         } else if(sometmp->right->tag == TIDENT) {
-                            // need to collapse previous type here...
-                            collapse_complex = 1;
                             typestate = 1;
                         } else if(issimpletypeast(sometmp->right->tag)) {
-                            collapse_complex = 1;
                             typestate = 0;
                         } else if(iscomplextypeast(sometmp->right->tag)) {
-                            collapse_complex = 1;
                             typestate = 3;
                         } else if(sometmp->right->tag == TARRAYLITERAL) {
-                            collapse_complex = 1;
                             typestate = 0;
                         } else if(sometmp->right->tag == TEND || sometmp->right->tag == TNEWL || sometmp->right->tag == TSEMI) {
                             debugln;
@@ -3622,6 +3610,9 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             idx++;
                         }
                         break;
+                    case 4:
+                        break;
+
                 }
 
                 if(collapse_complex) {
