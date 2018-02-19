@@ -426,10 +426,10 @@ iscomplextypeast(int tag) {
         case TREF:
         case TTAG: // user types 
             return 1;
-        case TARRAYLITERAL:
+        //case TARRAYLITERAL:
             // really... need to iterate through
             // the entire array to be sure here...
-            return 1;
+            //return 1;
         default:
             return 0;
     }
@@ -3588,24 +3588,52 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         idx++;
                         break;
                     case 3:
+                        debugln;
                         if(sometmp->right->tag == TOF) {
+                            debugln;
                             typestate = 4;
                         } else if(sometmp->right->tag == TIDENT) {
+                            debugln;
                             typestate = 1;
                         } else if(issimpletypeast(sometmp->right->tag)) {
+                            debugln;
                             typestate = 0;
                         } else if(iscomplextypeast(sometmp->right->tag)) {
+                            debugln;
                             typestate = 3;
                         } else if(sometmp->right->tag == TARRAYLITERAL) {
+                            debugln;
                             typestate = 0;
+                            tmp = sometmp->right;
+                            for(int tidx = 0; tidx < tmp->lenchildren; tidx++, idx++) {
+                                debugln;
+                                vectmp[idx] = tmp->children[tidx];
+                            }
+                            debugln;
                         } else if(sometmp->right->tag == TEND || sometmp->right->tag == TNEWL || sometmp->right->tag == TSEMI) {
                             debugln;
                             typestate = -1;
                         }
 
-                        if(typestate != 2 && typestate != -1) {
+                        debugln;
+
+                        if(typestate != 4 && typestate != -1) {
                             debugln;
                             dprintf("typestate == %d\n", typestate);
+                            tmp = (AST *)hmalloc(sizeof(AST));
+                            tmp->tag = TCOMPLEXTYPE;
+                            tmp->lenchildren = idx - flag;
+                            tmp->children = (AST **)hmalloc(sizeof(AST *) * tmp->lenchildren);
+                            for(int cidx = 0, tidx = flag, tlen = tmp->lenchildren; cidx < tlen; cidx++, tidx++) {
+                                tmp->children[cidx] = vectmp[tidx];
+                            }
+                            vectmp[flag] = tmp;
+                            flag = flag + 1;
+                            idx = flag + 1;
+                            //flag = 0;
+                            /*nstack[nsp] = tmp;
+                            nsp++;
+                            collapse_complex = 0;*/
                             vectmp[idx] = sometmp->right;
                             idx++;
                         }
@@ -3616,19 +3644,6 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 }
 
                 if(collapse_complex) {
-                    tmp = (AST *)hmalloc(sizeof(AST));
-                    tmp->tag = TCOMPLEXTYPE;
-                    tmp->lenchildren = idx - flag;
-                    tmp->children = (AST **)hmalloc(sizeof(AST *) * tmp->lenchildren);
-                    for(int cidx = 0, tidx = flag, tlen = tmp->lenchildren; cidx < tlen; cidx++, tidx++) {
-                        tmp->children[cidx] = vectmp[tidx];
-                    }
-                    vectmp[flag] = tmp;
-                    idx = flag + 1;
-                    flag = 0;
-                    /*nstack[nsp] = tmp;
-                    nsp++;*/
-                    collapse_complex = 0;
                 }
 
                 // ok, we got to the end of *something*
