@@ -3629,13 +3629,13 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             }
                             vectmp[flag] = tmp;
                             flag = flag + 1;
-                            idx = flag + 1;
+                            idx = flag;
                             //flag = 0;
                             /*nstack[nsp] = tmp;
                             nsp++;
                             collapse_complex = 0;*/
-                            vectmp[idx] = sometmp->right;
-                            idx++;
+                            //vectmp[idx] = sometmp->right;
+                            //idx++;
                         }
                         break;
                     case 4:
