@@ -7,6 +7,6 @@ type SExpression {
     Float float
     Char char
     Bool bool
-    List array of SExpression
-    Array array of SExpression
+    List array[SExpression]
+    Array array[SExpression]
 }

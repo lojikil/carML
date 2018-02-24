@@ -12,6 +12,6 @@ type Json {
     Array array of Json
     # a tuple would be nicest here
     # Object array[tuple[string Json]]
-    Object array of JsonPair
+    Object array[JsonPair]
 }
 

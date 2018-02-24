@@ -3634,13 +3634,60 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             /*nstack[nsp] = tmp;
                             nsp++;
                             collapse_complex = 0;*/
+                            // this is *very* gross
+                            if(typestate == 3 || (typestate == 0 && sometmp->right->tag != TARRAYLITERAL)) {
+                                vectmp[idx] = sometmp->right;
+                                idx++;
+                            }
+                        }
+                        break;
+                    case 4:
+                        if(sometmp->right->tag == TIDENT) {
+                            debugln;
+                            typestate = 1;
+                        } else if(issimpletypeast(sometmp->right->tag)) {
+                            debugln;
+                            typestate = 0;
+                        } else if(iscomplextypeast(sometmp->right->tag)) {
+                            debugln;
+                            typestate = 3;
+                            vectmp[idx] = sometmp->right;
+                            idx++;
+                        } else if(sometmp->right->tag == TARRAYLITERAL) {
+                            debugln;
+                            typestate = 0;
+                            tmp = sometmp->right;
+                            for(int tidx = 0; tidx < tmp->lenchildren; tidx++, idx++) {
+                                debugln;
+                                vectmp[idx] = tmp->children[tidx];
+                            }
+                            debugln;
+                        } else if(sometmp->right->tag == TEND || sometmp->right->tag == TNEWL || sometmp->right->tag == TSEMI) {
+                            debugln;
+                            typestate = -1;
+                        }
+
+                        if(typestate != 3 && typestate != -1) {
+                            debugln;
+                            dprintf("typestate == %d\n", typestate);
+                            tmp = (AST *)hmalloc(sizeof(AST));
+                            tmp->tag = TCOMPLEXTYPE;
+                            tmp->lenchildren = idx - flag;
+                            tmp->children = (AST **)hmalloc(sizeof(AST *) * tmp->lenchildren);
+                            for(int cidx = 0, tidx = flag, tlen = tmp->lenchildren; cidx < tlen; cidx++, tidx++) {
+                                tmp->children[cidx] = vectmp[tidx];
+                            }
+                            vectmp[flag] = tmp;
+                            flag = flag + 1;
+                            idx = flag;
+                            //flag = 0;
+                            /*nstack[nsp] = tmp;
+                            nsp++;
+                            collapse_complex = 0;*/
                             //vectmp[idx] = sometmp->right;
                             //idx++;
                         }
                         break;
-                    case 4:
-                        break;
-
                 }
 
                 if(collapse_complex) {
