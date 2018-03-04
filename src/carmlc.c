@@ -53,7 +53,8 @@ typedef enum {
     LDE0, LBOOL0, LBOOL1, LBOOL2, LREF0, LELSE0, LRE0, LTRUE2,
     LWITH0, LWITH1, LWITH2, LDEC4, LUSE1, LUSE2, LVAR2, LTAG0,
     LTAGIDENT, LWHILE1, LWHILE2, LWHILE3, LWHILE4, LWHILE5,
-    LFOR0, LFOR1, LFOR2, LWH0
+    LFOR0, LFOR1, LFOR2, LWH0, LTUPLE0, LTUPLE1, LTUPLE2, LTUPLE3,
+    LTUPLE4
 } LexStates;
 
 /* AST tag enum.
@@ -78,7 +79,8 @@ typedef enum {
     TARRAYLITERAL, TBIN, TOCT, THEX, // 60
     TARROW, TFATARROW, TCUT, TDOLLAR, // 64
     TPIPEARROW, TUSERT, TVAR, TTAG, // 68
-    TPARAMDEF, TTYPEDEF, TWHILE, TFOR // 72
+    TPARAMDEF, TTYPEDEF, TWHILE, TFOR, // 72
+    TTUPLET, // 73
 } TypeTag;
 
 struct _AST {
@@ -273,8 +275,8 @@ main(int ac, char **al) {
  / __/ _` | '__| |\\/| || |    \n\
 | (_| (_| | |  | |  | || |____\n\
  \\___\\__,_|_|  \\_|  |_/\\_____/\n");
-        printf("\t\tcarML/C 2017.3\n");
-        printf("(c) 2016-2017 lojikil, released under the ISC License.\n\n");
+        printf("\t\tcarML/C 2018.0\n");
+        printf("(c) 2016-2018 lojikil, released under the ISC License.\n\n");
         printf("%%c - turns on C code generation\n%%quit/%%q - quits\n\n");
         do {
             printf(">>> ");
@@ -392,6 +394,7 @@ istypeast(int tag) {
         case TCHART:
         case TDEQUET:
         case TFLOATT:
+        case TTUPLET:
         case TSTRT:
         case TTAG: // user types 
         case TBOOLT:
@@ -423,6 +426,7 @@ iscomplextypeast(int tag) {
     switch(tag) {
         case TARRAY:
         case TDEQUET:
+		case TTUPLET:
         case TREF:
         case TTAG: // user types 
             return 1;
@@ -1692,6 +1696,8 @@ next(FILE *fdin, char *buf, int buflen) {
                                 substate = LTYPE0;
                             } else if(cur == 'r') {
                                 substate = LTRUE0;
+                            } else if(cur == 'u') {
+                                substate = LTUPLE0;
                             } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
                                 ungetc(cur, fdin);
                                 buf[idx - 1] = '\0';
@@ -1797,6 +1803,53 @@ next(FILE *fdin, char *buf, int buflen) {
                             }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
                                 ungetc(cur, fdin);
                                 return TTRUE;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LTUPLE0:
+                            if(cur == 'p') {
+                                substate = LTUPLE1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+
+                        case LTUPLE1:
+                            if(cur == 'l') {
+                                substate = LTUPLE2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+
+                        case LTUPLE2:
+                            if(cur == 'e') {
+                                substate = LTUPLE3;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+
+                        case LTUPLE3:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TTUPLET;
                             } else {
                                 strncpy(buf, "malformed identifier", 512);
                                 return TERROR;
@@ -4093,6 +4146,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
         case TSTRING:
         case TCHAR:
         case TBOOL:
+        case TTUPLET:
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = ltype;
             head->value = hstrdup(buffer);
@@ -4417,6 +4471,9 @@ walk(AST *head, int level) {
             break;
         case TARRAY:
             printf("(type array)");
+            break;
+        case TTUPLET:
+            printf("(type tuple)");
             break;
         case TREF:
             printf("(type ref)");
