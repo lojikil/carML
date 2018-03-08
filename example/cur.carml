@@ -91,6 +91,7 @@ val xx : int = 45
 # typed vectors:
 val yy : array of int = [1,2,3,4,5]
 val zz : array of array of int = [[1,2], [3,4]]
+val aa : array[array[int]] = [[1,2], [3,4]]
 
 # should have the same type as the first:
 val zz = [1,2,3,4,5]
