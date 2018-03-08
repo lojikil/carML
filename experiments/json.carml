@@ -4,7 +4,7 @@ type Json {
     Float float
     String string
     Bool bool
-    Array array of Json
+    Array array[Json]
     Object array[tuple[string Json]]
 }
 

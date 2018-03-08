@@ -3855,6 +3855,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                                 } else {
                                     typestate = 1;
                                 }
+
                                 vectmp[idx++] = sometmp->right;
                                 break;
                             case 1: // awaiting either TOF or an end
@@ -3862,6 +3863,12 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                                     typestate = 0;
                                 } else if(sometmp->right->tag == TEQ) {
                                     typestate = 3;
+                                } else if(sometmp->right->tag == TARRAYLITERAL) {
+                                    tmp = sometmp->right;
+                                    for(int cidx = 0; cidx < tmp->lenchildren; cidx++) {
+                                        vectmp[idx++] = tmp->children[cidx];
+                                    }
+                                    typestate = 2;
                                 } else {
                                     return ASTLeft(0, 0, "expected either an `of` or a `=`");
                                 }
