@@ -67,43 +67,15 @@ considering that both languages are _not_ derived from existing ML dialects. [Ye
         end
         arrayIota' arr f 0
     end
-    
-    # same as the above, but here we
-    # use the closure in arrayIota' to
-    # capture variables, instead of
-    # explicitly passing them in
-    declare arrayIota0 array of Num (Num => Num) => ()
-    def arrayIota0 arr fun = begin
-        def arrayIota' idx = begin
-            if (< idx (array-length arr)) then {
-                set-array-index! arr (fun idx) idx;
-                arrayIota' (add idx 1);
-            } else ()
-        end
-        arrayIota' 0;
-    end
 
-    # same as the above, but using `foreachIndex`
     # note, there is no _real_ reason to use begin
     # form here, but it makes it a bit more pretty.
-    @arrayIota1 array of Num (Num => Num) => ()
-    def arrayIota1 arr fun = {
+    def arrayIota1 arr : array of int fun : (int => int) = {
         foreachIndex fn x = (set-array-index! arr (fun x) x) arr
     }
 
     # same as the above, but without the `{}` block
-    @arrayIota2 array of Num (Num => Num) => ()
-    def arrayIota2 arr fun = (foreachIndex fn x = (set-array-index! arr (fun x) x) arr)
-
-    # same as the above, but using `letrec`
-    @arrayIota3 array of Num (Num => Num) => ()
-    def arrayIota3 arr fun = {
-        letrec internalIota = fn idx = {
-            set-array-index! arr (fun idx) x
-            internalIota (sum idx 1)
-        } in
-        internalIota 0
-    }
+    def arrayIota2 arr : array of int fun : ( int => int) = (foreachIndex fn x = (set-array-index! arr (fun x) x) arr)
 
     # inline type definition style
     def arrayIota3 arr : array fun : (Num => Num) => () = {
@@ -111,11 +83,10 @@ considering that both languages are _not_ derived from existing ML dialects. [Ye
             foreachIndex intFn arr
     }
 
-    # eventually, `def` forms should work
-    # like `begin` forms
-    def foo x = (add x 1)
-     
-    val f = (array 10)
+    def foo x : int => int = (add x 1)
+
+    # Scala-style type declarations work as well
+    val f : array[int] = (array 10)
     
     arrayIota f foo;
     
