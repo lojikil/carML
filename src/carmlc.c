@@ -2894,6 +2894,11 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         } else if(sometmp->right->tag == TARRAYLITERAL) {
                             // which state here? need to check that the
                             // array only has types in it...
+                            tmp = sometmp->right;
+                            for(int cidx = 0; cidx < tmp->lenchildren; cidx++, idx++) {
+                                vectmp[idx] = tmp->children[cidx];
+                            }
+                            typestate = 0;
                         } else if(sometmp->right->tag == TFATARROW) {
                             debugln;
                             fatflag = idx;
