@@ -2458,6 +2458,12 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             case 1: // awaiting either TOF or an end
                                 if(sometmp->right->tag == TOF) {
                                     typestate = 0;
+                                } else if(sometmp->right->tag == TARRAYLITERAL) {
+                                    tmp = sometmp->right;
+                                    for(int cidx = 0; cidx < tmp->lenchildren; cidx++, idx++) {
+                                        vectmp[idx] = tmp->children[cidx];
+                                    }
+                                    typestate = 2;
                                 } else if(sometmp->right->tag == TEQ) {
                                     typestate = 3;
                                 } else {
