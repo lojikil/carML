@@ -1198,10 +1198,6 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LDEQ2:
                             if(isident(cur)) {
                                 substate = LIDENT0;
-                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
-                                ungetc(cur, fdin);
-                                buf[idx - 1] = '\0';
-                                return TIDENT;
                             } else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
                                 ungetc(cur, fdin);
                                 buf[idx] = '\0';
@@ -3932,14 +3928,6 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
 
             return ASTRight(head);
             break;
-        case TARRAY:
-            head = (AST *)hmalloc(sizeof(AST));
-            head->tag = TARRAY;
-            return ASTRight(head);
-        case TCOMMA:
-            head = (AST *)hmalloc(sizeof(AST));
-            head->tag = TCOMMA;
-            return ASTRight(head);
         case TOARR:
             flag = idx;
             sometmp = readexpression(fdin);
@@ -4164,6 +4152,9 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
         case TSTRING:
         case TCHAR:
         case TBOOL:
+        case TARRAY:
+        case TDEQUET:
+        case TCOMMA:
         case TTUPLET:
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = ltype;
@@ -4489,6 +4480,9 @@ walk(AST *head, int level) {
             break;
         case TARRAY:
             printf("(type array)");
+            break;
+        case TDEQUET:
+            printf("(type deque)");
             break;
         case TTUPLET:
             printf("(type tuple)");
