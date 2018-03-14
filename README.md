@@ -58,8 +58,8 @@ considering that both languages are _not_ derived from existing ML dialects. [Ye
 # Examples
 
     # cannonical loop example
-    def arrayIota arr:array[int] f:(int => int) = begin
-        def arrayIota' arr:array[int] fun:(int => int) idx:int = begin
+    def arrayIota arr:array[int] f:Function[int => int] = begin
+        def arrayIota' arr:array[int] fun:Function[int => int] idx:int = begin
             if (< idx (array-length arr)) then {
                 set-array-index! arr (fun idx) idx
                 arrayIota' arr fun (add idx 1)
@@ -70,12 +70,12 @@ considering that both languages are _not_ derived from existing ML dialects. [Ye
 
     # note, there is no _real_ reason to use begin
     # form here, but it makes it a bit more pretty.
-    def arrayIota1 arr : array[int] fun : (int => int) = {
+    def arrayIota1 arr : array[int] fun : Function[int => int] = {
         foreachIndex fn x = (set-array-index! arr (fun x) x) arr
     }
 
     # same as the above, but without the `{}` block
-    def arrayIota2 arr:array[int] fun : ( int => int) = (foreachIndex fn x = (set-array-index! arr (fun x) x) arr)
+    def arrayIota2 arr:array[int] fun : Function[int => int] = (foreachIndex fn x = (set-array-index! arr (fun x) x) arr)
 
     def foo x : int => int = (add x 1)
 
