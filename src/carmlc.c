@@ -398,6 +398,8 @@ istypeast(int tag) {
         case TDEQUET:
         case TFLOATT:
         case TTUPLET:
+        case TFUNCTIONT:
+        case TPROCEDURET:
         case TSTRT:
         case TTAG: // user types 
         case TBOOLT:
@@ -430,6 +432,8 @@ iscomplextypeast(int tag) {
         case TARRAY:
         case TDEQUET:
 		case TTUPLET:
+        case TFUNCTIONT:
+        case TPROCEDURET:
         case TREF:
         case TTAG: // user types 
             return 1;
