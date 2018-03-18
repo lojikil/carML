@@ -230,6 +230,7 @@ int isbrace(int);
 int istypeast(int);
 int issimpletypeast(int);
 int iscomplextypeast(int);
+int islambdatypeast(int);
 int issyntacticform(int);
 int isprimitivevalue(int);
 int isvalueform(int);
@@ -447,6 +448,17 @@ iscomplextypeast(int tag) {
 }
 
 int
+islambdatypeast(int tag) {
+    switch(tag) {
+        case TFUNCTIONT:
+        case TPROCEDURET:
+            return 1;
+        default:
+            return 0;
+    }
+}
+
+int
 isprimitivevalue(int tag) {
     switch(tag) {
         case TINT:
@@ -544,6 +556,9 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
             case TBOOLT:
                 typeval = "uint8_t";
                 break;
+            case TFUNCTIONT:
+            case TPROCEDURET:
+                typeval = "void (*)(void)";
             default:
                 typeval = "void *";
         }
@@ -562,7 +577,10 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
                     snprintf(dst, 10, "char * ");
                     break;
                 case TDEQUET:
-                    snprintf(dst, 10, "deque ");
+                    snprintf(dst, 10, "deque *");
+                    break;
+                case TFUNCTIONT:
+                case TPROCEDURET:
                     break;
                 case TARRAY:
                 case TREF:
@@ -574,7 +592,11 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
 
         if(name != nil) {
             strstart = strnlen(dst, 512);
-            snprintf(&dst[strstart], 512 - strstart, "%s ", name);
+            if(islambdatypeast(typespec->children[0]->tag)) {
+                snprintf(&dst[strstart], 512 - strstart, "void (*%s)(void)", name); 
+            } else {
+                snprintf(&dst[strstart], 512 - strstart, "%s ", name);
+            }
         }
     } else {
         speclen = typespec->lenchildren;
@@ -628,6 +650,9 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
                     break;
                 case TBOOLT:
                     typeval = "uint8_t";
+                    break;
+                case TFUNCTIONT:
+                case TPROCEDURET:
                     break;
                 default:
                     typeval = "void *";
