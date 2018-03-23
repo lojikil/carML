@@ -598,6 +598,8 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
                 snprintf(&dst[strstart], 512 - strstart, "%s ", name);
             }
         }
+    } else if(typespec->lenchildren > 1 && islambdatypeast(typespec->children[0]->tag)) {
+        // handle functions & procedures here.
     } else {
         speclen = typespec->lenchildren;
 
@@ -650,9 +652,6 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
                     break;
                 case TBOOLT:
                     typeval = "uint8_t";
-                    break;
-                case TFUNCTIONT:
-                case TPROCEDURET:
                     break;
                 default:
                     typeval = "void *";
