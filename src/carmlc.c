@@ -603,20 +603,40 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
         char *frettype = nil, fnbuf[256] = {0};
         int tlen = 0;
 
-        if(typespec->children[0]->tag == TFUNCITONT) {
-            tlen = typespec->lenchildren;
-            if(typespec->children[tlen - 1] == TUNIT) {
+        if(typespec->children[0]->tag == TFUNCTIONT) {
+            tlen = typespec->lenchildren - 1;
+            if(typespec->children[tlen]->tag == TUNIT) {
                 frettype = "void";
             } else {
-                frettype = typespec2c(typespec->children[tlen - 1], fnbuf, nil, 256);
+                frettype = typespec2c(typespec->children[tlen], fnbuf, nil, 256);
                 frettype = hstrdup(fnbuf);
             }
+            fnbuf[0] = 0;
         } else if(typespec->children[0]->tag == TPROCEDURET) {
-            frettype = "void"
+            frettype = "void";
+            tlen = typespec->lenchildren;
         }
 
         // ok, get the return type, then iterate over the
         // remaining list items and run typespec2c on each
+
+        if(name == nil) {
+            strstart = snprintf(dst, 512, "%s(*)(", frettype);
+        } else {
+            strstart = snprintf(dst, 512, "%s(*%s)(", frettype, name);
+        }
+
+        // we iterate from 1 instead of 0 because
+        // the first member of the type spec is the
+        // function/procedure type.
+        for(int cidx = 1; cidx < tlen; cidx++) {
+            frettype = typespec2c(typespec->children[cidx], fnbuf, nil, 256);
+            if(cidx < (tlen - 1)) {
+                strstart = snprintf(&dst[strstart], 512 - strstart, "%s, ", frettype);
+            } else {
+                strstart = snprintf(&dst[strstart], 512 - strstart, "%s)", frettype);
+            }
+        }
     } else {
         speclen = typespec->lenchildren;
 
