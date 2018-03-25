@@ -1,4 +1,4 @@
-#include <stdio.h>
+ #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -600,6 +600,23 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
         }
     } else if(typespec->lenchildren > 1 && islambdatypeast(typespec->children[0]->tag)) {
         // handle functions & procedures here.
+        char *frettype = nil, fnbuf[256] = {0};
+        int tlen = 0;
+
+        if(typespec->children[0]->tag == TFUNCITONT) {
+            tlen = typespec->lenchildren;
+            if(typespec->children[tlen - 1] == TUNIT) {
+                frettype = "void";
+            } else {
+                frettype = typespec2c(typespec->children[tlen - 1], fnbuf, nil, 256);
+                frettype = hstrdup(fnbuf);
+            }
+        } else if(typespec->children[0]->tag == TPROCEDURET) {
+            frettype = "void"
+        }
+
+        // ok, get the return type, then iterate over the
+        // remaining list items and run typespec2c on each
     } else {
         speclen = typespec->lenchildren;
 
