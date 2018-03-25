@@ -631,12 +631,14 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
         // function/procedure type.
         for(int cidx = 1; cidx < tlen; cidx++) {
             frettype = typespec2c(typespec->children[cidx], fnbuf, nil, 256);
+            strncat(dst, frettype, 512);
+
             if(cidx < (tlen - 1)) {
-                strstart = snprintf(&dst[strstart], 512 - strstart, "%s, ", frettype);
-            } else {
-                strstart = snprintf(&dst[strstart], 512 - strstart, "%s)", frettype);
+                strncat(dst, ", ", 512);
             }
         }
+
+        strncat(dst, ")", 512);
     } else {
         speclen = typespec->lenchildren;
 
