@@ -1,4 +1,4 @@
- #include <stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -5232,10 +5232,24 @@ llcwalk(AST *head, int level, int final) {
         case TPARAMLIST:
             printf("(");
             for(;idx < head->lenchildren; idx++) {
+                AST *dc_type = nil, *dc_name = nil;
                 if(head->children[idx]->tag == TIDENT) {
-                    printf("void *");
+                    dc_name = head->children[idx];
+                    printf("void *%s", dc_name->value);
+                } else {
+                    // now we've reached a TPARAMDEF
+                    // so just dump whatever is returned
+                    // by typespec2c
+                    dc_type = head->children[idx]->children[1];
+                    dc_name = head->children[idx]->children[0];
+                    tbuf = typespec2c(dc_type, buf, dc_name->value, 512);
+                    if(tbuf != nil) {
+                        printf("%s", tbuf);
+                    } else {
+                        printf("void *");
+                    }
                 }
-                cwalk(head->children[idx], 0); 
+
                 if(idx < (head->lenchildren - 1)){
                     printf(", ");
                 }
