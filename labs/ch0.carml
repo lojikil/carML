@@ -1,0 +1,41 @@
+# it's interesting...
+# the current state of carML's RTS is such that
+# the code I have to write is quite imperative.
+# More analysis passes are required to make this
+# much more functional... there's so many set!'s
+# and the like in the code below because things
+# like the let form aren't up and running, or 
+# there's no foreach/map working within the
+# compiler that can be fused... and yet, I'm
+# actually quite happy that the code can already
+# be used this way.
+def main ac:int al:array[string] => int = {
+    var composition : array[int] = (make-array 256 0)
+    var fh : ref of FILE = NULL
+    var ch : int = 0
+    var tmp : int = 0
+    
+    set! fh $ fopen (get al 1) "r"
+
+    when (eq? fh NULL) do {
+        printf "cannot open file %s\n" $ get al 1
+        return 1
+    }
+
+    while (not $ feof fh) do {
+        set! ch $ fgetc fh
+        when (<> ch 0x0D) do {
+            set! tmp $ get composition ch
+            set! (get composition ch) $ + tmp 1
+        }
+    }
+
+    set! tmp 32 
+
+    while (< tmp 127) do {
+        printf "%c => %d\n" tmp (get composition tmp)
+        set! tmp $ + tmp 1
+    }
+
+    0
+}

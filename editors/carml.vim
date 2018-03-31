@@ -1,5 +1,5 @@
 " Vim syntax file
-" Language: xl/29
+" Language: carML
 " Maintainer: lojikil
 " Latest Revision: 18 June 2016
 " add this to your .vimrc:
