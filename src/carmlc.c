@@ -201,6 +201,8 @@ const char *coperators[] = {
     "->", "->",
     "get", "get",
     "make-struct", "make-struct",
+    "make-string", "make-string",
+    "make-array", "make-array",
     "return", "return",
     0
 };
@@ -218,6 +220,7 @@ ASTEither *ASTLeft(int, int, char *);
 ASTEither *ASTRight(AST *);
 ASTOffset *ASTOffsetLeft(int, int, char *, int);
 ASTOffset *ASTOffsetRight(AST *, int);
+AST *linearize_complex_type(AST *);
 void indent(int);
 void walk(AST *, int);
 void llcwalk(AST *, int, int);
@@ -517,6 +520,21 @@ issyntacticform(int tag) {
             return 1;
         default:
             return 0;
+    }
+}
+
+// So currently the type parser will give us:
+// (complex-type (type array)
+//      (tag Either)
+//          (array-literal (type ref) (array-literal (type integer))
+//          (type string)))
+// for array[Either[ref[int] string]]
+// which is wrong. We need to linearize those complex types better,
+// and this function is meant to do that.
+AST *
+linearize_complex_type(AST *head) {
+    if(!iscomplextypeast(head->tag)){
+        return head;
     }
 }
 
