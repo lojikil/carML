@@ -755,6 +755,9 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
         dprintf("typespec[%d] == null? %s\n", typeidx, typespec->children[typeidx] == nil ? "yes" : "no");
         dprintf("here on %d, typeidx: %d, len: %d\n", __LINE__, typeidx, typespec->lenchildren);
         for(; typeidx >= 0; typeidx--) {
+            if(typespec->children[typeidx] == nil) {
+                continue;
+            }
             switch(typespec->children[typeidx]->tag) {
                 case TTAG:
                     typeval = typespec->children[typeidx]->value;
