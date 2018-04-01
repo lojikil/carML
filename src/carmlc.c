@@ -438,6 +438,7 @@ iscomplextypeast(int tag) {
 		case TTUPLET:
         case TFUNCTIONT:
         case TPROCEDURET:
+        case TCOMPLEXTYPE:
         case TREF:
         case TTAG: // user types 
             return 1;
@@ -531,11 +532,84 @@ issyntacticform(int tag) {
 // for array[Either[ref[int] string]]
 // which is wrong. We need to linearize those complex types better,
 // and this function is meant to do that.
+//
+// this is a *really* terrible way of doing this; the better way
+// would be to correctly parse types in the first place. However,
+// I'm still thinking about how I want to handle some things within
+// the type syntax, so until that is done, I think we can just leave
+// this as is. The code is technically O(n^m): it iterates over each
+// member of the array and then recurses the depths there of. The
+// sole saving grace of this approach is that our types are small
+// enough that this shouldn't matter: N should be < 10 worse case,
+// and M wouldn't be much larger. That's the *only* reason why I'm
+// not just diving into the types now. Fixing this, and fixing
+// type parsing in general, won't be major undertakings once I am
+// good with the type syntax & the associated calculus.
 AST *
 linearize_complex_type(AST *head) {
+    AST *stack[512] = {nil}, *tmp = nil, *flatten_target = nil;
+    int sp = 0;
+
+    dprintf("here? %d\n", __LINE__);
     if(!iscomplextypeast(head->tag)){
+        printf("here? %d\n", __LINE__);
+        walk(head, 0);
         return head;
     }
+    dprintf("here? %d: ", __LINE__);
+    dwalk(head, 0);
+    dprintf("\n");
+
+    stack[sp] = head->children[0];
+    sp++;
+
+    for(int cidx = 1; cidx < head->lenchildren; cidx++) {
+        if(iscomplextypeast(head->children[cidx]->tag) && cidx < (head->lenchildren - 1) && head->children[cidx + 1]->tag == TARRAYLITERAL) {
+            flatten_target = head->children[cidx + 1];
+
+            dprintf("here? %d: ", __LINE__);
+            dwalk(flatten_target, 0);
+            dprintf("\n");
+
+            tmp = (AST *)hmalloc(sizeof(AST));
+            tmp->tag = TCOMPLEXTYPE;
+            tmp->lenchildren = 1 + flatten_target->lenchildren;
+            tmp->children = (AST **)hmalloc(sizeof(AST *) * flatten_target->lenchildren);
+            tmp->children[0] = head->children[cidx];
+            for(int midx = 1; midx <= flatten_target->lenchildren; midx++) {
+                dprintf("here? %d: ", __LINE__);
+                dwalk(flatten_target->children[midx - 1], 0);
+                dprintf("\n");
+                tmp->children[midx] = flatten_target->children[midx - 1];
+            }
+            dprintf("here? %d: ", __LINE__);
+            dwalk(tmp, 0);
+            dprintf("here? %d\n", __LINE__);
+
+            tmp = linearize_complex_type(tmp);
+            stack[sp] = tmp;
+            sp++;
+            cidx++; // skip the next item, we have already consumed it
+        } else {
+            dprintf("here? %d\n", __LINE__);
+            stack[sp] = head->children[cidx];
+            sp++;
+        }
+    }
+
+    dprintf("here? %d\n", __LINE__);
+
+    // ok, we have collapsed types, now linearize them into
+    // one TCOMPLEX TYPE
+    tmp = (AST *)hmalloc(sizeof(AST));
+    tmp->tag = TCOMPLEXTYPE;
+    tmp->lenchildren = sp;
+    tmp->children = (AST **)hmalloc(sizeof(AST *) * sp);
+    for(int cidx = 0; cidx <= sp; cidx++) {
+        tmp->children[cidx] = stack[cidx];
+    }
+
+    return tmp;
 }
 
 // yet another location where I'd rather
@@ -3032,6 +3106,13 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             for(int cidx = 0, tidx = flag, tlen = returntype->lenchildren; cidx < tlen; cidx++, tidx++) {
                                 returntype->children[cidx] = vectmp[tidx];
                             }
+                            // this is a hack; because of the current grammar construction,
+                            // we end up with array-literals in positions that typespec2c
+                            // cannot handle. This solves that, but terribly. This will
+                            // be solved by changing the syntax such that there is no
+                            // need for the `of` form when specifying complex types,
+                            // and going full-Scala (get it???) on the type syntax.
+                            returntype = linearize_complex_type(returntype);
                             idx = flag;
                             flag = 0;
                             typestate = 6;
@@ -3190,6 +3271,8 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                                 debugln;
                                 ctmp->children[cidx] = vectmp[tidx];
                             }
+
+                            ctmp = linearize_complex_type(ctmp);
 
                             if(fatflag && fatflag != idx) {
                                 returntype = ctmp;
