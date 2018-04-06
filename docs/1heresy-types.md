@@ -1,4 +1,4 @@
-# 1 Heresy: More thoughts on types
+# Heresy 1: More thoughts on types
 
 _2018-APR-01_
 

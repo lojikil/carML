@@ -57,7 +57,8 @@ typedef enum {
     LTUPLE4, LFUNCTIONT0, LFUNCTIONT1, LFUNCTIONT2, LFUNCTIONT3,
 	LFUNCTIONT4, LFUNCTIONT5, LFUNCTIONT6, LP0, LPROCEDURET0,
     LPROCEDURET1, LPROCEDURET2, LPROCEDURET3, LPROCEDURET4,
-    LPROCEDURET5, LPROCEDURET6, LPROCEDURET7,
+    LPROCEDURET5, LPROCEDURET6, LPROCEDURET7, LANY0, LANY1,
+    LAND0, LAND1, LAND2, LA0, LAN0,
 } LexStates;
 
 /* AST tag enum.
@@ -83,7 +84,8 @@ typedef enum {
     TARROW, TFATARROW, TCUT, TDOLLAR, // 64
     TPIPEARROW, TUSERT, TVAR, TTAG, // 68
     TPARAMDEF, TTYPEDEF, TWHILE, TFOR, // 72
-    TTUPLET, TFUNCTIONT, TPROCEDURET // 75
+    TTUPLET, TFUNCTIONT, TPROCEDURET, // 75
+    TAND, TANY //77
 } TypeTag;
 
 struct _AST {
@@ -408,6 +410,7 @@ istypeast(int tag) {
         case TTAG: // user types 
         case TBOOLT:
         case TREF:
+        case TANY:
             return 1;
         default:
             return 0;
@@ -423,6 +426,7 @@ issimpletypeast(int tag) {
         case TFLOATT:
         case TSTRT:
         case TBOOLT:
+        case TANY:
             return 1;
         default:
             return 0;
@@ -748,6 +752,12 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
          * to some degree, but for now...
          */
         for(; typeidx < speclen; typeidx++) {
+            // so the reason why this is no longer working is because I've changed
+            // the way that types work: complex types are no longer a linear list
+            // of types, but rather a nested-tree of types. Need to change the domination
+            // algorithm here to account for that
+            // idea: seach the tree, and return the type that
+            // we should use
             if(typespec->children[typeidx]->tag == TTAG || issimpletypeast(typespec->children[typeidx]->tag)) {
                 break;
             }
@@ -1096,7 +1106,7 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LSTART:
                             switch(cur) {
                                 case 'a':
-                                    substate = LARRAY0;
+                                    substate = LA0;
                                     break;
                                 case 'b':
                                     substate = LB0;
@@ -1718,6 +1728,19 @@ next(FILE *fdin, char *buf, int buflen) {
                                 return TERROR;
                             }
                             break;
+                        case LA0:
+                            if(cur == 'r') {
+                                substate = LARRAY1;
+                            } else if(cur == 'n') {
+                                substate = LAN0;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
                         case LARRAY0:
                             if(cur == 'r') {
                                 substate = LARRAY1;
@@ -2090,6 +2113,43 @@ next(FILE *fdin, char *buf, int buflen) {
                             }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
                                 ungetc(cur, fdin);
                                 return TTUPLET;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LAN0:
+                            if(cur == 'y') {
+                                substate = LANY0;
+                            } else if(cur == 'd') {
+                                substate = LAND0;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate= LIDENT0;
+                            }
+                            break;
+                        case LANY0:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            } else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                buf[idx] = '\0';
+                                return TANY;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LAND0:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            } else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                buf[idx] = '\0';
+                                return TAND;
                             } else {
                                 strncpy(buf, "malformed identifier", 512);
                                 return TERROR;
@@ -4512,6 +4572,8 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
 		case TFUNCTIONT:
         case TCOMMA:
         case TTUPLET:
+        case TANY:
+        case TAND:
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = ltype;
             head->value = hstrdup(buffer);
@@ -4552,12 +4614,6 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
  */
 AST *
 mung_declare(const char **pdecls, const int **plexemes, int len, int haltstate) {
-    int idx = 0, substate = 0;
-    for(; idx < len ; idx++) {
-        switch(substate) {
-            
-        }
-    }
     return nil;
 }
 
@@ -4565,116 +4621,7 @@ mung_declare(const char **pdecls, const int **plexemes, int len, int haltstate) 
  */
 ASTOffset *
 mung_single_type(const char **pdecls, const int **plexemes, int len, int haltstate, int offset) {
-    int substate = 0, flag = -1, stackptr = 0, idx = 0;
-    const int *lexemes = *plexemes;
-    AST *tmp = nil, *stack[128] = {nil};
-
-    if(issimpletypeast(lexemes[idx])) {
-        tmp = (AST *)hmalloc(sizeof(AST));
-        tmp->tag = lexemes[idx];
-        return ASTOffsetRight(tmp, idx);
-    } else if(lexemes[idx] == TIDENT) {
-        /* here, we need to check if the
-         * next element is a TOF, because
-         * we don't _really_ know if we
-         * have a complex type or a simple
-         * type based on the fact that we
-         * have an identifier here...
-         */
-        if((idx + 1) < len && lexemes[idx + 1] != TOF) {
-            tmp = (AST *)hmalloc(sizeof(AST));
-            tmp->tag = TUSERT;
-            tmp->value = hstrdup(pdecls[idx]);
-            return ASTOffsetRight(tmp, idx);
-        }
-    }
-
-    /* ok, now we're in a complex type here... */
-
-    for(flag = offset, idx = offset; idx < len; idx ++){
-        switch(lexemes[idx]) {
-            case TCHART:
-            case TSTRT:
-            case TINTT:
-            case TFLOATT:
-                tmp = (AST *)hmalloc(sizeof(AST));
-                tmp->tag = lexemes[idx];
-                if(flag == -1) {
-                    return ASTOffsetRight(tmp, idx);
-                } else {
-                    if(substate == 1) {
-                    } else if(substate == 2) {
-                        break;
-                    } else {
-                        substate = 99;
-                    } 
-                    stack[stackptr] = tmp;
-                    stackptr += 1;
-                }
-                break;
-            case TOPAREN:
-                /* Ok, here, we need to know
-                 * what state we're in. It's
-                 * partially context dependent
-                 * (yuck), but it means that we
-                 * can easily parse procedures
-                 * versus tuples (for sum types)
-                 */
-                if(substate == 0) {
-                    /* procedure:
-                     * read single types and
-                     * a fat arrow (=>) until
-                     * we hit a TCPAREN
-                     */
-                } else if(substate == 2) {
-                    /* tuple for sum types:
-                     * read a type, then a TCOMMA,
-                     * then a type, until we hit 
-                     * TCPAREN
-                     */
-                } else {
-                    substate = 99;
-                }
-                break;
-            case TIDENT:
-                /* ... */
-                break;
-            case TOF:
-                /* ... */
-                if(substate == 1) {
-                    substate = 2;
-                } else {
-                    substate = 99; /* parse error */
-                }
-                break;
-            case TARRAY:
-            case TDEQUET:
-                /* there's a few cases to consider here:
-                 * - that the next token is TOF
-                 * - that the next token is *not* TOF
-                 * - that the next token is not TOF *and* that this is the terminal type.
-                 * for example:
-                 * array of int
-                 * array
-                 * array of array
-                 */
-                tmp = (AST *)hmalloc(sizeof(AST));
-                tmp->tag = lexemes[idx];
-
-                /* should I check for TOF here, or in another state?
-                 * _almost_ seems like another state is "cleaner"...
-                 * oooo, and that way too we can see if the () is correct
-                 */
-                if(flag == -1) {
-                    flag = idx + 1;
-                    substate = 1;
-                } 
-                stack[stackptr] = tmp;
-                stackptr += 1;
-                break;
-        }
-    }
-    return ASTOffsetRight(tmp, idx);
+    return nil;
 }
 
 void
@@ -4988,6 +4935,9 @@ walk(AST *head, int level) {
             break;
         case TCHART:
             printf("(type char)");
+            break;
+        case TANY:
+            printf("(type any)");
             break;
         case TSTRT:
             printf("(type string)");
