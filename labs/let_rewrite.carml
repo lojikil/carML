@@ -8,6 +8,15 @@ record NameMap {
     vals : array[string]
 }
 
+# specializing Option here
+# myself, because carML's 
+# allocation strategy hasn't
+# *really* been decided yet...
+type OptionString {
+    SomeString string
+    NoString
+}
+
 def fresh_name src:string => string = {
     val len : int = (+ 10 $ strlen src) 
     var f : string = (make-string ' ' len)
@@ -16,9 +25,20 @@ def fresh_name src:string => string = {
     f
 }
 
+def find_name rewrites:ref[NameMap] => ref[OptionString] = {
+    var ret : ref[OptionString] = (NoString_ref)
+    foreach-index (-> rewrites len) fn x : int = {
+
+    }
+
+}
+
+
 def rewrite_names head:ref[AST] rewrites:NameMap => ref[AST] = {
     match (-> head tag) with
-        TIDENT => ...
+        TIDENT => {
+            if
+        }
         else => ...
     }
 }
