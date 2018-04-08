@@ -1,0 +1,28 @@
+#@(#) a simple let/let-rec rewriter
+#@(#) rewrite let/let-rec ASTs to 
+#@(#) simple val nodes
+
+record NameMap {
+    len : int
+    names : array[string]
+    vals : array[string]
+}
+
+def fresh_name src:string => string = {
+    val len : int = (+ 10 $ strlen src) 
+    var f : string = (make-string ' ' len)
+    
+    snprintf f "%s%d" len src $ arc4random 
+    f
+}
+
+def rewrite_names head:ref[AST] rewrites:NameMap => ref[AST] = {
+    match (-> head tag) with
+        TIDENT => ...
+        else => ...
+    }
+}
+
+def let_to_val head:ref[AST] rewrites:NameMap => ref[AST] = {
+    nil
+}
