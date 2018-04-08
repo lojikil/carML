@@ -85,7 +85,7 @@ typedef enum {
     TPIPEARROW, TUSERT, TVAR, TTAG, // 68
     TPARAMDEF, TTYPEDEF, TWHILE, TFOR, // 72
     TTUPLET, TFUNCTIONT, TPROCEDURET, // 75
-    TAND, TANY //77
+    TAND, TANY, TGUARD, // 78
 } TypeTag;
 
 struct _AST {
@@ -3551,6 +3551,9 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 // need to figure out how to wedge guard clauses in here...
                 if(sometmp->tag == ASTLEFT) {
                     return sometmp;
+                } else if(sometmp->right->tag == TWHEN) {
+                    // read in a guard clause
+                    // then check for a TFATARROW
                 } else if(sometmp->right->tag != TFATARROW) {
                     return ASTLeft(0, 0, "match conditions *must* be followed by a fat-arrow `=>`");
                 } 
