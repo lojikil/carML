@@ -19,7 +19,7 @@ type OptionString {
 
 def fresh_name src:string => string = {
     val len : int = (+ 10 $ strlen src) 
-    var f : string = (make-string ' ' len)
+    var f : string = (hmalloc $ mul len $ sizeof char)
     
     snprintf f "%s%d" len src $ arc4random 
     f
@@ -40,13 +40,51 @@ def find_name name:string rewrites:ref[NameMap] => ref[OptionString] = {
 
 def rewrite_names head:ref[AST] rewrites:NameMap => ref[AST] = {
     val v:int = (-> head tag)
+    var name : ref[OptionString] = (SomeString_NoString_ref)
     match v with
-        # dying with tags here...
-        TIDENT => 10
+        TIDENT => {
+            set! name $ find_name (-> head value) rewrites
+            # HACK: I'm unpacking a tag because the compiler
+            # can't yet handle this as call + Binding
+            match (-> name tag) with
+                 OptionString_Tag_SOMESTRING => do_rewrite
+                else => head
+            end
+        }
         else => 11
-    }
+    end
 }
 
 def let_to_val head:ref[AST] rewrites:NameMap => ref[AST] = {
+    # the code here is very imperative... getting some handle
+    # on for/foreach/map/reduce/filter/take vis-a-vis Deques
+    # and the like will be hugely important for fixing the
+    # readability here
+    var ret : ref[AST] = nil
+    var idx : int = 0
+    var new_name : string = nil
+    match (-> head tag) with
+        # matching multiple cases with | would
+        # be nice...
+        # so would destructuring binds
+        TLET => {
+            set! new_name $ fresh_name $ let_ident_name head
+            # we technically need to do rewrites for here as well..
+            set! ret $ new_val new_name $ let_ident_value head rewrites
+            # we add this last because the name may shadow another name
+            # elsewhere...
+            add_rewrite (let_ident_name head) new_name rewrites
+        }
+        else => {
+
+        }
+    end
+}
+
+# it would be interesting to have some nano-pass
+# signature for these sorts of things that made
+# these sorts of optimizations easy to handle
+# maybe something like this?
+def nanopass_let head:ref[AST] => ref[AST] = {
     nil
 }
