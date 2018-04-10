@@ -25,21 +25,25 @@ def fresh_name src:string => string = {
     f
 }
 
-def find_name rewrites:ref[NameMap] => ref[OptionString] = {
-    var ret : ref[OptionString] = (NoString_ref)
-    foreach-index (-> rewrites len) fn x : int = {
+def find_name name:string rewrites:ref[NameMap] => ref[OptionString] = {
+    var idx : int = 0
 
+    while (< idx (-> rewrites len)) do {
+        when (not $ strcmp (get (-> rewrites names) idx) name) do {
+            return (OptionString_SomeString_ref $ get (-> rewrites vals) idx)
+        }
+        set! idx $ + idx 1
     }
 
+    (OptionString_NoString_ref)
 }
 
-
 def rewrite_names head:ref[AST] rewrites:NameMap => ref[AST] = {
-    match (-> head tag) with
-        TIDENT => {
-            if
-        }
-        else => ...
+    val v:int = (-> head tag)
+    match v with
+        # dying with tags here...
+        TIDENT => 10
+        else => 11
     }
 }
 

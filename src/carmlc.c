@@ -3540,10 +3540,12 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                     if(mcond->children[0]->tag != TTAG) {
                         return ASTLeft(0, 0, "match can only decompose sum-types.");
                     }
-                } else if(isprimitivevalue(sometmp->right->tag) || sometmp->right->tag == TELSE) {
+                } else if(sometmp->right->tag == TTAG || isprimitivevalue(sometmp->right->tag) || sometmp->right->tag == TELSE) {
                     mcond = sometmp->right;
                 } else if(sometmp->right->tag == TEND) {
                     break;
+                } else {
+                    return ASTLeft(0, 0, "match cannot match against this value");
                 }
                 debugln;
                 sometmp = readexpression(fdin);
@@ -4490,6 +4492,12 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                                 case 1: // awaiting either TOF or an end
                                     if(sometmp->right->tag == TOF) {
                                         typestate = 0;
+                                    } else if(sometmp->right->tag == TARRAYLITERAL) {
+                                        tmp = sometmp->right;
+                                        for(int cidx = 0; cidx < tmp->lenchildren; cidx++, idx++) {
+                                            vectmp[idx] = tmp->children[cidx];
+                                        }
+                                        typestate = 2;
                                     } else if(sometmp->right->tag == TNEWL || sometmp->right->tag == TSEMI) {
                                         typestate = 3;
                                     } else {
@@ -5236,6 +5244,7 @@ llcwalk(AST *head, int level, int final) {
                         // have to figure out how to encode booleans as well
                         case TFLOAT:
                         case TINT:
+                        case TTAG:
                             printf("%s == %s", ctmp->value, htmp->children[tidx]->value);
                             break;
                         case TCHAR:
@@ -5243,10 +5252,6 @@ llcwalk(AST *head, int level, int final) {
                             break;
                         case TSTRING:
                             printf("!strncmp(%s, \"%s\", %lu)", ctmp->value, htmp->children[tidx]->value, strlen(htmp->children[tidx]->value));
-                            break;
-                        case TTAG:
-                            // to do, but should be able to calculate
-                            // the tag name easily enough...
                             break;
                         default:
                             break;
