@@ -15,8 +15,8 @@ A quick list of the current `TODO`s.
 1. **FIXED** _BUG_: complex return types
 1. _TEST_: add more complex type tests  
 1. add test runner: parse SExpression output...
-1. parse HOFs in declarations
-1. Review switch to Scala-style `[]` for types.
+1. **DONE** parse HOFs in declarations
+1. **DONE**Review switch to Scala-style `[]` for types.
 1. Parse `@`/`declare` forms
 1. Update `val`, `let`, records to use the new `declare` type parser
 1. Make function definitions & `let` forms accept `begin` style function calls (i.e. avoid using `()`)
@@ -26,6 +26,7 @@ A quick list of the current `TODO`s.
 1. make `$` and `|>` work as they would in Haskell & OCaml/F# respectively.
 1. integrate `$` and `|>` with `$()`
 1. Hoare-logic (pre, post, invariants, &c.)
+1. make `mung_single_type` for reading a single type, use for `@` forms
 1. Runtime, which should be pretty minimal
 1. **DONE** Compile to C in the style of Enyalios
 1. an `extern` or `alien` form for easy FFI
@@ -44,7 +45,8 @@ A quick list of the current `TODO`s.
 1. make the types parsing code more modular; could easily extract that out into a function
 1. **DONE** (not in the most elegant way, mind, but...) Finally fix the frakking lexer to not goof up internal states
 1. Csharp-style record parameter unboxing
-1. Error handling: `Either`
+1. **DONE** Error handling: `Either`
+1. **DONE** Option types
 1. Lexer-as-stream
 1. in the base C compiler & carML self-hosting one, include a defined list of compiler errors with friendly data
 1. add line numbers to errors
@@ -58,6 +60,10 @@ A quick list of the current `TODO`s.
 1. add nano-pass: ANF => SSA
 1. add nano-pass: rewrite `let`/`letrec` => `val` + temporary binding
 1. add nano-pass: constant folding
+1. add nano-pass: select the correct reified constructor implementation
+1. add nano-pass: demand-driven type inference
+1. fix complex type handling in `typespec2c`
+1. fix match with `type`s
 1. Investigate: method of determining effects, and how that could make ANF easier (lift once for two calls)
 1. **DONE** Investigate: currently there is a syntax ambiguity in `begin` forms: is `t` a unary function call, or an identifier? Fix: identifier
 1. Tests, both for IR and C
