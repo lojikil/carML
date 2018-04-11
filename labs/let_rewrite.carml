@@ -18,6 +18,14 @@ type OptionString {
     NoString
 }
 
+def add_rewrite name:string new_name:string rewrites:ref[NameMap] = {
+    ()
+}
+
+def init_rewrite => ref[NamedMap] = {
+    nil
+}
+
 def fresh_name src:string => string = {
     val len : int = (+ 10 $ strlen src) 
     var f : string = (hmalloc $ mul len $ sizeof char)
