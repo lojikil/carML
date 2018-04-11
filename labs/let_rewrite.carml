@@ -3,7 +3,8 @@
 #@(#) simple val nodes
 
 record NameMap {
-    len : int
+    len : int # length of names/vals
+    offset : int # current offset into names/vals
     names : array[string]
     vals : array[string]
 }
@@ -20,7 +21,6 @@ type OptionString {
 def fresh_name src:string => string = {
     val len : int = (+ 10 $ strlen src) 
     var f : string = (hmalloc $ mul len $ sizeof char)
-    
     snprintf f "%s%d" len src $ arc4random 
     f
 }
@@ -39,20 +39,82 @@ def find_name name:string rewrites:ref[NameMap] => ref[OptionString] = {
 }
 
 def rewrite_names head:ref[AST] rewrites:NameMap => ref[AST] = {
-    val v:int = (-> head tag)
+    val v : int = (-> head tag)
+    var idx : int = 0
     var name : ref[OptionString] = (SomeString_NoString_ref)
     match v with
         TIDENT => {
             set! name $ find_name (-> head value) rewrites
-            # HACK: I'm unpacking a tag because the compiler
+            # XXX: I'm unpacking a tag because the compiler
             # can't yet handle this as call + Binding
             match (-> name tag) with
-                 OptionString_Tag_SOMESTRING => do_rewrite
+                OptionString_Tag_SOMESTRING => (make_ident $ -> name m_1)
                 else => head
             end
         }
-        else => 11
+        else => {
+            while (< idx $ -> head lenchildren) do {
+                # need to copy each node in the AST to
+                # the return list
+                set! idx $ + idx 1
+            }
+        }
     end
+}
+
+def let_ident_name head:ref[AST] => ref[OptionString] = match (-> head tag) with
+        TLET => (OptionString_SomeString_ref $ get (-> head children) 0) #XXX: I hate how this reads...
+        else => (NoString)
+    end
+
+def let_ident_value head:ref[AST] => ref[AST] = match (-> head tag) with
+        TLET => (get (-> head children) 1) #XXX: I hate how this reads...
+        else => nil
+    end
+
+def make_val name:string value:ref[AST] => ref[AST] = {
+    # this would be so much nicer with a monadic interface
+    var ret : ref[AST] = (hmalloc $ sizeof AST)
+    set! (-> ret tag) TVAL
+    set! (-> ret lenchildren) 2
+    set! (-> ret children) $ hmalloc $ mul 2 $ sizeof AST
+    set! (get (-> ref children) 0) name
+    set! (get (-> ref children) 1) value
+    ret
+}
+
+def make_ident name:string => ref[AST] = {
+    var ret : ref[AST] = (hmalloc $ sizeof AST)
+    set! (-> ret tag) TIDENT
+    set! (-> ret lenchildren) 0
+    set! (-> ret value) name
+    ret
+}
+
+def make_begin_pair binding:ref[AST] body:ref[AST] = {
+    var ret : ref[AST] = (hmalloc $ sizeof AST)
+    set! (-> ret tag) TBEGIN
+    match (-> body tag) with
+        TBEGIN => {
+            val len : int = (+ 1 $ -> body lenchildren)
+            var idx : int = 0
+            set! (-> ret lenchildren) len
+            set! (-> ret children) $ hmalloc $ mul len $ sizeof AST
+            # another situation where foreach would be
+            # perfect for...
+            while (< idx len) do {
+                set! (get (-> ret children) idx) (get (-> body children) idx)
+                set! idx $ + idx 1
+            }
+        }
+        else => {
+            set! (-> ret lenchildren) 2
+            set! (-> ret children) $ hmalloc $ mul 2 $ sizeof AST
+            set! (get (-> ret children) 0) binding
+            set! (get (-> ret children) 1) body
+        }
+    end
+    ret
 }
 
 def let_to_val head:ref[AST] rewrites:NameMap => ref[AST] = {
@@ -61,6 +123,8 @@ def let_to_val head:ref[AST] rewrites:NameMap => ref[AST] = {
     # and the like will be hugely important for fixing the
     # readability here
     var ret : ref[AST] = nil
+    var new_binding : ref[AST] = nil
+    var new_body : ref[AST] = nil
     var idx : int = 0
     var new_name : string = nil
     match (-> head tag) with
@@ -70,13 +134,17 @@ def let_to_val head:ref[AST] rewrites:NameMap => ref[AST] = {
         TLET => {
             set! new_name $ fresh_name $ let_ident_name head
             # we technically need to do rewrites for here as well..
-            set! ret $ new_val new_name $ let_ident_value head rewrites
+            set! new_binding $ new_val new_name $ let_ident_value head rewrites
             # we add this last because the name may shadow another name
             # elsewhere...
             add_rewrite (let_ident_name head) new_name rewrites
+            set! new_body $ rewrite_names head rewrites
+            make_begin_pair new_binding new_body
         }
         else => {
-
+            # thinking that we could iterate over each
+            # child and see if it is a TLET
+            head
         }
     end
 }
