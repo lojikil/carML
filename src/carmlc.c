@@ -4522,6 +4522,8 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             ctmp->children[cidx] = vectmp[tidx];
                         }
 
+                        ctmp = linearize_complex_type(ctmp);
+
                         /* create the record field definition holder */
                         tmp = (AST *)hmalloc(sizeof(AST));
                         tmp->tag = TRECDEF;

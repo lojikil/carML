@@ -5,8 +5,8 @@
 record NameMap {
     len : int # length of names/vals
     offset : int # current offset into names/vals
-    names : array[string]
-    vals : array[string]
+    names : ref[array[string]]
+    vals : ref[array[string]]
 }
 
 # specializing Option here
@@ -18,12 +18,30 @@ type OptionString {
     NoString
 }
 
-def add_rewrite name:string new_name:string rewrites:ref[NameMap] = {
-    ()
+def add_rewrite name:string new_name:string rewrites:ref[NameMap] => bool = {
+    val len : int = (-> rewrites len)
+    val off : int = (-> rewrites offset)
+
+    when (< off len) then {
+        set! (get (-> rewrites names) off) name
+        set! (get (-> rewrites vals) off) new_name
+        return true
+    }
+
+    false
 }
 
 def init_rewrite => ref[NamedMap] = {
-    nil
+    var ret : ref[NamedMap] = (hmalloc $ sizeof NamedMap)
+    val len : int = 64
+    # again, this could be so much nicer if
+    # we had decent constructors *or* a monadic
+    # interface to construction...
+    set! (-> ret len) len
+    set! (-> ret offset) 0
+    set! (-> ret names) $ hmalloc $ mul len $ sizeof ref[array[string]]
+    set! (-> ret vals) $ hmalloc $ mul len $ sizeof ref[array[string]]
+    ret
 }
 
 def fresh_name src:string => string = {
