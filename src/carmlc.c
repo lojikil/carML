@@ -2757,8 +2757,24 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
         case TCOMMENT:
             /* do we want return this, so that we can
              * return documentation, &c.?
+             * ran into an interesting bug here.
+             * because `#` eats until the newline, it
+             * doesn't *return* a new line, which breaks
+             * llread for certain types of newline-sensitive
+             * operations, such as record members. So, we
+             * have to check what the nltreatment value is,
+             * and either convert this into a TNEWL or call
+             * read expression again.
              */
-            sometmp = readexpression(fdin);
+
+            if(nltreatment) {
+                tmp = (AST *)hmalloc(sizeof(AST));
+                tmp->tag = TNEWL;
+                sometmp = ASTRight(tmp);
+            } else {
+                sometmp = readexpression(fdin);
+            }
+
             return sometmp;
         case TERROR:
             return ASTLeft(0, 0, hstrdup(&buffer[0]));
