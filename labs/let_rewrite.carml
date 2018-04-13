@@ -25,6 +25,7 @@ def add_rewrite name:string new_name:string rewrites:ref[NameMap] => bool = {
     when (< off len) do {
         set! (get (-> rewrites names) off) name
         set! (get (-> rewrites vals) off) new_name
+        set! (-> ret off) $ + off 1
         return true
     }
 
@@ -89,15 +90,21 @@ def rewrite_names head:ref[AST] rewrites:NameMap => ref[AST] = {
     end
 }
 
-def let_ident_name head:ref[AST] => ref[OptionString] = match (-> head tag) with
+def let_ident_name head:ref[AST] => ref[OptionString] = {
+    val tag : int = (-> head tag)
+    match tag with
         TLET => (OptionString_SomeString_ref $ get (-> head children) 0) #XXX: I hate how this reads...
         else => (NoString)
     end
+}
 
-def let_ident_value head:ref[AST] => ref[AST] = match (-> head tag) with
+def let_ident_value head:ref[AST] => ref[AST] =
+    val tag : int = (-> head tag)
+    match tag with
         TLET => (get (-> head children) 1) #XXX: I hate how this reads...
         else => nil
     end
+}
 
 def make_val name:string value:ref[AST] => ref[AST] = {
     # this would be so much nicer with a monadic interface
