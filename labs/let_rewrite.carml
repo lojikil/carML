@@ -95,11 +95,11 @@ def let_ident_name head:ref[AST] => ref[OptionString] = {
     val tag : int = (-> head tag)
     match tag with
         TLET => (OptionString_SomeString_ref $ get (-> head children) 0) #XXX: I hate how this reads...
-        else => (NoString)
+        else => (OptionString_NoString_ref)
     end
 }
 
-def let_ident_value head:ref[AST] => ref[AST] =
+def let_ident_value head:ref[AST] => ref[AST] = {
     val tag : int = (-> head tag)
     match tag with
         TLET => (get (-> head children) 1) #XXX: I hate how this reads...
@@ -128,8 +128,9 @@ def make_ident name:string => ref[AST] = {
 
 def make_begin_pair binding:ref[AST] body:ref[AST] = {
     var ret : ref[AST] = (hmalloc $ sizeof AST)
+    val tag : int = (-> body tag)
     set! (-> ret tag) TBEGIN
-    match (-> body tag) with
+    match tag with
         TBEGIN => {
             val len : int = (+ 1 $ -> body lenchildren)
             var idx : int = 0
