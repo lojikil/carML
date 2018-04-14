@@ -71,6 +71,7 @@ def rewrite_names head:ref[AST] rewrites:NameMap => ref[AST] = {
     val v : int = (-> head tag)
     var idx : int = 0
     var name : ref[OptionString] = (SomeString_NoString_ref)
+    var ret : ref[AST] = nil
     match v with
         TIDENT => {
             set! name $ find_name (-> head value) rewrites
@@ -82,9 +83,14 @@ def rewrite_names head:ref[AST] rewrites:NameMap => ref[AST] = {
             end
         }
         else => {
+            set! ret $ hmalloc $ sizeof AST
+            set! (-> ret lenchildren) (-> head lenchildren)
+            set! (-> ret tag) (-> head tag)
+            set! (-> ret children) $ hmalloc $ mul (-> ret lenchildren) $ sizeof ref[AST]
             while (< idx $ -> head lenchildren) do {
                 # need to copy each node in the AST to
                 # the return list
+                set! (get (-> ret children) idx) (rewrite_names (get (-> head children) idx) rewrites)
                 set! idx $ + idx 1
             }
         }
@@ -153,7 +159,7 @@ def make_begin_pair binding:ref[AST] body:ref[AST] = {
     ret
 }
 
-def let_to_val head:ref[AST] rewrites:NameMap => ref[AST] = {
+def let_to_val head:ref[AST] rewrites:ref[NameMap] => ref[AST] = {
     # the code here is very imperative... getting some handle
     # on for/foreach/map/reduce/filter/take vis-a-vis Deques
     # and the like will be hugely important for fixing the
@@ -191,5 +197,6 @@ def let_to_val head:ref[AST] rewrites:NameMap => ref[AST] = {
 # these sorts of optimizations easy to handle
 # maybe something like this?
 def nanopass_let head:ref[AST] => ref[AST] = {
-    nil
+    var holder : ref[NameMap] = (init_rewrite)
+      
 }
