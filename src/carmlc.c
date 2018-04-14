@@ -5283,7 +5283,7 @@ llcwalk(AST *head, int level, int final) {
                     cwalk(htmp->children[tidx + 1], 0);
                     printf(";\n");
                 } else if(final) {
-                    llcwalk(htmp->children[tidx + 1], level, YES);
+                    llcwalk(htmp->children[tidx + 1], level + 1, YES);
                 } else {
                     cwalk(htmp->children[tidx + 1], level + 1);
                     printf(";\n");

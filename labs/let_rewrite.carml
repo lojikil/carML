@@ -41,8 +41,9 @@ def init_rewrite => ref[NamedMap] = {
     set! (-> ret len) len
     set! (-> ret offset) 0
     # would be interesting to have a "new" semantic for this stuff...
-    set! (-> ret names) $ hmalloc $ mul len $ sizeof ref[array[string]]
-    set! (-> ret vals) $ hmalloc $ mul len $ sizeof ref[array[string]]
+    # something like Rust, with it's Vec::new or VecDeque::new
+    set! (-> ret names) $ hmalloc $ mul len $ sizeof array[string]
+    set! (-> ret vals) $ hmalloc $ mul len $ sizeof array[string]
     ret
 }
 
@@ -161,7 +162,8 @@ def let_to_val head:ref[AST] rewrites:NameMap => ref[AST] = {
     var new_body : ref[AST] = nil
     var idx : int = 0
     var new_name : string = nil
-    match (-> head tag) with
+    val tag : int = (-> head tag)
+    match tag with
         # matching multiple cases with | would
         # be nice...
         # so would destructuring binds
