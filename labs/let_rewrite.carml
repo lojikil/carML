@@ -87,12 +87,15 @@ def rewrite_names head:ref[AST] rewrites:NameMap => ref[AST] = {
             set! (-> ret lenchildren) (-> head lenchildren)
             set! (-> ret tag) (-> head tag)
             set! (-> ret children) $ hmalloc $ mul (-> ret lenchildren) $ sizeof ref[AST]
+            # this would be so much cleaner as a map form over
+            # ASTs
             while (< idx $ -> head lenchildren) do {
                 # need to copy each node in the AST to
                 # the return list
                 set! (get (-> ret children) idx) (rewrite_names (get (-> head children) idx) rewrites)
                 set! idx $ + idx 1
             }
+            ret
         }
     end
 }
@@ -187,7 +190,19 @@ def let_to_val head:ref[AST] rewrites:ref[NameMap] => ref[AST] = {
         else => {
             # thinking that we could iterate over each
             # child and see if it is a TLET
-            head
+            set! ret $ hmalloc $ sizeof AST
+            set! (-> ret lenchildren) (-> head lenchildren)
+            set! (-> ret tag) (-> head tag)
+            set! (-> ret children) $ hmalloc $ mul (-> ret lenchildren) $ sizeof ref[AST]
+            # this would be so much cleaner as a map form over
+            # ASTs; need to look at this a bit more, but it seems to make sense...
+            while (< idx $ -> head lenchildren) do {
+                # need to copy each node in the AST to
+                # the return list
+                set! (get (-> ret children) idx) (let_to_val (get (-> head children) idx) rewrites)
+                set! idx $ + idx 1
+            }
+            ret
         }
     end
 }
@@ -198,5 +213,6 @@ def let_to_val head:ref[AST] rewrites:ref[NameMap] => ref[AST] = {
 # maybe something like this?
 def nanopass_let head:ref[AST] => ref[AST] = {
     var holder : ref[NameMap] = (init_rewrite)
-      
+    val tag : int = (-> head tag)
+    let_to_val head holder
 }
