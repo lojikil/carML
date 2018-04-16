@@ -34,7 +34,7 @@ A quick list of the current `TODO`s.
 1. **DONE** Compilation of variants
 1. **DONE** Parsing of polymorphic variants
 1. **DONE** Compilation of polymorphic variants
-1. Make sure types are correct for types/polys 
+1. **DONE** Make sure types are correct for types/polys
 1. OCaml/SML-style Modules, and their application to higher-kinded types
 1. Friendlier REPL, with keyboard support, and a simple Logo-style `edit` command
 1. **DONE** Syntax updates: `record`

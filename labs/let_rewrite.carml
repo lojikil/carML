@@ -69,15 +69,17 @@ def find_name name:string rewrites:ref[NameMap] => ref[OptionString] = {
 
 def rewrite_names head:ref[AST] rewrites:NameMap => ref[AST] = {
     val v : int = (-> head tag)
+    var x : int = 0
     var idx : int = 0
     var name : ref[OptionString] = (SomeString_NoString_ref)
     var ret : ref[AST] = nil
     match v with
         TIDENT => {
             set! name $ find_name (-> head value) rewrites
+            set! x $ -> name tag
             # XXX: I'm unpacking a tag because the compiler
             # can't yet handle this as call + Binding
-            match (-> name tag) with
+            match x with
                 OptionString_Tag_SOMESTRING => (make_ident $ -> name m_1)
                 else => head
             end
@@ -122,8 +124,8 @@ def make_val name:string value:ref[AST] => ref[AST] = {
     set! (-> ret tag) TVAL
     set! (-> ret lenchildren) 2
     set! (-> ret children) $ hmalloc $ mul 2 $ sizeof AST
-    set! (get (-> ref children) 0) name
-    set! (get (-> ref children) 1) value
+    set! (get (-> ret children) 0) name
+    set! (get (-> ret children) 1) value
     ret
 }
 
