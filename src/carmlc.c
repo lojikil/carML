@@ -497,10 +497,9 @@ isvalueform(int tag) {
 int
 iscoperator(const char *potential) {
     int idx = 0;
-    size_t sze = strlen(potential);
 
     while(coperators[idx] != nil) {
-        if(!strncmp(potential, coperators[idx], sze)) {
+        if(!strcmp(potential, coperators[idx])) {
             return idx + 1;
         }
         idx += 2;
