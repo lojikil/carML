@@ -1,4 +1,4 @@
-def main ac : int al : array of string => int = {
+def main ac : int al : array[string] => int = {
     # whoops; the compiler should warn here...
     # TODO: this was originally a `val` but failed in C
     var foo : int = 0

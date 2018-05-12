@@ -3,7 +3,7 @@
 # Fixed bug: parameter-list is malformed 
 # Fixed bug: Left/Right are missing
 # Fixed bug: newline is not being read
-# bug: complex types are not collapsed 
+# Fixed bug: complex types are not collapsed 
 
 # Test: tag with single type
 type Baz {
@@ -19,25 +19,26 @@ type Blah {
 
 # Test: we can apply constructors to complex types
 type Bloo {
-    BlooOk array of int
+    BlooOk array[int]
     BlooErr int string
+    BlooWat array int
 }
 
 type Frob {
-    FrobOk array of Bloo
+    FrobOk array[Bloo]
     FrobErr array Bloo
     FrobWot Bloo int
-    FrobWat int int string array of int
+    FrobWat int int string array[int]
 }
 
 # Test: tags separated with semi-colons
 type Foo {
-    Left int;
+    Left int
     Right int
 }
 
 # Test: parameter list
 type Result Success Fail {
-    Ok Success;
+    Ok Success
     Err Fail
 }
