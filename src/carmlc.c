@@ -241,6 +241,7 @@ int isprimitivevalue(int);
 int isvalueform(int);
 int iscoperator(const char *);
 char *typespec2c(AST *, char *, char*, int);
+char *findtype(AST *);
 
 int
 main(int ac, char **al) {
@@ -615,6 +616,51 @@ linearize_complex_type(AST *head) {
     return tmp;
 }
 
+// find a type in a tree of complex types
+// could be interesting to walk down...
+char *
+findtype(AST *head) {
+    AST *tmp = head;
+    char *stack[16] = {nil};
+    int sp = 0, speclen = head->lendchildren, typeidx = 0;
+    for(; typeidx < speclen; typeidx++) {
+        switch(tmp->tag) {
+            case TTAG:
+                typeval = tmp->value;
+                breakflag = 1;
+                break;
+            case TINTT:
+                typeval = "int";
+                breakflag = 1;
+                break;
+            case TFLOATT:
+                typeval = "double";
+                breakflag = 1;
+                break;
+            case TSTRT:
+                typeval = "char *";
+                breakflag = 1;
+                break;
+            case TCHART:
+                typeval = "char";
+                breakflag = 1;
+                break;
+            case TBOOLT:
+                typeval = "uint8_t";
+                breakflag = 1;
+                break;
+            case TREF:
+            case TARRAY:
+            case TDEQUET:
+                typeval = "*";
+                break;
+            case TCOMPLEXTYPE:
+                tmp = 
+        }
+    }
+    return nil;
+}
+
 // yet another location where I'd rather
 // return Option[String], sigh
 // this works fine for function declarations, but 
@@ -622,8 +668,14 @@ linearize_complex_type(AST *head) {
 // out what *type* of signature we're generating...
 char *
 typespec2c(AST *typespec, char *dst, char *name, int len) {
-    int strstart = 0, typeidx = 0, rewrite = 0, speclen = 0;
-    char *typeval = nil;
+    int strstart = 0, typeidx = 0, rewrite = 0, speclen = 0, sp = 0, breakflag = 0;
+    char *typeval = nil, *typestack[16] = {nil};
+    AST *tmp = nil;
+
+    // we use the type stack to capture each level of a type...
+    // probably should use a growable, but 16 levels deep of 
+    // arrays/refs should be good for now...
+    // (famous last words)
 
     if(typespec->lenchildren == 0 && istypeast(typespec->tag)) {
         switch(typespec->tag) {
@@ -750,17 +802,12 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
          * Honestly, I'd love to Specialize types, at least
          * to some degree, but for now...
          */
-        for(; typeidx < speclen; typeidx++) {
-            // so the reason why this is no longer working is because I've changed
-            // the way that types work: complex types are no longer a linear list
-            // of types, but rather a nested-tree of types. Need to change the domination
-            // algorithm here to account for that
-            // idea: seach the tree, and return the type that
-            // we should use
-            if(typespec->children[typeidx]->tag == TTAG || issimpletypeast(typespec->children[typeidx]->tag)) {
-                break;
-            }
-        }
+        tmp = typespec;
+        printf("what does typespec look like here: ");
+        walk(tmp, 0);
+        printf("\n");
+
+
         dprintf("typespec[%d] == null? %s\n", typeidx, typespec->children[typeidx] == nil ? "yes" : "no");
         dprintf("here on %d, typeidx: %d, len: %d\n", __LINE__, typeidx, typespec->lenchildren);
         for(; typeidx >= 0; typeidx--) {
@@ -796,6 +843,9 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
                 case TBOOLT:
                     typeval = "uint8_t";
                     break;
+                case TCOMPLEXTYPE:
+                    printf("ugh here %d\n", __LINE__);
+                    walk(typespec->children[typeidx], 0);
                 default:
                     typeval = "void *";
             }
