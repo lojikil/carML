@@ -621,8 +621,9 @@ linearize_complex_type(AST *head) {
 char *
 findtype(AST *head) {
     AST *tmp = head;
-    char *stack[16] = {nil};
-    int sp = 0, speclen = head->lendchildren, typeidx = 0;
+    char *stack[16] = {nil}, *typeval = nil;
+    int sp = 0, speclen = head->lenchildren, typeidx = 0;
+    int breakflag = 0;
     for(; typeidx < speclen; typeidx++) {
         switch(tmp->tag) {
             case TTAG:
@@ -655,7 +656,12 @@ findtype(AST *head) {
                 typeval = "*";
                 break;
             case TCOMPLEXTYPE:
-                tmp = 
+                tmp = tmp->children[typeidx];
+                break;
+            default:
+                typeval = "void *";
+                breakflag = 1;
+                break;
         }
     }
     return nil;
