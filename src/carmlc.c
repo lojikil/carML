@@ -620,14 +620,14 @@ linearize_complex_type(AST *head) {
 // could be interesting to walk down...
 char *
 findtype(AST *head) {
-    AST *tmp = head;
+    AST *hare = head, *turtle = head;
     char *stack[16] = {nil}, *typeval = nil;
     int sp = 0, speclen = head->lenchildren, typeidx = 0;
-    int breakflag = 0;
-    for(; typeidx < speclen; typeidx++) {
-        switch(tmp->tag) {
+    int breakflag = 0, reslen = 0;
+    while(!breakflag) {
+        switch(hare->tag) {
             case TTAG:
-                typeval = tmp->value;
+                typeval = hare->value;
                 breakflag = 1;
                 break;
             case TINTT:
@@ -656,12 +656,32 @@ findtype(AST *head) {
                 typeval = "*";
                 break;
             case TCOMPLEXTYPE:
-                tmp = tmp->children[typeidx];
+                turtle = turtle->children[typeidx];
+                hare = turtle->children[0];
+                typeidx = 0;
+                speclen = turtle->lenchildren;
                 break;
+            case TFUNCTIONT:
+            case TPROCEDURET:
             default:
                 typeval = "void *";
                 breakflag = 1;
                 break;
+        }
+
+        stack[sp] = hstrdup(typeval);
+        sp += 1;
+        // keep the length of the resulting
+        // string updated each time, and add
+        // one to the length for either a space
+        // in between members or a NUL at the
+        // end
+        reslen += strlen(typeval) + 1;
+
+        if(typeidx >= speclen) {
+            break;
+        } else if(breakflag) {
+            break;
         }
     }
     return nil;
