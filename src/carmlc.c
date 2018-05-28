@@ -684,7 +684,14 @@ findtype(AST *head) {
             break;
         }
     }
-    return nil;
+
+    typeval = (char *)hmalloc(sizeof(char) * reslen);
+
+    for(; sp >= 0; sp--) {
+        strncat(typeval, stack[sp], reslen);
+        strncat(typeval, " ", reslen);
+    }
+    return typeval;
 }
 
 // yet another location where I'd rather
@@ -840,41 +847,9 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
             if(typespec->children[typeidx] == nil) {
                 continue;
             }
-            switch(typespec->children[typeidx]->tag) {
-                case TTAG:
-                    typeval = typespec->children[typeidx]->value;
-                    break;
-                case TINTT:
-                    typeval = "int";
-                    break;
-                case TFLOATT:
-                    typeval = "double";
-                    break;
-                case TARRAY:
-                    if(name != nil) {
-                        typeval = "[]";
-                    } else {
-                        typeval = "*";
-                    }
-                    break;
-                case TREF:
-                    typeval = "*";
-                    break;
-                case TSTRT:
-                    typeval = "char *";
-                    break;
-                case TCHART:
-                    typeval = "char";
-                    break;
-                case TBOOLT:
-                    typeval = "uint8_t";
-                    break;
-                case TCOMPLEXTYPE:
-                    printf("ugh here %d\n", __LINE__);
-                    walk(typespec->children[typeidx], 0);
-                default:
-                    typeval = "void *";
-            }
+
+            typeval = findtype(typespec->children[typeidx]);
+
             snprintf(&dst[strstart], (len - strstart), "%s ", typeval);
             strstart = strnlen(dst, len);
             if(name != nil && !rewrite) {
