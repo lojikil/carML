@@ -624,13 +624,24 @@ findtype(AST *head) {
     char *stack[16] = {nil}, *typeval = nil;
     int sp = 0, speclen = head->lenchildren, typeidx = 0;
     int breakflag = 0, reslen = 0;
+
+    if(turtle->tag == TCOMPLEXTYPE) {
+        hare = turtle->children[0];
+    }
+
+    printf("speclen: %d\n", speclen);
+    walk(head, 0);
+    printf("\n");
+    debugln;
     while(!breakflag) {
+        debugln;
         switch(hare->tag) {
             case TTAG:
                 typeval = hare->value;
                 breakflag = 1;
                 break;
             case TINTT:
+                printf("here?\n");
                 typeval = "int";
                 breakflag = 1;
                 break;
@@ -669,28 +680,48 @@ findtype(AST *head) {
                 break;
         }
 
+        printf("typeval: %s\n", typeval);
+
         stack[sp] = hstrdup(typeval);
         sp += 1;
+        debugln;
         // keep the length of the resulting
         // string updated each time, and add
         // one to the length for either a space
         // in between members or a NUL at the
         // end
+        debugln;
         reslen += strlen(typeval) + 1;
+        debugln;
 
         if(typeidx >= speclen) {
+            printf("here on 690? typeidx: %d, speclen: %d\n", typeidx, speclen);
             break;
         } else if(breakflag) {
+            printf("here on 693?\n");
             break;
+        } else {
+            typeidx++;
+            hare = turtle->children[typeidx];
         }
     }
 
+    debugln;
+
     typeval = (char *)hmalloc(sizeof(char) * reslen);
 
-    for(; sp >= 0; sp--) {
+    debugln;
+
+    for(sp--; sp >= 0; sp--) {
+        debugln;
         strncat(typeval, stack[sp], reslen);
+        debugln;
         strncat(typeval, " ", reslen);
+        debugln;
     }
+
+    debugln;
+
     return typeval;
 }
 
@@ -836,31 +867,22 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
          * to some degree, but for now...
          */
         tmp = typespec;
-        printf("what does typespec look like here: ");
-        walk(tmp, 0);
-        printf("\n");
+        dprintf("what does typespec look like here: ");
+        dwalk(tmp, 0);
+        dprintf("\n");
 
+        printf("result? %s\n", findtype(typespec));
 
         dprintf("typespec[%d] == null? %s\n", typeidx, typespec->children[typeidx] == nil ? "yes" : "no");
         dprintf("here on %d, typeidx: %d, len: %d\n", __LINE__, typeidx, typespec->lenchildren);
-        for(; typeidx >= 0; typeidx--) {
-            if(typespec->children[typeidx] == nil) {
-                continue;
-            }
 
-            typeval = findtype(typespec->children[typeidx]);
+        typeval = findtype(typespec);
 
-            snprintf(&dst[strstart], (len - strstart), "%s ", typeval);
+        snprintf(&dst[strstart], (len - strstart), "%s ", typeval);
+        strstart = strnlen(dst, len);
+        if(name != nil) {
+            snprintf(&dst[strstart], (len - strstart), "%s", name);
             strstart = strnlen(dst, len);
-            if(name != nil && !rewrite) {
-                if(typeidx >= 1 && typespec->children[typeidx - 1]->tag == TREF){
-                    continue;
-                } else {
-                    snprintf(&dst[strstart], (len - strstart), "%s", name);
-                    strstart = strnlen(dst, len);
-                    rewrite = 1;
-                }
-            }
         }
     }
     return dst;
