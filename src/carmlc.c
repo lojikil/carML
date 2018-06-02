@@ -623,54 +623,66 @@ findtype(AST *head) {
     AST *hare = head, *turtle = head;
     char *stack[16] = {nil}, *typeval = nil;
     int sp = 0, speclen = head->lenchildren, typeidx = 0;
-    int breakflag = 0, reslen = 0;
+    int breakflag = 0, reslen = 0, pushf = 0;
 
     if(turtle->tag == TCOMPLEXTYPE) {
         hare = turtle->children[0];
     }
 
-    printf("speclen: %d\n", speclen);
-    walk(head, 0);
-    printf("\n");
+    dprintf("speclen: %d\n", speclen);
+    dwalk(head, 0);
+    dprintf("\n");
     debugln;
     while(!breakflag) {
         debugln;
+        dprintf("current hare: ");
+        dwalk(hare, 0);
+        dprintf("\n");
         switch(hare->tag) {
             case TTAG:
+                // really should be Tag *...
                 typeval = hare->value;
                 breakflag = 1;
+                pushf = 1;
                 break;
             case TINTT:
                 printf("here?\n");
                 typeval = "int";
                 breakflag = 1;
+                pushf = 1;
                 break;
             case TFLOATT:
                 typeval = "double";
                 breakflag = 1;
+                pushf = 1;
                 break;
             case TSTRT:
                 typeval = "char *";
                 breakflag = 1;
+                pushf = 1;
                 break;
             case TCHART:
                 typeval = "char";
                 breakflag = 1;
+                pushf = 1;
                 break;
             case TBOOLT:
                 typeval = "uint8_t";
                 breakflag = 1;
+                pushf = 1;
                 break;
             case TREF:
             case TARRAY:
             case TDEQUET:
                 typeval = "*";
+                pushf = 1;
                 break;
             case TCOMPLEXTYPE:
                 turtle = turtle->children[typeidx];
                 hare = turtle->children[0];
-                typeidx = 0;
+                typeidx = -1;
                 speclen = turtle->lenchildren;
+                pushf = 0;
                 break;
             case TFUNCTIONT:
             case TPROCEDURET:
@@ -680,10 +692,16 @@ findtype(AST *head) {
                 break;
         }
 
-        printf("typeval: %s\n", typeval);
-
-        stack[sp] = hstrdup(typeval);
-        sp += 1;
+        
+        // another great place to have Option types
+        // would be nice to be able to have the above
+        // set an Option[string] and have that matched
+        // here... 
+        if(pushf) {
+            dprintf("typeval: %s\n", typeval);
+            stack[sp] = hstrdup(typeval);
+            sp += 1;
+        }
         debugln;
         // keep the length of the resulting
         // string updated each time, and add
@@ -695,10 +713,10 @@ findtype(AST *head) {
         debugln;
 
         if(typeidx >= speclen) {
-            printf("here on 690? typeidx: %d, speclen: %d\n", typeidx, speclen);
+            dprintf("here on 716? typeidx: %d, speclen: %d\n", typeidx, speclen);
             break;
         } else if(breakflag) {
-            printf("here on 693?\n");
+            debugln;
             break;
         } else {
             typeidx++;
@@ -871,7 +889,7 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
         dwalk(tmp, 0);
         dprintf("\n");
 
-        printf("result? %s\n", findtype(typespec));
+        dprintf("result? %s\n", findtype(typespec));
 
         dprintf("typespec[%d] == null? %s\n", typeidx, typespec->children[typeidx] == nil ? "yes" : "no");
         dprintf("here on %d, typeidx: %d, len: %d\n", __LINE__, typeidx, typespec->lenchildren);
