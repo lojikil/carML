@@ -646,7 +646,6 @@ findtype(AST *head) {
                 pushf = 1;
                 break;
             case TINTT:
-                printf("here?\n");
                 typeval = "int";
                 breakflag = 1;
                 pushf = 1;
