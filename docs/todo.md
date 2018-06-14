@@ -62,7 +62,7 @@ A quick list of the current `TODO`s.
 1. add nano-pass: constant folding
 1. add nano-pass: select the correct reified constructor implementation
 1. add nano-pass: demand-driven type inference
-1. fix complex type handling in `typespec2c`
+1. **DONE** fix complex type handling in `typespec2c`
 1. fix match with `type`s
 1. Investigate: method of determining effects, and how that could make ANF easier (lift once for two calls)
 1. **DONE** Investigate: currently there is a syntax ambiguity in `begin` forms: is `t` a unary function call, or an identifier? Fix: identifier
