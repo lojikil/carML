@@ -1,6 +1,8 @@
 #@(#) a simple let/let-rec rewriter
 #@(#) rewrite let/let-rec ASTs to 
 #@(#) simple val nodes
+#@(#) Sadly, this is all very imperative
+#@(#) at the moment, but we'll get there...
 
 record NameMap {
     len : int # length of names/vals
@@ -95,6 +97,7 @@ def rewrite_names head:ref[AST] rewrites:NameMap => ref[AST] = {
                 # need to copy each node in the AST to
                 # the return list
                 set! (get (-> ret children) idx) (rewrite_names (get (-> head children) idx) rewrites)
+                # XXX a low-level `inc!` form would be nice... 
                 set! idx $ + idx 1
             }
             ret
@@ -137,7 +140,7 @@ def make_ident name:string => ref[AST] = {
     ret
 }
 
-def make_begin_pair binding:ref[AST] body:ref[AST] = {
+def make_begin_pair binding:ref[AST] body:ref[AST] => ref[AST] = {
     var ret : ref[AST] = (hmalloc $ sizeof AST)
     val tag : int = (-> body tag)
     set! (-> ret tag) TBEGIN
