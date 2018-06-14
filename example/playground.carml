@@ -1,7 +1,7 @@
 # just a syntactic playground to see what's what.
 
-@arrayIota3 array of Num (Num => Num) => ()
-def arrayIota3 arr fun = {
+#@arrayIota3 array of Num (Num => Num) => ()
+def arrayIota3 arr:array[int] fun:function[int int] = {
     letrec internalIota = fn idx = {
         set-array-index! arr (fun idx) x
         internalIota (sum idx 1)
@@ -9,8 +9,8 @@ def arrayIota3 arr fun = {
     internalIota 0
 }
 
-@arrayIota4 array of Num (Num => Num) => ()
-def arrayIota4 arr fun {
+#@arrayIota4 array of Num (Num => Num) => ()
+def arrayIota4 arr:array[int] fun:function[int in] {
     # should `fn` forms accept a `begin`
     # form sans `=` just like `def`?
     # looks... so much cleaner

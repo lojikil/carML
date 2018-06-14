@@ -7,9 +7,9 @@ A quick list of the current `TODO`s.
 1. **DONE** Add complex types to `let` 
 1. **DONE** Add `var` form
 1. **DONE** type tags
-1. _BUG_: `Foo Bar int` as type constructor is parsed as `(type-constructor Foo (complex-type Bar Int))` when it should be `(type-constructor Foo Bar Int)` (2 members)
-1. _BUG_: look at how the `experiments/sexpr.carml` is being parsed, and note that several constructors are missing
-1. (test case for the above: `Foo Bar int`)
+1. **FIXED** _BUG_: `Foo Bar int` as type constructor is parsed as `(type-constructor Foo (complex-type Bar Int))` when it should be `(type-constructor Foo Bar Int)` (2 members)
+1. **FIXED** _BUG_: look at how the `experiments/sexpr.carml` is being parsed, and note that several constructors are missing
+1. **DONE** (test case for the above: `Foo Bar int`)
 1. **FIXED** _BUG_: `def bar h:Url => Url` is parsed as `(parameter-list (ident h) (tag Url))` when it should be `(parameter-list (parameter-def h (complex-type (tag Url))))`
 1. **FIXED** (test case for the above: `def foo f:Url => Url = f`)
 1. **FIXED** _BUG_: complex return types
@@ -19,7 +19,7 @@ A quick list of the current `TODO`s.
 1. **DONE**Review switch to Scala-style `[]` for types.
 1. Parse `@`/`declare` forms
 1. Update `val`, `let`, records to use the new `declare` type parser
-1. Make function definitions & `let` forms accept `begin` style function calls (i.e. avoid using `()`)
+1. **WONTFIX** Make function definitions & `let` forms accept `begin` style function calls (i.e. avoid using `()`)
 1. `match`/`case` form, with guards.
 1. Figure out a decent backing for Rust-style deques (possibly implemented from records + arrays)
 1. **DONE**: Partial application syntax: `$()`, including `_` as filler
