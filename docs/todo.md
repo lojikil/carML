@@ -30,30 +30,32 @@ A quick list of the current `TODO`s.
 1. Runtime, which should be pretty minimal
 1. **DONE** Compile to C in the style of Enyalios
 1. an `extern` or `alien` form for easy FFI
+1. Finish the `use` form
 1. **DONE** Parsing of variants
 1. **DONE** Compilation of variants
 1. **DONE** Parsing of polymorphic variants
 1. **DONE** Compilation of polymorphic variants
 1. **DONE** Make sure types are correct for types/polys
 1. OCaml/SML-style Modules, and their application to higher-kinded types
+1. `deque` and memory model
 1. Friendlier REPL, with keyboard support, and a simple Logo-style `edit` command
 1. **DONE** Syntax updates: `record`
 1. **WONTFIX** Syntax updates: `def`
 1. **WONTFIX** Syntax updates: `match`
 1. **WONTFIX** Syntax updates: `fn`
-1. _REVIEW_ make `let` & `var/var` treat items like a call form (as in `val r : int = sum x 10` instead of `val r : int = (sum x 10)`)
+1. **WONTFIX in C version** _REVIEW_ make `let` & `var/var` treat items like a call form (as in `val r : int = sum x 10` instead of `val r : int = (sum x 10)`)
 1. make the types parsing code more modular; could easily extract that out into a function
 1. **DONE** (not in the most elegant way, mind, but...) Finally fix the frakking lexer to not goof up internal states
 1. Csharp-style record parameter unboxing
 1. **DONE** Error handling: `Either`
 1. **DONE** Option types
-1. Lexer-as-stream
+1. **WONTFIX in C version** Lexer-as-stream
 1. in the base C compiler & carML self-hosting one, include a defined list of compiler errors with friendly data
 1. add line numbers to errors
 1. **DONE** Fix type state transition, which fails for Tagged types (`Url`)
 1. **DONE** Fix parsing of single line `begin`: `{sum x 10}` fails to parse properly
 1. **DONE** Fix `float`, `bool`, and `char` parsing
-1. Add sized ints/uints/floats (e.g. `uint8`) as types
+1. Add sized ints/uints/floats (e.g. `uint8`) as types (what about `U8` or `U64`? that works...)
 1. **DONE** Fix edge case: complex type right before `=>` fails `def foo bar : Url => int = ...` fails
 1. add nano-pass: a-normal form (ANF)
 1. add nano-pass: lambda lifting
