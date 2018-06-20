@@ -2992,6 +2992,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                     for(int cidx = 0, tidx = flag, tlen = tmp->lenchildren; cidx < tlen; cidx++, tidx++) {
                         tmp->children[cidx] = vectmp[tidx];
                     }
+                    tmp = linearize_complex_type(tmp);
                     vectmp[flag] = tmp;
                     idx = flag;
                     flag = 0;
@@ -4438,6 +4439,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                     for(int cidx = 0, tidx = flag, tlen = tmp->lenchildren; cidx < tlen; cidx++, tidx++) {
                         tmp->children[cidx] = vectmp[tidx];
                     }
+                    tmp = linearize_complex_type(tmp);
                     vectmp[flag] = tmp;
                     idx = flag;
                     flag = 0;
