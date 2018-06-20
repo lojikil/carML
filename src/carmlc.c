@@ -3096,6 +3096,24 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             head->children[0] = tmp;
 
             return ASTRight(head);
+        case TUSE:
+            head = (AST *) hmalloc(sizeof(AST));
+            head->tag = TUSE;
+            head->lenchildren = 1;
+            head->children = (AST **)hmalloc(sizeof(AST *));
+            
+            sometmp = readexpression(fdin);
+            tmp = sometmp->right;
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else if(tmp->tag != TIDENT && tmp->tag != TTAG && tmp->tag != TSTRING) {
+                return ASTLeft(0, 0, "`use` must be followed by an ident, a tag, or a string.");
+            }
+
+            head->children[0] = sometmp->right;
+
+            return ASTRight(head);
         case TFN:
         case TDEF:
             head = (AST *) hmalloc(sizeof(AST));
@@ -4789,6 +4807,11 @@ walk(AST *head, int level) {
             }
             printf("\n");
             walk(head->children[1], level + 1);
+            printf(")");
+            break;
+        case TUSE:
+            printf("(use ");
+            walk(head->children[0], 0);
             printf(")");
             break;
         case TVAL:
