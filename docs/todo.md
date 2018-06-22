@@ -30,7 +30,8 @@ A quick list of the current `TODO`s.
 1. Runtime, which should be pretty minimal
 1. **DONE** Compile to C in the style of Enyalios
 1. an `extern` or `alien` form for easy FFI
-1. Finish the `use` form
+1. **DONE** Finish the `use` form
+1. write an actual inclusion algorithm for the compiler to consume `use`d libraries
 1. **DONE** Parsing of variants
 1. **DONE** Compilation of variants
 1. **DONE** Parsing of polymorphic variants

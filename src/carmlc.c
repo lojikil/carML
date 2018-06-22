@@ -58,7 +58,8 @@ typedef enum {
 	LFUNCTIONT4, LFUNCTIONT5, LFUNCTIONT6, LP0, LPROCEDURET0,
     LPROCEDURET1, LPROCEDURET2, LPROCEDURET3, LPROCEDURET4,
     LPROCEDURET5, LPROCEDURET6, LPROCEDURET7, LANY0, LANY1,
-    LAND0, LAND1, LAND2, LA0, LAN0,
+    LAND0, LAND1, LAND2, LA0, LAN0, LEXTERN0, LEXTERN1, LEXTERN2,
+    LEXTERN3, LEXTERN4,
 } LexStates;
 
 /* AST tag enum.
@@ -85,7 +86,7 @@ typedef enum {
     TPIPEARROW, TUSERT, TVAR, TTAG, // 68
     TPARAMDEF, TTYPEDEF, TWHILE, TFOR, // 72
     TTUPLET, TFUNCTIONT, TPROCEDURET, // 75
-    TAND, TANY, TGUARD, // 78
+    TAND, TANY, TGUARD, TEXTERN // 79 
 } TypeTag;
 
 struct _AST {
@@ -1543,6 +1544,8 @@ next(FILE *fdin, char *buf, int buflen) {
                                substate = LELSE0;
                             } else if(cur == 'n') {
                                substate = LEND0;
+                            } else if(cur == 'x') {
+                                substate = LEXTERN0;
                             } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
                                 ungetc(cur, fdin);
                                 buf[idx - 1] = '\0';
@@ -1595,6 +1598,61 @@ next(FILE *fdin, char *buf, int buflen) {
                             }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
                                 ungetc(cur, fdin);
                                 return TEND;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LEXTERN0:
+                            if(cur == 't') {
+                                substate = LEXTERN1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LEXTERN1:
+                            if(cur == 'e') {
+                                substate = LEXTERN2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LEXTERN2: 
+                            if(cur == 'r') {
+                                substate = LEXTERN3;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LEXTERN3: 
+                            if(cur == 'n') {
+                                substate = LEXTERN4;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LEXTERN4:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TEXTERN;
                             } else {
                                 strncpy(buf, "malformed identifier", 512);
                                 return TERROR;
@@ -4341,6 +4399,51 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             debugln;
             return ASTRight(head);
             break;
+        case TEXTERN:
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TEXTERN;
+
+            sometmp = readexpression(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else if(sometmp->right->tag != TIDENT && sometmp->right->tag != TTAG) {
+                return ASTLeft(0, 0, "`extern` *must* be followed by an ident or a tag");
+            } else {
+                head->value = sometmp->right->value;
+            }
+
+            sometmp = readexpression(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else if(sometmp->right->tag != TCOLON) {
+                return ASTLeft(0, 0, "`extern`'s name *must* be followed by a `:`");
+            }
+
+            sometmp = readexpression(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else if(!istypeast(sometmp->right->tag)) {
+                return ASTLeft(0, 0, "an `extern`'s `:` *must* be followed by a type.");
+            } else if(issimpletypeast(sometmp->right->tag)) {
+                head->children[0] = sometmp->right;
+            } else { // complex type
+                tmp = sometmp->right;
+                switch(tmp->tag) {
+                    case TARRAY:
+                    case TREF:
+                    case TDEQUE:
+                        break;
+                    case TTAG:
+                    default:
+                        break;
+                }
+            }
+
+            return head;
+
         case TVAL:
         case TVAR:
             head = (AST *)hmalloc(sizeof(AST));
