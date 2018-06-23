@@ -4402,6 +4402,8 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
         case TEXTERN:
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = TEXTERN;
+            head->lenchildren = 1;
+            head->children = (AST **)hmalloc(sizeof(AST *));
 
             sometmp = readexpression(fdin);
 
@@ -4434,16 +4436,60 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 switch(tmp->tag) {
                     case TARRAY:
                     case TREF:
-                    case TDEQUE:
+                    case TDEQUET:
+                    case TFUNCTIONT:
+                    case TPROCEDURET:
+                    case TTUPLET:
+                        vectmp[idx] = tmp;
+                        idx++;
+                        sometmp = readexpression(fdin);
+                        if(sometmp->tag == ASTLEFT) {
+                            return sometmp;
+                        } else if(sometmp->right->tag != TARRAYLITERAL) {
+                            return ASTLeft(0, 0, "core complex types *must* have a type paramter.");
+                        }
+                        tmp = (AST *)hmalloc(sizeof(AST));
+                        tmp->tag = TCOMPLEXTYPE;
+
+                        ltmp = sometmp->right->lenchildren + 1;
+                        tmp->lenchildren = ltmp;
+                        tmp->children = (AST **)hmalloc(sizeof(AST *) * ltmp);
+                        tmp->children[0] = vectmp[idx - 1];
+                        for(int cidx = 1, tidx = 0; tidx < (ltmp - 1); cidx++, tidx++) {
+                            tmp->children[cidx] = sometmp->right->children[tidx];
+                        }
+                        head->children[0] = linearize_complex_type(tmp);
                         break;
                     case TTAG:
                     default:
+                        vectmp[idx] = tmp;
+                        idx++;
+                        sometmp = llreadexpression(fdin, YES);
+                        if(sometmp->tag == ASTLEFT) {
+                            return sometmp;
+                        } else if(sometmp->right->tag == TNEWL || sometmp->right->tag == TSEMI) {
+                            tmp->children = (AST **)hmalloc(sizeof(AST *));
+                            tmp->lenchildren = 1;
+                            head->children[0] = tmp;
+                        } else if(sometmp->right->tag != TARRAYLITERAL) {
+                            return ASTLeft(0, 0, "tagged user data types *must* be followed by an array literal or a terminator (newline or semicolon)");
+                        } else {
+                            tmp = (AST *)hmalloc(sizeof(AST));
+                            tmp->tag = TCOMPLEXTYPE;
+                            ltmp = sometmp->right->lenchildren + 1;
+                            tmp->children = (AST **)hmalloc(sizeof(AST *) * ltmp);
+                            tmp->lenchildren = ltmp;
+                            tmp->children[0] = vectmp[idx - 1];
+                            for(int cidx = 1; cidx < ltmp; cidx++) {
+                                tmp->children[cidx] = sometmp->right->children[cidx - 1];
+                            }
+                            head->children[0] = linearize_complex_type(tmp);
+                        }
                         break;
                 }
             }
 
-            return head;
-
+            return ASTRight(head);
         case TVAL:
         case TVAR:
             head = (AST *)hmalloc(sizeof(AST));
@@ -4916,6 +4962,11 @@ walk(AST *head, int level) {
             break;
         case TUSE:
             printf("(use ");
+            walk(head->children[0], 0);
+            printf(")");
+            break;
+        case TEXTERN:
+            printf("(extern %s ", head->value);
             walk(head->children[0], 0);
             printf(")");
             break;
