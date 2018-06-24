@@ -18,7 +18,7 @@ A quick list of the current `TODO`s.
 1. **DONE** parse HOFs in declarations
 1. **DONE**Review switch to Scala-style `[]` for types.
 1. Parse `@`/`declare` forms
-1. Update `val`, `let`, records to use the new `declare` type parser
+1. **WONTFIX in C version** Update `val`, `let`, records to use the new `declare` type parser
 1. **WONTFIX** Make function definitions & `let` forms accept `begin` style function calls (i.e. avoid using `()`)
 1. `match`/`case` form, with guards.
 1. Figure out a decent backing for Rust-style deques (possibly implemented from records + arrays)
@@ -29,7 +29,7 @@ A quick list of the current `TODO`s.
 1. make `mung_single_type` for reading a single type, use for `@` forms
 1. Runtime, which should be pretty minimal
 1. **DONE** Compile to C in the style of Enyalios
-1. an `extern` or `alien` form for easy FFI
+1. **DONE** an `extern` or `alien` form for easy FFI
 1. **DONE** Finish the `use` form
 1. write an actual inclusion algorithm for the compiler to consume `use`d libraries
 1. **DONE** Parsing of variants
@@ -39,13 +39,14 @@ A quick list of the current `TODO`s.
 1. **DONE** Make sure types are correct for types/polys
 1. OCaml/SML-style Modules, and their application to higher-kinded types
 1. `deque` and memory model
+1. investigate untagged unions (`int | float` as a type)
 1. Friendlier REPL, with keyboard support, and a simple Logo-style `edit` command
 1. **DONE** Syntax updates: `record`
 1. **WONTFIX** Syntax updates: `def`
 1. **WONTFIX** Syntax updates: `match`
 1. **WONTFIX** Syntax updates: `fn`
 1. **WONTFIX in C version** _REVIEW_ make `let` & `var/var` treat items like a call form (as in `val r : int = sum x 10` instead of `val r : int = (sum x 10)`)
-1. make the types parsing code more modular; could easily extract that out into a function
+1. **WONTFIX in C version** make the types parsing code more modular; could easily extract that out into a function
 1. **DONE** (not in the most elegant way, mind, but...) Finally fix the frakking lexer to not goof up internal states
 1. Csharp-style record parameter unboxing
 1. **DONE** Error handling: `Either`
