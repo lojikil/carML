@@ -235,6 +235,7 @@ int isident(int);
 int isbrace(int);
 int istypeast(int);
 int issimpletypeast(int);
+int isbuiltincomplextypeast(int);
 int iscomplextypeast(int);
 int islambdatypeast(int);
 int issyntacticform(int);
@@ -432,6 +433,21 @@ issimpletypeast(int tag) {
             return 1;
         default:
             return 0;
+    }
+}
+int
+isbuiltincomplextypeast(int tag) {
+    switch(tag) {
+        case TARRAY:
+        case TDEQUET:
+		case TTUPLET:
+        case TFUNCTIONT:
+        case TPROCEDURET:
+        case TCOMPLEXTYPE:
+        case TREF:
+            return YES;
+        default:
+            return NO;
     }
 }
 
@@ -3115,44 +3131,37 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             head->lenchildren = 2;
             head->children = (AST **)hmalloc(sizeof(AST *) * 2);
             int substate = 0, curoffset = 0;
-            char *decls[32] = {0};
-            int lexemes[32] = {0};
 
-            /* the structure of a declaration:
-             * head->value: ident name being declared
-             * head->children[0] = parameter-list params
-             * head->children[1] = return type;
-             */
+            sometmp = readexpression(fdin);
 
-            ltmp = next(fdin, &buffer[0], 512);
-            if(ltmp != TIDENT) {
-                return ASTLeft(0, 0, "parser error");
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else if(sometmp->right->tag != TIDENT) {
+                return ASTLeft(0, 0, "declare *must* be followed by an identifier");
+            } else {
+                head->children[0] = sometmp->right;
             }
 
-            head->value = hstrdup(buffer);
+            sometmp = llreadexpression(fdin, YES);
+            tmp = sometmp->right;
 
-            /* ok, so first we collate the terms of the declaration
-             * into a pair of stacks, one side is the string representation
-             * the other the lexeme type.
-             */
-            do {
-                ltmp = next(fdin, &buffer[0], 512);
-                if(ltmp == TEOF || ltmp == TERROR || ltmp == TNEWL) {
-                    break;
+            while(1) {
+                switch(substate) {
+                    case 0: // initial state
+                        if(sometmp->tag == ASTLEFT) {
+                            return sometmp;
+                        } else if(issimpletypeast(tmp->tag)) {
+
+                        } else if(isbuiltincomplextypeast(tmp->tag)) {
+
+                        } else if(tmp->tag == TTAG) {
+
+                        } else {
+
+                        }
+                        break;
                 }
-
-                decls[curoffset] = hstrdup(buffer);
-                lexemes[curoffset] = ltmp;
-                curoffset++;
-            } while(ltmp != TNEWL);
-
-            /* next, we iterate o'er the list of collected terms
-             * and parse them as a collection of type declarations.
-             */
-
-            tmp = mung_declare((const char **)decls, (const int **)lexemes, curoffset, TNEWL);
-
-            head->children[0] = tmp;
+            }
 
             return ASTRight(head);
         case TUSE:
