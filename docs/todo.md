@@ -16,8 +16,8 @@ A quick list of the current `TODO`s.
 1. _TEST_: add more complex type tests  
 1. add test runner: parse SExpression output...
 1. **DONE** parse HOFs in declarations
-1. **DONE**Review switch to Scala-style `[]` for types.
-1. Parse `@`/`declare` forms
+1. **DONE** Review switch to Scala-style `[]` for types.
+1. **DONE** Parse `@`/`declare` forms
 1. **WONTFIX in C version** Update `val`, `let`, records to use the new `declare` type parser
 1. **WONTFIX** Make function definitions & `let` forms accept `begin` style function calls (i.e. avoid using `()`)
 1. `match`/`case` form, with guards.
