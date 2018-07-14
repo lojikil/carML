@@ -3130,7 +3130,9 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             head->tag = TDECLARE;
             head->lenchildren = 2;
             head->children = (AST **)hmalloc(sizeof(AST *) * 2);
-            int substate = 0, curoffset = 0;
+            int substate = 0, sp = 0;
+            AST *stack[32] = {nil};
+            AST *ctmp = nil;
 
             sometmp = readexpression(fdin);
 
@@ -3151,16 +3153,86 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         if(sometmp->tag == ASTLEFT) {
                             return sometmp;
                         } else if(issimpletypeast(tmp->tag)) {
-
+                            stack[sp] = tmp;
+                            sp++;
                         } else if(isbuiltincomplextypeast(tmp->tag)) {
-
+                            vectmp[idx] = tmp;
+                            idx++;
+                            substate = 1;
                         } else if(tmp->tag == TTAG) {
-
+                            vectmp[idx] = tmp;
+                            idx++;
+                            substate = 2;
+                        } else if(tmp->tag == TNEWL) {
+                            flag = 1;
                         } else {
-
+                            return ASTLeft(0, 0, "`declare` must have a type.");
+                        }
+                        break;
+                    case 1:
+                        if(sometmp->tag == ASTLEFT) {
+                            return sometmp;
+                        } else if(tmp->tag != TARRAYLITERAL) {
+                            return ASTLeft(0, 0, "`declare` built-in complex types *must* be followed by a type parameter.");
+                        } else {
+                            substate = 0;
+                            ctmp = (AST *)hmalloc(sizeof(AST));
+                            ctmp->tag = TCOMPLEXTYPE;
+                            ctmp->lenchildren = 2;
+                            ctmp->children = (AST **)hmalloc(sizeof(AST *) * 2);
+                            ctmp->children[0] = vectmp[idx - 1];
+                            ctmp->children[1] = tmp;
+                            idx = 0;
+                            stack[sp] = linearize_complex_type(ctmp);
+                            sp++;
+                        }
+                        break;
+                    case 2:
+                        if(sometmp->tag == ASTLEFT) {
+                            return sometmp;
+                        } else if(tmp->tag == TARRAYLITERAL) {
+                            substate = 0;
+                            ctmp = (AST *)hmalloc(sizeof(AST));
+                            ctmp->tag = TCOMPLEXTYPE;
+                            ctmp->lenchildren = 2;
+                            ctmp->children = (AST **)hmalloc(sizeof(AST *) * 2);
+                            ctmp->children[0] = vectmp[idx - 1];
+                            ctmp->children[1] = tmp;
+                            idx = 0;
+                            stack[sp] = linearize_complex_type(ctmp);
+                            sp++;
+                        } else if(issimpletypeast(tmp->tag)) {
+                            stack[sp] = vectmp[idx - 1];
+                            stack[sp + 1] = tmp;
+                            sp += 2;
+                            idx = 0;
+                            substate = 0;
+                        } else if(tmp->tag == TTAG) {
+                            stack[sp] = vectmp[idx - 1];
+                            vectmp[idx - 1] = tmp;
+                            sp++;
+                        } else if(tmp->tag == TNEWL) {
+                            flag = 1;
+                        } else {
+                            return ASTLeft(0, 0, "User type tags *must* be followed by either a type parameter, another type, or a newline");
                         }
                         break;
                 }
+
+                if(flag == 1) {
+                    ctmp = (AST *)hmalloc(sizeof(AST));
+                    ctmp->tag = TPARAMLIST;
+                    ctmp->lenchildren = sp ;
+                    ctmp->children = (AST **)hmalloc(sizeof(AST *) * sp);
+                    for(int cidx = 0; cidx < sp; cidx++) {
+                        ctmp->children[cidx] = stack[cidx];
+                    }
+                    head->children[1] = ctmp;
+                    break;
+                }
+
+                sometmp = llreadexpression(fdin, YES);
+                tmp = sometmp->right;
             }
 
             return ASTRight(head);
@@ -4988,6 +5060,13 @@ walk(AST *head, int level) {
                 printf(" ");
                 walk(head->children[1], 0);
             }
+            printf(")");
+            break;
+        case TDECLARE:
+            printf("(declare ");
+            walk(head->children[0], 0);
+            printf(" ");
+            walk(head->children[1], 0);
             printf(")");
             break;
         case TLET:
