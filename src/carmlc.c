@@ -3196,10 +3196,12 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             substate = 0;
                             ctmp = (AST *)hmalloc(sizeof(AST));
                             ctmp->tag = TCOMPLEXTYPE;
-                            ctmp->lenchildren = 2;
-                            ctmp->children = (AST **)hmalloc(sizeof(AST *) * 2);
+                            ctmp->lenchildren = tmp->lenchildren + 1;
+                            ctmp->children = (AST **)hmalloc(sizeof(AST *) * (tmp->lenchildren + 1));
                             ctmp->children[0] = vectmp[idx - 1];
-                            ctmp->children[1] = tmp;
+                            for(int cidx = 1, tidx = 0; cidx < (tmp->lenchildren + 1); cidx++, tidx++) {
+                                ctmp->children[cidx] = tmp->children[tidx];
+                            }
                             idx = 0;
                             if(!fatflag) {
                                 stack[sp] = linearize_complex_type(ctmp);
@@ -3217,10 +3219,12 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             substate = 0;
                             ctmp = (AST *)hmalloc(sizeof(AST));
                             ctmp->tag = TCOMPLEXTYPE;
-                            ctmp->lenchildren = 2;
-                            ctmp->children = (AST **)hmalloc(sizeof(AST *) * 2);
+                            ctmp->lenchildren = tmp->lenchildren + 1;
+                            ctmp->children = (AST **)hmalloc(sizeof(AST *) * (tmp->lenchildren + 1));
                             ctmp->children[0] = vectmp[idx - 1];
-                            ctmp->children[1] = tmp;
+                            for(int cidx = 1, tidx = 0; cidx < (tmp->lenchildren + 1); cidx++, tidx++) {
+                                ctmp->children[cidx] = tmp->children[tidx];
+                            }
                             idx = 0;
                             if(!fatflag) {
                                 stack[sp] = linearize_complex_type(ctmp);
