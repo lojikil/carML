@@ -74,10 +74,10 @@ typedef enum {
     TIDENT, TCALL, TOPAREN, TCPAREN, TMATCH, // 9
     TIF, TELSE, TTHEN, TTYPE, TPOLY, TVAL, // 15
     TARRAY, TRECORD, TINT, TFLOAT, TSTRING, // 20
-    TCHAR, TBOOL, TEQ, TSEMI, TEOF, TPARAMLIST, // 25
-    TTDECL, TWHEN, TNEWL, TDO, TUNIT, TERROR,  // 31
-    TLETREC, TLET, TFN, TCASE, TSTRT, TCHART, // 37
-    TINTT, TFLOATT, TCOMMENT, TREF, TDEQUET, // 41
+    TCHAR, TBOOL, TEQ, TSEMI, TEOF, TPARAMLIST, // 26
+    TTDECL, TWHEN, TNEWL, TDO, TUNIT, TERROR,  // 32
+    TLETREC, TLET, TFN, TCASE, TSTRT, TCHART, // 38
+    TINTT, TFLOATT, TCOMMENT, TREF, TDEQUET, // 42
     TBOOLT, TWITH, TOF, TDECLARE, TFALSE, // 47
     TTRUE, TUSE, TIN, TCOLON, TRECDEF, // 52
     TCOMPLEXTYPE, TCOMMA, TOARR, TCARR, // 56
@@ -3254,10 +3254,10 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         if(sometmp->tag == ASTLEFT) {
                             return sometmp;
                         } else if(tmp->tag != TFATARROW) {
-                            printf("tmp->tag == %d\n", tmp->tag);
                             return ASTLeft(0, 0, "a void-parameter list (aka unit) must be followed by a fat arrow (=>)");
                         } else {
                             fatflag = 1;
+                            substate = 0;
                         }
                         break;
                 }
