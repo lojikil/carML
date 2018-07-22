@@ -3128,8 +3128,8 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
         case TDECLARE:
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = TDECLARE;
-            head->lenchildren = 2;
-            head->children = (AST **)hmalloc(sizeof(AST *) * 2);
+            head->lenchildren = 3;
+            head->children = (AST **)hmalloc(sizeof(AST *) * 3);
             int substate = 0, sp = 0;
             AST *stack[32] = {nil};
             AST *ctmp = nil;
@@ -3148,13 +3148,21 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             tmp = sometmp->right;
 
             while(1) {
+                // need code in here to handle { refinements }
+                // although I'm on the fence about adding those
+                // refinements directly to the DECLARE form...
                 switch(substate) {
                     case 0: // initial state
                         if(sometmp->tag == ASTLEFT) {
                             return sometmp;
                         } else if(issimpletypeast(tmp->tag)) {
-                            stack[sp] = tmp;
-                            sp++;
+                            if(!fatflag) {
+                                stack[sp] = tmp;
+                                sp++;
+                            } else {
+                                flag = 1;
+                                head->children[2] = tmp;
+                            }
                         } else if(isbuiltincomplextypeast(tmp->tag)) {
                             vectmp[idx] = tmp;
                             idx++;
@@ -3163,6 +3171,16 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             vectmp[idx] = tmp;
                             idx++;
                             substate = 2;
+                        } else if(tmp->tag == TUNIT) {
+                            if(!fatflag) {
+                                stack[sp] = tmp;
+                                sp++;
+                                substate = 3;
+                            } else {
+                                head->children[2] = tmp;
+                            }
+                        } else if(tmp->tag == TFATARROW) {
+                            fatflag = 1;
                         } else if(tmp->tag == TNEWL) {
                             flag = 1;
                         } else {
@@ -3183,8 +3201,13 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             ctmp->children[0] = vectmp[idx - 1];
                             ctmp->children[1] = tmp;
                             idx = 0;
-                            stack[sp] = linearize_complex_type(ctmp);
-                            sp++;
+                            if(!fatflag) {
+                                stack[sp] = linearize_complex_type(ctmp);
+                                sp++;
+                            } else {
+                                head->children[2] = linearize_complex_type(ctmp);
+                                flag = 1;
+                            }
                         }
                         break;
                     case 2:
@@ -3199,8 +3222,12 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             ctmp->children[0] = vectmp[idx - 1];
                             ctmp->children[1] = tmp;
                             idx = 0;
-                            stack[sp] = linearize_complex_type(ctmp);
-                            sp++;
+                            if(!fatflag) {
+                                stack[sp] = linearize_complex_type(ctmp);
+                                sp++;
+                            } else {
+                                head->children[2] = linearize_complex_type(ctmp);
+                            }
                         } else if(issimpletypeast(tmp->tag)) {
                             stack[sp] = vectmp[idx - 1];
                             stack[sp + 1] = tmp;
@@ -3211,10 +3238,26 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             stack[sp] = vectmp[idx - 1];
                             vectmp[idx - 1] = tmp;
                             sp++;
+                        } else if(tmp->tag == TFATARROW) {
+                            stack[sp] = vectmp[idx - 1];
+                            sp++;
+                            fatflag = 1;
+                            substate = 0;
                         } else if(tmp->tag == TNEWL) {
+                            head->children[2] = vectmp[idx - 1];
                             flag = 1;
                         } else {
                             return ASTLeft(0, 0, "User type tags *must* be followed by either a type parameter, another type, or a newline");
+                        }
+                        break;
+                    case 3:
+                        if(sometmp->tag == ASTLEFT) {
+                            return sometmp;
+                        } else if(tmp->tag != TFATARROW) {
+                            printf("tmp->tag == %d\n", tmp->tag);
+                            return ASTLeft(0, 0, "a void-parameter list (aka unit) must be followed by a fat arrow (=>)");
+                        } else {
+                            fatflag = 1;
                         }
                         break;
                 }
@@ -5067,6 +5110,8 @@ walk(AST *head, int level) {
             walk(head->children[0], 0);
             printf(" ");
             walk(head->children[1], 0);
+            printf(" ");
+            walk(head->children[2], 0);
             printf(")");
             break;
         case TLET:
