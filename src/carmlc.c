@@ -3234,6 +3234,13 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             sp += 2;
                             idx = 0;
                             substate = 0;
+                        } else if(isbuiltincomplextypeast(tmp->tag)) {
+                            stack[sp] = vectmp[idx - 1];
+                            idx = 0;
+                            vectmp[idx] = tmp;
+                            idx++;
+                            sp++;
+                            substate = 1;
                         } else if(tmp->tag == TTAG) {
                             stack[sp] = vectmp[idx - 1];
                             vectmp[idx - 1] = tmp;
