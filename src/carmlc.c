@@ -3869,10 +3869,22 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 // need to figure out how to wedge guard clauses in here...
                 if(sometmp->tag == ASTLEFT) {
                     return sometmp;
-                } else if(sometmp->right->tag == TWHEN) {
+                }
+
+                // we split this step so that we parse and 
+                // consume a TWHEN guard clause. What we do
+                // here is shunt out when there's a when, 
+                // consume it and the guard clause (which
+                // must be a TBOOL, a TIDENT, a TTAG, or
+                // a TCALL, and then continue on testing
+                // for the precense of a TFATARROW
+                
+                if(sometmp->right->tag == TWHEN) {
                     // read in a guard clause
                     // then check for a TFATARROW
-                } else if(sometmp->right->tag != TFATARROW) {
+                }
+                
+                if(sometmp->right->tag != TFATARROW) {
                     return ASTLeft(0, 0, "match conditions *must* be followed by a fat-arrow `=>`");
                 } 
                 debugln;
