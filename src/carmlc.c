@@ -3878,10 +3878,33 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 // must be a TBOOL, a TIDENT, a TTAG, or
                 // a TCALL, and then continue on testing
                 // for the precense of a TFATARROW
+                // ...
+                // oh interesting, because we're parsing a 
+                // full AST for TWHEN, we can't really do
+                // the below... hmmmm... new keyword, given?
+                // match x with 
+                // y given (> x 10) => ...
+                // z given (<= x 10) => ...
+                // else => ...
+                // end
+                // I kinda like that...
+                // the shorthand in math for "given" is "|"
+                // ... I like that too. Need to make sure that
+                // lower-level math operators still work, but I
+                // like this...
                 
                 if(sometmp->right->tag == TWHEN) {
                     // read in a guard clause
                     // then check for a TFATARROW
+
+                    sometmp = readexpression(fdin);
+                    tmp = sometmp->right;
+
+                    if(sometmp->tag == ASTLEFT) {
+                        return sometmp;
+                    } else if(tmp->tag != TTRUE && tmp->tag != TFALSE && tmp->tag != TIDENT && tmp->tag != TTAG && tmp->tag != TCALL) {
+                        return ASTLeft(0, 0, "a guard-clause must be a boolean, an ident, a tag, or a call.");
+                    }
                 }
                 
                 if(sometmp->right->tag != TFATARROW) {
