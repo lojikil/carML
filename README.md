@@ -10,6 +10,7 @@ with [Digamma](http://lojikil.com/p/digamma/). It's meant to be:
 - without requiring too much mental cost from the programmer
 - "secure"
 - implemented and understood quickly
+- borrowing ideas from Scala, BitC, OCaml, F#, Digamma, Yeti, and PowerLogo
 
 
 This is at least the 3rd time (and probably 5th) time that I've attempted such a thing, so don't mind me at all. This *is* the first time
