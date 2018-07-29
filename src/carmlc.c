@@ -59,7 +59,8 @@ typedef enum {
     LPROCEDURET1, LPROCEDURET2, LPROCEDURET3, LPROCEDURET4,
     LPROCEDURET5, LPROCEDURET6, LPROCEDURET7, LANY0, LANY1,
     LAND0, LAND1, LAND2, LA0, LAN0, LEXTERN0, LEXTERN1, LEXTERN2,
-    LEXTERN3, LEXTERN4,
+    LEXTERN3, LEXTERN4, LGIVEN0, LGIVEN1, LGIVEN2, LGIVEN3,
+    LGIVEN4,
 } LexStates;
 
 /* AST tag enum.
@@ -86,7 +87,7 @@ typedef enum {
     TPIPEARROW, TUSERT, TVAR, TTAG, // 68
     TPARAMDEF, TTYPEDEF, TWHILE, TFOR, // 72
     TTUPLET, TFUNCTIONT, TPROCEDURET, // 75
-    TAND, TANY, TGUARD, TEXTERN // 79 
+    TAND, TANY, TGUARD, TEXTERN, TGIVEN // 80
 } TypeTag;
 
 struct _AST {
@@ -287,7 +288,7 @@ main(int ac, char **al) {
  / __/ _` | '__| |\\/| || |    \n\
 | (_| (_| | |  | |  | || |____\n\
  \\___\\__,_|_|  \\_|  |_/\\_____/\n");
-        printf("\t\tcarML/C 2018.0\n");
+        printf("\t\tcarML/C 2018.2\n");
         printf("(c) 2016-2018 lojikil, released under the ISC License.\n\n");
         printf("%%c - turns on C code generation\n%%quit/%%q - quits\n\n");
         do {
@@ -1229,6 +1230,9 @@ next(FILE *fdin, char *buf, int buflen) {
                                 case 'f':
                                     substate = LF0;
                                     break;
+                                case 'g':
+                                    substate = LGIVEN0;
+                                    break;
                                 case 'i':
                                     substate = LI0;
                                     break;
@@ -1886,6 +1890,61 @@ next(FILE *fdin, char *buf, int buflen) {
                             }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
                                 ungetc(cur, fdin);
                                 return TFN;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LGIVEN0: 
+                            if(cur == 'i') {
+                                substate = LGIVEN1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LGIVEN1: 
+                            if(cur == 'v') {
+                                substate = LGIVEN2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LGIVEN2: 
+                            if(cur == 'e') {
+                                substate = LGIVEN3;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LGIVEN3: 
+                            if(cur == 'n') {
+                                substate = LGIVEN4;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LGIVEN4:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TGIVEN;
                             } else {
                                 strncpy(buf, "malformed identifier", 512);
                                 return TERROR;
@@ -3893,7 +3952,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 // lower-level math operators still work, but I
                 // like this...
                 
-                if(sometmp->right->tag == TWHEN) {
+                if(sometmp->right->tag == TGIVEN) {
                     // read in a guard clause
                     // then check for a TFATARROW
 
@@ -5030,18 +5089,6 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
         case TTUPLET:
         case TANY:
         case TAND:
-            head = (AST *)hmalloc(sizeof(AST));
-            head->tag = ltype;
-            head->value = hstrdup(buffer);
-            return ASTRight(head);
-        case TNEWL:
-            if(!nltreatment) {
-                return llreadexpression(fdin, nltreatment);
-            } else {
-                head = (AST *)hmalloc(sizeof(AST));
-                head->tag = TNEWL;
-                return ASTRight(head);
-            }
         case TFALSE:
         case TTRUE:
         case TEQ:
@@ -5055,9 +5102,19 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
         case TFATARROW:
         case TPIPEARROW:
         case TREF:
+        case TGIVEN:
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = ltype;
+            head->value = hstrdup(buffer);
             return ASTRight(head);
+        case TNEWL:
+            if(!nltreatment) {
+                return llreadexpression(fdin, nltreatment);
+            } else {
+                head = (AST *)hmalloc(sizeof(AST));
+                head->tag = TNEWL;
+                return ASTRight(head);
+            }
     }
     return ASTLeft(0, 0, "unable to parse statement"); 
 }
