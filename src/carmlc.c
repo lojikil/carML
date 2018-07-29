@@ -3964,6 +3964,14 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                     } else if(tmp->tag != TTRUE && tmp->tag != TFALSE && tmp->tag != TIDENT && tmp->tag != TTAG && tmp->tag != TCALL) {
                         return ASTLeft(0, 0, "a guard-clause must be a boolean, an ident, a tag, or a call.");
                     }
+                    tmp = hmalloc(sizeof(AST));
+                    tmp->tag = TGUARD;
+                    tmp->lenchildren = 2;
+                    tmp->children = (AST **) hmalloc(sizeof(AST *) * 2);
+                    tmp->children[0] = mcond;
+                    tmp->children[1] = sometmp->right;
+                    mcond = tmp;
+                    sometmp = readexpression(fdin);
                 }
                 
                 if(sometmp->right->tag != TFATARROW) {
@@ -5378,6 +5386,13 @@ walk(AST *head, int level) {
                     printf("\n");
                 }
             }
+            printf(")");
+            break;
+        case TGUARD:
+            printf("(guarded-condition ");
+            walk(head->children[0], 0);
+            printf(" ");
+            walk(head->children[1], 0);
             printf(")");
             break;
         case TIF:
