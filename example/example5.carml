@@ -3,10 +3,10 @@ record Test {
     baz : int
 }
 
-def main ac : int al : array of string => int = {
+def main ac : int al : array[string] => int = {
     # var, because we want to assign to it
     # and technically should be `ref of Test`
-    var f : ref of Test = (malloc (sizeof Test))
+    var f : ref[Test] = (malloc (sizeof Test))
 
     # I dislike having to use `->` at some level, because 
     # I feel like that's an implementation detail that the

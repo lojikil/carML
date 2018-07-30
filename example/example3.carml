@@ -5,4 +5,4 @@ def fact n : int => int = if (< n 0) then
     else
         (mul n (fact (sub n 1)))
 
-def foo x : array of int => int = (reduce fn y : int z : int => int = (sum y z) 0 x)
+def foo x : array[int] => int = (reduce fn y : int z : int => int = (sum y z) 0 x)

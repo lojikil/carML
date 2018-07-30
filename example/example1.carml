@@ -7,7 +7,7 @@ type Option Tx {
 # as a generic type here... you'd end up with
 # something... different I think. 
 type List Tx {
-    Cons Tx List of Tx
+    Cons Tx List[Tx]
     Nil
 }
 

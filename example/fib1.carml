@@ -1,7 +1,7 @@
 # tail-recursive fib
 def fib n : int i : int j : int => int = if (< n 1) then i else (fib (- n 1) (+ i j) i)
 
-def main ac : int al : array of string => int = {
+def main ac : int al : array[string] => int = {
 
     when (!= ac 2) do {
         printf "fib [number]\\n"
@@ -10,6 +10,6 @@ def main ac : int al : array of string => int = {
 
     val n : int = (atoi (get al 1))
     val t : int = (fib n 0 1)
-    printf "(fib %d) == %d\\n" n t
+    printf "(fib %d) == %d\n" n t
     0
 }

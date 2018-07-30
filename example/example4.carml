@@ -6,11 +6,11 @@ def unix.close fd : int = {
 
 }
 
-def unix.readlines fd : int => array of string = {
+def unix.readlines fd : int => array[string] = {
 
 }
 
-def main ac : int al : array of string => int = {
+def main ac : int al : array[string] => int = {
     val fh = (unix.open "./foo.txt" "r") 
     val lines = (unix.readlines fh)
     unix.close fh
