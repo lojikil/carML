@@ -14,7 +14,7 @@ def fact0 x : int => int = match x with
         # hmm... how does this work elsewhere? I like it tho...
         #case x, (< x 0) => (fact0 $ abs x)
         0 => 1
-        y when (< y 0) => (fact0 $ abs y)
+        y given (< y 0) => (fact0 $ abs y)
         else => (mul x $ fact0 $ sub x 1)
     end
 

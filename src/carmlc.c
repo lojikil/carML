@@ -3915,7 +3915,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                     if(mcond->children[0]->tag != TTAG) {
                         return ASTLeft(0, 0, "match can only decompose sum-types.");
                     }
-                } else if(sometmp->right->tag == TTAG || isprimitivevalue(sometmp->right->tag) || sometmp->right->tag == TELSE) {
+                } else if(sometmp->right->tag == TIDENT || sometmp->right->tag == TTAG || isprimitivevalue(sometmp->right->tag) || sometmp->right->tag == TELSE) {
                     mcond = sometmp->right;
                 } else if(sometmp->right->tag == TEND) {
                     break;
@@ -5349,9 +5349,9 @@ walk(AST *head, int level) {
             break;
         case TARRAYLITERAL:
             printf("(array-literal ");
-            for(;idx < head->lenchildren; idx++) {
-                walk(head->children[idx], 0); 
-                if(idx < (head->lenchildren - 1)){
+            for(int cidx = 0; cidx < head->lenchildren; cidx++) {
+                walk(head->children[cidx], 0);
+                if(cidx < (head->lenchildren - 1)){
                     printf(" ");
                 }
             }
@@ -5941,9 +5941,9 @@ llcwalk(AST *head, int level, int final) {
             break;
         case TARRAYLITERAL:
             printf("{");
-            for(;idx < head->lenchildren; idx++) {
-                cwalk(head->children[idx], 0); 
-                if(idx < (head->lenchildren - 1)){
+            for(int cidx; cidx < head->lenchildren; cidx++) {
+                cwalk(head->children[cidx], 0);
+                if(cidx < (head->lenchildren - 1)){
                     printf(", ");
                 }
             }
