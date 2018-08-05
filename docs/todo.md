@@ -2,6 +2,35 @@
 
 A quick list of the current `TODO`s.
 
+1. _TEST_: add more complex type tests  
+1. add test runner: parse SExpression output...
+1. Figure out a decent backing for Rust-style deques (possibly implemented from records + arrays)
+1. make `$` and `|>` work as they would in Haskell & OCaml/F# respectively.
+1. add `.` ala Haskell for "compose"? `f . g` becomes `(f (g x))`
+1. If we are adding those, may as well do full shunting yard and parse things nicely
+1. integrate `$` and `|>` with `$()`
+1. Runtime, which should be pretty minimal
+1. write an actual inclusion algorithm for the compiler to consume `use`d libraries
+1. OCaml/SML-style Modules, and their application to higher-kinded types
+1. `deque` and memory model
+1. investigate untagged unions (`int | float` as a type) _note_: I like this style: `union[int float]`
+1. Friendlier REPL, with keyboard support, and a simple Logo-style `edit` command
+1. in the base C compiler & carML self-hosting one, include a defined list of compiler errors with friendly data
+1. add line numbers to errors
+1. Add sized ints/uints/floats (e.g. `uint8`) as types (what about `U8` or `U64`? that works...)
+1. add nano-pass: a-normal form (ANF)
+1. add nano-pass: lambda lifting
+1. add nano-pass: ANF => SSA
+1. add nano-pass: rewrite `let`/`letrec` => `val` + temporary binding
+1. add nano-pass: constant folding
+1. add nano-pass: select the correct reified constructor implementation
+1. add nano-pass: demand-driven type inference
+1. Investigate: method of determining effects, and how that could make ANF easier (lift once for two calls)
+1. Tests, both for IR and C
+1. JS, Java, C++ backends, but written in carML itself and using the SExpression output.
+
+And completed items:
+
 1. **DONE** Add complex types to `val`
 1. **DONE** Add complex types to records
 1. **DONE** Add complex types to `let` 
@@ -13,34 +42,23 @@ A quick list of the current `TODO`s.
 1. **FIXED** _BUG_: `def bar h:Url => Url` is parsed as `(parameter-list (ident h) (tag Url))` when it should be `(parameter-list (parameter-def h (complex-type (tag Url))))`
 1. **FIXED** (test case for the above: `def foo f:Url => Url = f`)
 1. **FIXED** _BUG_: complex return types
-1. _TEST_: add more complex type tests  
-1. add test runner: parse SExpression output...
 1. **DONE** parse HOFs in declarations
 1. **DONE** Review switch to Scala-style `[]` for types.
 1. **DONE** Parse `@`/`declare` forms
 1. **WONTFIX in C version** Update `val`, `let`, records to use the new `declare` type parser
 1. **WONTFIX** Make function definitions & `let` forms accept `begin` style function calls (i.e. avoid using `()`)
 1. **DONE** `match`/`case` form, with guards.
-1. Figure out a decent backing for Rust-style deques (possibly implemented from records + arrays)
 1. **DONE**: Partial application syntax: `$()`, including `_` as filler
-1. make `$` and `|>` work as they would in Haskell & OCaml/F# respectively.
-1. integrate `$` and `|>` with `$()`
 1. **WONTFIX** Hoare-logic (pre, post, invariants, &c.): Won't fix because moving towards refinement types
 1. **WONTFIX** make `mung_single_type` for reading a single type, use for `@` forms
-1. Runtime, which should be pretty minimal
 1. **DONE** Compile to C in the style of Enyalios
 1. **DONE** an `extern` or `alien` form for easy FFI
 1. **DONE** Finish the `use` form
-1. write an actual inclusion algorithm for the compiler to consume `use`d libraries
 1. **DONE** Parsing of variants
 1. **DONE** Compilation of variants
 1. **DONE** Parsing of polymorphic variants
 1. **DONE** Compilation of polymorphic variants
 1. **DONE** Make sure types are correct for types/polys
-1. OCaml/SML-style Modules, and their application to higher-kinded types
-1. `deque` and memory model
-1. investigate untagged unions (`int | float` as a type) _note_: I like this style: `union[int float]`
-1. Friendlier REPL, with keyboard support, and a simple Logo-style `edit` command
 1. **DONE** Syntax updates: `record`
 1. **WONTFIX** Syntax updates: `def`
 1. **WONTFIX** Syntax updates: `match`
@@ -52,26 +70,13 @@ A quick list of the current `TODO`s.
 1. **DONE** Error handling: `Either`
 1. **DONE** Option types
 1. **WONTFIX in C version** Lexer-as-stream
-1. in the base C compiler & carML self-hosting one, include a defined list of compiler errors with friendly data
-1. add line numbers to errors
 1. **DONE** Fix type state transition, which fails for Tagged types (`Url`)
 1. **DONE** Fix parsing of single line `begin`: `{sum x 10}` fails to parse properly
 1. **DONE** Fix `float`, `bool`, and `char` parsing
-1. Add sized ints/uints/floats (e.g. `uint8`) as types (what about `U8` or `U64`? that works...)
 1. **DONE** Fix edge case: complex type right before `=>` fails `def foo bar : Url => int = ...` fails
-1. add nano-pass: a-normal form (ANF)
-1. add nano-pass: lambda lifting
-1. add nano-pass: ANF => SSA
-1. add nano-pass: rewrite `let`/`letrec` => `val` + temporary binding
-1. add nano-pass: constant folding
-1. add nano-pass: select the correct reified constructor implementation
-1. add nano-pass: demand-driven type inference
 1. **DONE** fix complex type handling in `typespec2c`
-1. fix match with `type`s
-1. Investigate: method of determining effects, and how that could make ANF easier (lift once for two calls)
+1. **DONE** fix match with `type`s
 1. **DONE** Investigate: currently there is a syntax ambiguity in `begin` forms: is `t` a unary function call, or an identifier? Fix: identifier
-1. Tests, both for IR and C
-1. JS, Java, C++ backends, but written in carML itself and using the SExpression output.
 
 # Begin-style function calls
 

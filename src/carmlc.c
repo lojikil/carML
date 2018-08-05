@@ -207,6 +207,7 @@ const char *coperators[] = {
     "make-struct", "make-struct",
     "make-string", "make-string",
     "make-array", "make-array",
+    "make", "make",
     "return", "return",
     0
 };
@@ -5956,6 +5957,15 @@ llcwalk(AST *head, int level, int final) {
             opidx = iscoperator(head->children[0]->value);
 
             if(head->children[0]->tag == TIDENT && opidx != -1) {
+                // low-level construtors like `make-struct` and
+                // company need to be optimized here... also,
+                // how oppinionated should they be? `make-struct`
+                // is generally meant for just laying out a struct
+                // on stack; if a user defines a memory model of
+                // heap, should we abide? also it's dumb; a user
+                // might use `make-struct` to layout something that
+                // is actually going to a `ref[SomeStruct]`, is that
+                // going to be a pain in the rear to fix?
                 if(head->lenchildren == 2) {
                     printf("%s ", coperators[opidx]);
                     cwalk(head->children[1], 0);
