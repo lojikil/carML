@@ -35,8 +35,9 @@ syn region xl29DescBlock start="begin" end="end" fold transparent
 syn keyword xl29Todo contained TODO FIXME XXX NOTE
 syn match xl29Comment "#.*$" contains=xl29Todo
 
-syn keyword xl29Type int char float string bool deque
-syn keyword xl29Ops add sum array println print ref div mod divide modulo sub subtract
+syn keyword xl29Type int char float string bool deque array ref
+syn keyword xl29Ops add sum println print div mod divide modulo sub subtract printf
+syn keyword xl29Ops / + - * % ^ ! @ $ & \| \|\| && and or not <> < <= > >= != eq? ==?
 
 let b:current_syntax = "xl29"
 
