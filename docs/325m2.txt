@@ -1,0 +1,57 @@
+[note]: this document is something I wrote I toyed with in ~2006, and then finally
+wrote fully in ~2011. It's funny because these ideas became carML to a large extent,
+but also the Scala community added Scala-Native with similar features.
+
+----------------
+
+325 m^2 is 1/4 a Scala (Cretian unit of measure)
+
+support:
+
+object, class, if/else, when, not, and, or, def, val, for, match, case,
+int, float, double, List, Array, String, Char
+
+compile to:
+    - C: native, minimal run time, should be self-hosting
+        + should generate legible code, even at expense of some optimizations
+    - JS: support both legible & illegible outputs (based on aggression of optimization),
+        with JS support for Canvas, &c.
+
+Should support (G)ADTs, Dependent Types
+
+Examples of what I'm thinking of:
+
+def main(args: Array[String]) = println("Hello, world");
+
+
+def main(args: Array[String]) {
+    for (val a <- args) {
+        println("a: " + a);
+    }
+}
+
+def main(args: Array[String])  = for (val a <- args) { println(a); }
+
+def foo(x) = x + x; /* Type of Number? */
+
+def main(args: Array[String]) {
+    for (val a <- args) {
+        println(foo(Number.parseNumber(a)));
+    }
+}
+
+
+class AddressBook {
+    class Person {
+        val name : String;
+        val surname : String;
+    }
+}
+
+def sum(i: Int*) {
+    if(i.length >= 1) {
+        i(0) + /* ... */
+    } else {
+        0
+    }
+}
