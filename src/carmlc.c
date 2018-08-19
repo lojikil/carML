@@ -5567,7 +5567,7 @@ generate_type_value(AST *head, const char *name) {
     for(cidx = 1; cidx < head->lenchildren; cidx++) {
         indent(1);
         snprintf(buf, 512, "m_%d", cidx);
-        printf("res.members.%s_t->%s = %s;\n", member, buf, buf);
+        printf("res.members.%s_t.%s = %s;\n", member, buf, buf);
     }
     indent(1);
     printf("return res;\n}\n");
@@ -5607,7 +5607,7 @@ generate_type_ref(AST *head, const char *name) {
     for(cidx = 1; cidx < head->lenchildren; cidx++) {
         indent(1);
         snprintf(buf, 512, "m_%d", cidx);
-        printf("res->members.%s_t->%s = %s;\n", member, buf, buf);
+        printf("res->members.%s_t.%s = %s;\n", member, buf, buf);
     }
     indent(1);
     printf("return res;\n}\n");

@@ -4,6 +4,7 @@ A quick list of the current `TODO`s.
 
 1. Fix (finally) the `match` form for variants/poly
 1. Figure out both type specialization and generics to compiled form
+1. Fusion for `map`, `map!`, `foreach`, and so on.
 1. _TEST_: add more complex type tests  
 1. add test runner: parse SExpression output...
 1. Figure out a decent backing for Rust-style deques (possibly implemented from records + arrays)

@@ -1,0 +1,22 @@
+# a simple test case for working with `type` forms
+# and making sure the C output is correct.
+
+type OptionInt {
+    Some int
+    None
+}
+
+def main ac:int al:array[string] => int = {
+
+    when (<> ac 2) do {
+        printf "usage: optionint [number]\n"
+        return 1
+    }
+
+    val f : OptionInt = (OptionInt.Some $ atoi $ get al 1)
+    match f with
+        (OptionInt.Some x) => (printf "yes: %d\n" x)
+        (OptionInt.None) => (printf "oh no!\n")
+    end
+    0
+}
