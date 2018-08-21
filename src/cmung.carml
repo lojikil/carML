@@ -1,3 +1,17 @@
+# a very simple C-mung implementation
+# we have two functions:
+#
+# - `c_safe_char`, which rewrites characters to ones that are safe for C
+# - `cmung`, which simply iterates over one string
+#
+# I think `c_safe_char` is pretty nice, sans just relying on type inference,
+# but `cmung` could be improved:
+#
+# - a `string.map!` form to handle application
+# - generic `map!` form that takes any `Seq` module/type class
+#
+# or whatever. it's not terrible tho, all things told
+
 def c_safe_char x:char => char = match x with
          '!' => 'B'
          '%' => '_'
@@ -12,6 +26,8 @@ def c_safe_char x:char => char = match x with
          '|' => '_'
          '*' => '_'
          '.' => '_'
+         '+' => '_'
+         '-' => '_'
          else => x
     end
 
