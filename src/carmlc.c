@@ -5788,6 +5788,8 @@ llcwalk(AST *head, int level, int final) {
                         case TSTRING:
                             printf("!strncmp(%s, \"%s\", %lu)", ctmp->value, htmp->children[tidx]->value, strlen(htmp->children[tidx]->value));
                             break;
+                        case TCALL:
+                        case TGUARD:
                         default:
                             break;
                     }

@@ -1,0 +1,71 @@
+def cmung src : string dst : string len : int => string = {
+    var idx : int = 0
+    var tmp : char = ' '
+    # ideally, this would be great as a 
+    # map or map! form. The below is 
+    # entirely too low level for my tastes,
+    # esp. when I can see the proper direction.
+    while (< idx len) do {
+        # this would be a wonderful place for the match form
+        # honestly, instead of having the above arrays, just 
+        # have a simple match here. The match could also detect
+        # if we have hit end of string (i.e. ASCII NUL).
+        set! tmp $ get src idx
+        match tmp with 
+            # refactor out all these set!s...
+             '!' => (set! (get dst idx) 'B')
+             '%' => (set! (get dst idx) '_')
+             '$' => (set! (get dst idx) '_')
+             '?' => (set! (get dst idx) 'p')
+             '<' => (set! (get dst idx) 'l')
+             '>' => (set! (get dst idx) 'g')
+             '=' => (set! (get dst idx) 'e')
+             '@' => (set! (get dst idx) '_')
+             '^' => (set! (get dst idx) '_')
+             '&' => (set! (get dst idx) '_')
+             '|' => (set! (get dst idx) '_')
+             '*' => (set! (get dst idx) '_')
+             '.' => (set! (get dst idx) '_')
+             else => (set! (get dst idx) (get src idx))
+        end
+
+        # probably should make an `inc!` form
+        set! idx $ + idx 1
+
+        when (eq? (get src idx) '\0') do
+            (return dst)
+    }
+}
+
+def cmung_nicer src:string dst:string len:int => string = {
+    # this is pretty nice, and it hides much of the
+    # actual details about how things are stored and
+    # what not. It's also generally just quite a bit
+    # smaller. I do wonder if it's *too* minimal tho;
+    # I think I'll need to get others reading some
+    # carML at some point soon to see. Probably
+    # Bruce will see this first tho. XD
+    map! src dst fn x:char => char = {
+        match x with
+             '!' => 'B'
+             '%' => '_'
+             '$' => '_'
+             '?' => 'p'
+             '<' => 'l'
+             '>' => 'g'
+             '=' => 'e'
+             '@' => '_'
+             '^' => '_'
+             '&' => '_'
+             '|' => '_'
+             '*' => '_'
+             '.' => '_'
+             else => x
+        end
+    }
+}
+
+def cmung_alloc src : string len : int => string = {
+    var dst : string = (malloc (* (sizeof src) len))
+    cmung src dst len
+}
