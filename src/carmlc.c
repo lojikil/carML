@@ -5724,19 +5724,30 @@ llcwalk(AST *head, int level, int final) {
             printf("if(");
             cwalk(head->children[0], 0);
             printf("){\n");
+            // there are some ugly extra calls to
+            // indent in here, because there's some
+            // strange interactions between WHEN and
+            // BEGIN forms. 
             if(final && isvalueform(head->children[1]->tag)) {
-                //indent(level + 1);
+                indent(level + 1);
                 printf("return ");
                 cwalk(head->children[1], 0);
                 printf(";\n");
             } else if(final) {
                 llcwalk(head->children[1], level + 1, YES);
             } else {
-                cwalk(head->children[1], level + 1);
-                printf(";\n");
+                cwalk(head->children[1], level + 2);
+                if(head->children[1]->tag == TCALL) {
+                    printf(";");
+                }
+                indent(level + 1);
             }
             indent(level);
-            printf("}");
+            if(final){
+                printf("}\n");
+            } else {
+                printf("}");
+            }
             break;
         case TMATCH:
             // there are several different strategies to
@@ -5788,6 +5799,8 @@ llcwalk(AST *head, int level, int final) {
                         case TSTRING:
                             printf("!strncmp(%s, \"%s\", %lu)", ctmp->value, htmp->children[tidx]->value, strlen(htmp->children[tidx]->value));
                             break;
+                        case TARRAYLITERAL:
+                        case TIDENT:
                         case TCALL:
                         case TGUARD:
                         default:
@@ -6183,7 +6196,11 @@ llcwalk(AST *head, int level, int final) {
                         llcwalk(head->children[idx], 0, YES);
                     } else {
                         cwalk(head->children[idx], 0);
-                        printf(";\n");
+                        if(issyntacticform(head->children[idx]->tag)) {
+                            printf("\n");
+                        } else {
+                            printf(";\n");
+                        }
                     }
                 } else if(idx < (head->lenchildren - 1)) {
                     cwalk(head->children[idx], level);

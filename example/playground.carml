@@ -10,7 +10,7 @@ def arrayIota3 arr:array[int] fun:function[int int] = {
 }
 
 #@arrayIota4 array of Num (Num => Num) => ()
-def arrayIota4 arr:array[int] fun:function[int in] {
+def arrayIota4 arr:array[int] fun:function[int int] {
     # should `fn` forms accept a `begin`
     # form sans `=` just like `def`?
     # looks... so much cleaner
