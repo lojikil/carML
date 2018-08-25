@@ -217,6 +217,7 @@ char *upcase(const char *, char *, int);
 char *downcase(const char *, char *, int);
 char *hstrdup(const char *);
 int next(FILE *, char *, int);
+void mung_variant_name(AST *, AST *, int);
 AST *mung_declare(const char **, const int **, int, int);
 ASTOffset *mung_single_type(const char **, const int **, int, int, int);
 ASTEither *readexpression(FILE *);
@@ -5146,6 +5147,42 @@ mung_single_type(const char **pdecls, const int **plexemes, int len, int haltsta
     return nil;
 }
 
+/* prints a variant condition, like (OptionInt.Some x) becomes
+ * foo.tag == TAG_OptionInt_SOME
+ */
+void
+mung_variant_name(AST *name, AST *variant, int ref) {
+    char result[512] = {0}, varname[128] = {0}, constructor[128] = {0}, *src = variant->value;
+    int loc = 0, idx = 0, namelen = strlen(src);
+    uint8_t flag = 0;
+
+    // separate the variant name and the constructor name
+    // in one pass; I'm using a deeply nested if to
+    // avoid some state tracking. Generally I dislike that
+    // deep of an if, but it works.
+    for(; loc < namelen; loc++, idx++) {
+        if(src[loc] == '.') {
+            varname[idx] = '\0';
+            flag = 1;
+            idx = -1; // the ++ above starts us on the wrong index
+        } else {
+            if(!flag) {
+                varname[idx] = src[loc];
+            } else {
+                constructor[idx] = src[loc];
+            }
+        }
+    }
+    constructor[idx] = '\0';
+    upcase((const char *)&constructor[0], (char *)&constructor[0], 128);
+
+    if(ref) {
+        printf("%s->tag == TAG_%s_%s", name->value, varname, constructor);
+    } else {
+        printf("%s.tag == TAG_%s_%s", name->value, varname, constructor);
+    }
+}
+
 void
 indent(int level) {
     // should probably look to inline this
@@ -5801,7 +5838,10 @@ llcwalk(AST *head, int level, int final) {
                             break;
                         case TARRAYLITERAL:
                         case TIDENT:
+                            break;
                         case TCALL:
+                            mung_variant_name(ctmp, htmp->children[tidx]->children[0], NO);
+                            break;
                         case TGUARD:
                         default:
                             break;
