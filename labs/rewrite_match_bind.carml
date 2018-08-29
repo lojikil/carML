@@ -1,0 +1,63 @@
+# recreating the AST type from carML/c here
+# as a carML record. Were I to clean-room
+# this properly, I'd obviously use variants.
+# However, this at least allows me to test
+# a rewriter without having to link the 
+# entire carML/c code base here...
+
+record AST {
+    tag:U32 # FIXME: need to define C-level types...
+    value: string
+    children:array[AST] # FIXME need to fix self-referential records...
+    lenvalue: U32
+    lenchildren: U32
+}
+
+def make_AST tag:int lenchildren:int children:array[ref[AST]] lenvalue:int value:string => ref[AST] = {
+    var res:ref[AST] = (hmalloc $ sizeof AST)
+    set! (-> res tag) tag
+    set! (-> res lenchildren) lenchildren
+    set! (-> res children) children
+    set! (-> res value) value
+    set! (-> res lenvalue) lenvalue
+    res
+}
+
+
+# make a specific type of AST, specifically a
+# ident node.
+def make_ident_AST name:string => ref[AST] = (make_AST 0 0 NULL (strlen name) name)
+
+# make a shallow copy of an AST
+# probably should have added value & lenvalue
+# to make_AST...
+def copy_AST src:ref[AST] => ref[AST] = {
+    (make_AST
+        (-> src tag)
+        (-> src lenchildren)
+        (-> src children)
+        (-> src lenvalue)
+        (-> src value))
+}
+
+def rewrite_AST name:ref[AST] dst:ref[AST] => ref[AST] = {
+    NULL
+}
+
+# just for testing, add a main here
+# use that for running this whole test...
+# would be nice to have some sort of 
+# conditional compilation language, ala
+# SRFI-0
+
+def main ac:int al:array[string] => int = {
+    var test:ref[AST] = (make_ident_AST "test")
+    var newtest:ref[AST] = (copy_AST test)
+
+    # would be nice to make this printf (if...) but the compiler
+    # would probably generate terrible C for that rn... need to add
+    # something to detect that
+    if (<> test newtest) then (printf "they differ!\n") else (printf "wait... what?")
+
+    0
+}
