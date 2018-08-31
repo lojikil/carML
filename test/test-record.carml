@@ -1,0 +1,13 @@
+# a simple test record 
+# need to add:
+# 
+# - actual tests of helpers & such
+# - polymorphic tests
+
+record Foo {
+    bar:int # should support simple types
+    baz:int
+    blah:float
+    eh:string # should support complex types
+    next:ref[Foo] # should support recursive definition
+}

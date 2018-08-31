@@ -6205,14 +6205,14 @@ llcwalk(AST *head, int level, int final) {
             printf("\"%s\"", head->value);
             break;
         case TRECORD:
-            printf("typedef struct {\n");
+            printf("typedef struct %s %s;\nstruct %s {\n", head->value, head->value, head->value);
             for(int i = 0; i < head->lenchildren; i++) {
                 cwalk(head->children[i], level + 1);
                 if(i < (head->lenchildren - 1)) {
                     printf("\n");
                 }
             }
-            printf("\n} %s;", head->value);
+            printf("\n};");
             break;
         case TRECDEF:
             if(head->lenchildren == 2) {
