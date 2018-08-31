@@ -8,17 +8,17 @@
 record AST {
     tag:U32 # FIXME: need to define C-level types...
     value: string
-    children:array[AST] # FIXME need to fix self-referential records...
+    children:array[ref[AST]] # FIXME need to fix self-referential records...
     lenvalue: U32
     lenchildren: U32
 }
 
 def make_AST tag:int lenchildren:int children:array[ref[AST]] lenvalue:int value:string => ref[AST] = {
-    var res:ref[AST] = (hmalloc $ sizeof AST)
+    var res:ref[AST] = (malloc $ sizeof AST)
     set! (-> res tag) tag
     set! (-> res lenchildren) lenchildren
     set! (-> res children) children
-    set! (-> res value) value
+    set! (-> res value) $ strdup value
     set! (-> res lenvalue) lenvalue
     res
 }
@@ -29,8 +29,6 @@ def make_AST tag:int lenchildren:int children:array[ref[AST]] lenvalue:int value
 def make_ident_AST name:string => ref[AST] = (make_AST 0 0 NULL (strlen name) name)
 
 # make a shallow copy of an AST
-# probably should have added value & lenvalue
-# to make_AST...
 def copy_AST src:ref[AST] => ref[AST] = {
     (make_AST
         (-> src tag)
@@ -42,6 +40,30 @@ def copy_AST src:ref[AST] => ref[AST] = {
 
 def rewrite_AST name:ref[AST] dst:ref[AST] => ref[AST] = {
     NULL
+}
+
+# walk an AST, freeing anything that
+# we've allocated with `malloc(3)` and
+# friends ("malloc(3) and friends": worst. children's show. ever)
+def free_AST head:ref[AST] = {
+    var idx : int = 0
+    when (<> NULL $ -> head value) do {
+        free $ -> head value
+    }
+
+    when (<> 0 $ -> head lenchildren) do {
+        # HAAAAAAAAATE while loops like this
+        # should be a `for` loop, but i haven't
+        # added support for compiling those yet
+        while (< idx $ -> head lenchildren) do {
+            free_AST $ get (-> head children) idx
+            set! idx $ + idx 1 # probably should just have an inc! form
+        }
+
+        free $ -> head children
+    }
+
+    free head
 }
 
 # just for testing, add a main here
@@ -58,6 +80,10 @@ def main ac:int al:array[string] => int = {
     # would probably generate terrible C for that rn... need to add
     # something to detect that
     if (<> test newtest) then (printf "they differ!\n") else (printf "wait... what?")
+
+    # clean up our legos
+    free_AST test
+    free_AST newtest
 
     0
 }
