@@ -5773,7 +5773,7 @@ llcwalk(AST *head, int level, int final) {
             } else if(final) {
                 llcwalk(head->children[1], level + 1, YES);
             } else {
-                cwalk(head->children[1], level + 2);
+                cwalk(head->children[1], level + 1);
                 if(head->children[1]->tag == TCALL) {
                     printf(";");
                 }
@@ -6072,11 +6072,6 @@ llcwalk(AST *head, int level, int final) {
             // the compiler level. Should be done as
             // a pass above.
             if(final && isvalueform(head->children[1]->tag)) {
-                // need to extract all of these calls to an
-                // actual indent function
-                /*for(idx = 0; idx < level + 1; idx++) {
-                    printf("    ");
-                }*/
                 indent(level + 1);
                 printf("return ");
                 cwalk(head->children[1], 0);
@@ -6226,6 +6221,10 @@ llcwalk(AST *head, int level, int final) {
             break;
         case TBEGIN:
             // TODO: this code is super ugly & can be cleaned up
+            // clean up idea could be that there doesn't _really_
+            // need to be a special case for *0*, but rather only
+            // if we're final == YES and we're at the last member
+            // (which for a 1-ary BEGIN, that would be 0)
             for(idx = 0; idx < head->lenchildren; idx++){
                 if(idx == 0) {
                     if(head->lenchildren == 1 && final && isvalueform(head->children[0]->tag)) {
@@ -6233,9 +6232,9 @@ llcwalk(AST *head, int level, int final) {
                         cwalk(head->children[idx], 0);
                         printf(";\n");
                     } else if(head->lenchildren == 1 && final) {
-                        llcwalk(head->children[idx], 0, YES);
+                        llcwalk(head->children[idx], level, YES);
                     } else {
-                        cwalk(head->children[idx], 0);
+                        cwalk(head->children[idx], level);
                         if(issyntacticform(head->children[idx]->tag)) {
                             printf("\n");
                         } else {
@@ -6243,7 +6242,7 @@ llcwalk(AST *head, int level, int final) {
                         }
                     }
                 } else if(idx < (head->lenchildren - 1)) {
-                    cwalk(head->children[idx], level);
+                    cwalk(head->children[idx], level + 1);
                     if(!issyntacticform(head->children[idx]->tag)){
                         printf(";\n");
                     } else {
@@ -6259,9 +6258,9 @@ llcwalk(AST *head, int level, int final) {
                         printf(";\n");
                     } else {
                         if(final) {
-                            llcwalk(head->children[idx], level, YES);
+                            llcwalk(head->children[idx], level + 1, YES);
                         } else {
-                            cwalk(head->children[idx], level);
+                            cwalk(head->children[idx], level + 1);
                         }
                         if(!issyntacticform(head->children[idx]->tag)){
                             printf(";\n");

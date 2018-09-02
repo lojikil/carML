@@ -4,7 +4,7 @@ def fib n : int i : int j : int => int = if (< n 1) then i else (fib (- n 1) (+ 
 def main ac : int al : array[string] => int = {
 
     when (!= ac 2) do {
-        printf "fib [number]\\n"
+        printf "fib [number]\n"
         return -1
     }
 

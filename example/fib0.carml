@@ -4,8 +4,8 @@ def fib n : int => int = if (<= n 1) then 1 else (+ (fib (- n 1)) (fib (- n 2)))
 def main ac : int al : array[string] => int = {
 
     when (!= ac 2) do {
-        printf "fib [number]\\n"
-        -1
+        printf "fib [number]\n"
+        return -1
     }
 
     val n : int = (atoi (get al 1))
