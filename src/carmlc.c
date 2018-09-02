@@ -208,6 +208,9 @@ const char *coperators[] = {
     "make-string", "make-string",
     "make-array", "make-array",
     "make", "make",
+    "stack-allocate", "stack-allocate",
+    "heap-allocate", "heap-allocate",
+    "region-allocate", "region-allocate",
     "return", "return",
     0
 };
@@ -6033,6 +6036,18 @@ llcwalk(AST *head, int level, int final) {
                         }
                     }
                     printf("}");
+                } else if(!strncmp(head->children[0]->value, "make-string", 11)) {
+
+                } else if(!strncmp(head->children[0]->value, "make-array", 10)) {
+
+                } else if(!strncmp(head->children[0]->value, "make", 4)) {
+
+                } else if(!strncmp(head->children[0]->value, "stack-allocate", 14)) {
+
+                } else if(!strncmp(head->children[0]->value, "heap-allocate", 13)) {
+
+                } else if(!strncmp(head->children[0]->value, "region-allocate", 15)) {
+
                 } else {
                     cwalk(head->children[1], 0);
                     if(!strncmp(head->children[0]->value, ".", 2)) {
