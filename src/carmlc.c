@@ -498,6 +498,9 @@ isprimitivevalue(int tag) {
         case TARRAYLITERAL:
         case TSTRING:
         case TCHAR:
+        case THEX:
+        case TOCT:
+        case TBIN:
             return 1;
 
         default:
@@ -5839,6 +5842,12 @@ llcwalk(AST *head, int level, int final) {
                         case TSTRING:
                             printf("!strncmp(%s, \"%s\", %lu)", ctmp->value, htmp->children[tidx]->value, strlen(htmp->children[tidx]->value));
                             break;
+                        case THEX:
+                        case TOCT:
+                        case TBIN:
+                            printf("%s == ", ctmp->value);
+                            cwalk(htmp->children[tidx], 0);
+                            break;
                         case TARRAYLITERAL:
                         case TIDENT:
                             break;
@@ -6187,7 +6196,7 @@ llcwalk(AST *head, int level, int final) {
             break;
         case TBIN:
             /* convert to hex... */
-            printf("(binary-integer %s)", head->value);
+            printf("%lu", strtol(head->value, NULL, 2));
             break;
         case TINT:
             printf("%s", head->value);
