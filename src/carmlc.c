@@ -221,6 +221,7 @@ char *downcase(const char *, char *, int);
 char *hstrdup(const char *);
 int next(FILE *, char *, int);
 void mung_variant_name(AST *, AST *, int);
+void mung_guard(AST *, AST *);
 AST *mung_declare(const char **, const int **, int, int);
 ASTOffset *mung_single_type(const char **, const int **, int, int, int);
 ASTEither *readexpression(FILE *);
@@ -5190,6 +5191,44 @@ mung_variant_name(AST *name, AST *variant, int ref) {
 }
 
 void
+mung_guard(AST *name, AST *guard) {
+    AST *mcond = guard->children[0], *mguard = guard->children[1];
+
+    printf("(");
+    switch(mcond->tag) {
+        // TODO have to figure out how to encode booleans as well
+        case TFLOAT:
+        case TINT:
+        case TTAG:
+            printf("%s == %s", name->value, mcond->value);
+            break;
+        case TCHAR:
+            printf("%s == '%s'", name->value, mcond->value);
+            break;
+        case TSTRING:
+            printf("!strncmp(%s, \"%s\", %lu)", name->value, mcond->value, strlen(mcond->value));
+            break;
+        case THEX:
+        case TOCT:
+        case TBIN:
+            printf("%s == ", name->value);
+            cwalk(mcond, 0);
+            break;
+        case TARRAYLITERAL:
+        case TIDENT:
+            break;
+        case TCALL:
+            mung_variant_name(name, mcond->children[0], NO);
+            break;
+        default:
+            break;
+    }
+    printf(") && (");
+    cwalk(mguard, 0);
+    printf(")");
+}
+
+void
 indent(int level) {
     // should probably look to inline this
     // basically what we are replacing is the
@@ -5829,8 +5868,7 @@ llcwalk(AST *head, int level, int final) {
 
                 if(htmp->children[tidx]->tag != TELSE) {
                     switch(htmp->children[tidx]->tag) {
-                        // add HEX, OCT, BIN here too
-                        // have to figure out how to encode booleans as well
+                        // TODO have to figure out how to encode booleans as well
                         case TFLOAT:
                         case TINT:
                         case TTAG:
@@ -5855,6 +5893,8 @@ llcwalk(AST *head, int level, int final) {
                             mung_variant_name(ctmp, htmp->children[tidx]->children[0], NO);
                             break;
                         case TGUARD:
+                            mung_guard(ctmp, htmp->children[tidx]);
+                            break;
                         default:
                             break;
                     }
@@ -6195,7 +6235,6 @@ llcwalk(AST *head, int level, int final) {
             printf("0%s", head->value);
             break;
         case TBIN:
-            /* convert to hex... */
             printf("%lu", strtol(head->value, NULL, 2));
             break;
         case TINT:
