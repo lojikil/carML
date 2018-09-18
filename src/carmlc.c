@@ -502,6 +502,8 @@ isprimitivevalue(int tag) {
         case THEX:
         case TOCT:
         case TBIN:
+        case TTRUE:
+        case TFALSE:
             return 1;
 
         default:
@@ -5196,11 +5198,19 @@ mung_guard(AST *name, AST *guard) {
 
     printf("(");
     switch(mcond->tag) {
-        // TODO have to figure out how to encode booleans as well
         case TFLOAT:
         case TINT:
         case TTAG:
             printf("%s == %s", name->value, mcond->value);
+            break;
+        case TTRUE:
+            // could possibly use stdbool here as well
+            // but currently just encoding directly to
+            // integers
+            printf("%s == 1", name->value);
+            break;
+        case TFALSE:
+            printf("%s == 0", name->value);
             break;
         case TCHAR:
             printf("%s == '%s'", name->value, mcond->value);
@@ -5868,11 +5878,19 @@ llcwalk(AST *head, int level, int final) {
 
                 if(htmp->children[tidx]->tag != TELSE) {
                     switch(htmp->children[tidx]->tag) {
-                        // TODO have to figure out how to encode booleans as well
                         case TFLOAT:
                         case TINT:
                         case TTAG:
                             printf("%s == %s", ctmp->value, htmp->children[tidx]->value);
+                            break;
+                        case TTRUE:
+                            // could possibly use stdbool here as well
+                            // but currently just encoding directly to
+                            // integers
+                            printf("%s == 1", ctmp->value);
+                            break;
+                        case TFALSE:
+                            printf("%s == 0", ctmp->value);
                             break;
                         case TCHAR:
                             printf("%s == '%s'", ctmp->value, htmp->children[tidx]->value);
