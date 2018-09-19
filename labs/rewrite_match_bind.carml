@@ -111,8 +111,10 @@ def main ac:int al:array[string] => int = {
     val test:ref[AST] = (make_ident_AST "test")
     val newtest:ref[AST] = (copy_AST test)
     val fun:ref[AST] = (make_ident_AST "+")
-    val test0:ref[AST] = (make_call_AST [fun (make_integer_AST 10) test] 3)
-    val test1:ref[AST] = (make_begin_AST [test0 test] 2)
+    val tmp0:array[ref[AST]] = [fun (make_integer_AST 10) test]
+    val test0:ref[AST] = (make_call_AST tmp0 3)
+    val tmp1:array[ref[AST]] = [test0 test]
+    val test1:ref[AST] = (make_begin_AST tmp1 2)
 
     # would be nice to make this printf (if...) but the compiler
     # would probably generate terrible C for that rn... need to add

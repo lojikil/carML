@@ -2,7 +2,7 @@
 
 A quick list of the current `TODO`s.
 
-1. Fix (finally) the `match` form for variants/poly
+1. Make rebinding for idents in `match` forms (`rewrite_match_bind.carml`)
 1. Figure out both type specialization and generics to compiled form
 1. Fusion for `map`, `map!`, `foreach`, and so on.
 1. _TEST_: add more complex type tests  
@@ -12,6 +12,7 @@ A quick list of the current `TODO`s.
 1. add `.` ala Haskell for "compose"? `f . g` becomes `(f (g x))`
 1. If we are adding those, may as well do full shunting yard and parse things nicely
 1. integrate `$` and `|>` with `$()`
+1. C version: convert `(foo [1 2 3 4])` to `let x:array[int] = [1 2 3 4] in (foo x)`
 1. Runtime, which should be pretty minimal
 1. write an actual inclusion algorithm for the compiler to consume `use`d libraries
 1. OCaml/SML-style Modules, and their application to higher-kinded types
@@ -34,6 +35,7 @@ A quick list of the current `TODO`s.
 
 And completed items:
 
+1. **DONE** Fix (finally) the `match` form for variants/poly
 1. **DONE** Add complex types to `val`
 1. **DONE** Add complex types to records
 1. **DONE** Add complex types to `let` 
