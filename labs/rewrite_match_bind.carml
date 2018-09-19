@@ -18,7 +18,10 @@ def make_AST tag:int lenchildren:int children:array[ref[AST]] lenvalue:int value
     set! (-> res tag) tag
     set! (-> res lenchildren) lenchildren
     set! (-> res children) children
-    set! (-> res value) $ strdup value
+    if (<> value NULL) then
+        set! (-> res value) $ strdup value
+    else
+        set! (-> res value) NULL
     set! (-> res lenvalue) lenvalue
     res
 }
@@ -62,7 +65,7 @@ def need_rewritep name:ref[AST] dst:ref[AST] => bool = {
         var idx:int = 0
         var rst:bool = false
         while (< idx (-> dst lenchildren)) do {
-            set! rst $ need_rewrite name $ get (-> dst children) idx
+            set! rst $ need_rewritep name $ get (-> dst children) idx
             when rst do {
                 return true
             }
