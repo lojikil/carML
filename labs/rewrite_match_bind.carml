@@ -28,6 +28,12 @@ def make_AST tag:int lenchildren:int children:array[ref[AST]] lenvalue:int value
 # ident node.
 def make_ident_AST name:string => ref[AST] = (make_AST 0 0 NULL (strlen name) name)
 
+def make_integer_AST value:string => ref[AST] = (make_AST 1 0 NULL (strlen value) value)
+
+def make_call_AST children:array[ref[AST]] len:int => ref[AST] = (make_AST 2 len children 0 NULL)
+
+def make_begin_AST children:array[ref[AST]] len:int => ref[AST] = (make_AST 3 len children 0 NULL)
+
 # make a shallow copy of an AST
 def copy_AST src:ref[AST] => ref[AST] = {
     (make_AST
@@ -36,6 +42,35 @@ def copy_AST src:ref[AST] => ref[AST] = {
         (-> src children)
         (-> src lenvalue)
         (-> src value))
+}
+
+# there should only be minimal amount of nodes to
+# iterate over, since we'll mainly be using this
+# in `given` forms and match-case bodies, but this
+# still means we're iterating over all forms to check
+# for a rewrite case N^2 or N^3 (if there's both a given
+# case guard *AND* a body)
+def need_rewritep name:ref[AST] dst:ref[AST] => bool = {
+    # should combine these two...
+    when (eq? (-> name tag) (-> dst tag)) do {
+        when (not (strcmp (-> name value) (-> dst value))) do {
+            return true
+        }
+    }
+
+    when (> (-> dst lenchildren) 0) do {
+        var idx:int = 0
+        var rst:bool = false
+        while (< idx (-> dst lenchildren)) do {
+            set! rst $ need_rewrite name $ get (-> dst children) idx
+            when rst do {
+                return true
+            }
+            set! idx $ + idx 1
+        }
+    }
+
+    return false
 }
 
 def rewrite_AST name:ref[AST] dst:ref[AST] => ref[AST] = {
@@ -73,8 +108,11 @@ def free_AST head:ref[AST] = {
 # SRFI-0
 
 def main ac:int al:array[string] => int = {
-    var test:ref[AST] = (make_ident_AST "test")
-    var newtest:ref[AST] = (copy_AST test)
+    val test:ref[AST] = (make_ident_AST "test")
+    val newtest:ref[AST] = (copy_AST test)
+    val fun:ref[AST] = (make_ident_AST "+")
+    val test0:ref[AST] = (make_call_AST [fun (make_integer_AST 10) test] 3)
+    val test1:ref[AST] = (make_begin_AST [test0 test] 2)
 
     # would be nice to make this printf (if...) but the compiler
     # would probably generate terrible C for that rn... need to add
