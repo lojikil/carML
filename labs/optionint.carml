@@ -15,6 +15,7 @@ def main ac:int al:array[string] => int = {
 
     val f : OptionInt = (OptionInt.Some $ atoi $ get al 1)
     match f with
+        (OptionInt.Some y) given (> y 10) => (printf "yes and y is greater than 10: %d\n" x)
         (OptionInt.Some x) => (printf "yes: %d\n" x)
         (OptionInt.None) => (printf "oh no!\n")
     end

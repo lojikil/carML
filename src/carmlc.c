@@ -3865,6 +3865,11 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
 
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
+            } else if(sometmp->right->tag == TFATARROW) {
+                // in a `for ident in value => value` form
+                // we need to read:
+                // - another value (limit)
+                // - then a TDO
             } else if(sometmp->right->tag != TDO) {
                 return ASTLeft(0, 0, "for-form conditions *must* be followed by a `do`...");
             }
