@@ -3,6 +3,7 @@
 A quick list of the current `TODO`s.
 
 1. Make rebinding for idents in `match` forms (`rewrite_match_bind.carml`)
+1. Fix `match` forms that have a call; memoize the call (but need types, sigh)
 1. Figure out both type specialization and generics to compiled form
 1. Fusion for `map`, `map!`, `foreach`, and so on.
 1. _TEST_: add more complex type tests  
