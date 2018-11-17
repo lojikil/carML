@@ -47,6 +47,31 @@ def copy_AST src:ref[AST] => ref[AST] = {
         (-> src value))
 }
 
+# we could just gather names and return a list...
+def gather_names head:ref[AST] => array[ref[AST]] = {
+    val len : int = (-> head lenchildren)
+    val ret : array[ref[AST]] = (hmalloc $ * len $ sizeof ref[AST])
+    var idx : int = 1
+    var cur : ref[AST] = NULL
+
+    # again, foreach would be perfect here...
+    # actually just a map...
+    # and really, could do a list of tuple[ref[AST], int]
+    # or the like...
+    while (< idx len) do {
+        set! cur $ get (-> head children) idx
+        when (eq? (-> cur tag) TIDENT) do {
+            if (not $ eq? (-> cur value) "_") then {
+                set! (get ret idx) cur
+            } else {
+                set! (get ret idx) NULL
+            }
+        }
+        set! idx $ + idx 1
+    }
+    return ret
+}
+
 # there should only be minimal amount of nodes to
 # iterate over, since we'll mainly be using this
 # in `given` forms and match-case bodies, but this

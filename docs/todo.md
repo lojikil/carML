@@ -5,6 +5,7 @@ A quick list of the current `TODO`s.
 1. Make rebinding for idents in `match` forms (`rewrite_match_bind.carml`)
 1. Figure out both type specialization and generics to compiled form
 1. Fusion for `map`, `map!`, `foreach`, and so on.
+1. Variable Length Array (VLA) style
 1. _TEST_: add more complex type tests  
 1. add test runner: parse SExpression output...
 1. Figure out a decent backing for Rust-style deques (possibly implemented from records + arrays)
@@ -32,6 +33,7 @@ A quick list of the current `TODO`s.
 1. Investigate: method of determining effects, and how that could make ANF easier (lift once for two calls)
 1. Tests, both for IR and C
 1. JS, Java, C++ backends, but written in carML itself and using the SExpression output.
+1. WebAssembly backend
 
 And completed items:
 
@@ -286,3 +288,25 @@ Thinking about `$` though, that might be interesting to have...
     println $ int_to_string $ sum 54 100
 
 Could make `$` the only infix form...
+
+# Variable Length Arrays
+
+Arrays should be fixed size, deques should handle growth, so that also means anywhere that we have
+an array we can also define a `len` variable to capture that length. Calls to `length` on arrays or
+strings can be simply rewritten to that variable.
+
+```
+val foo : array[int] = [1,2,3,4,5]
+# compiler defines a `foo_len_$integer` variable...
+# ...
+# ...
+for x in (range 0 $ length foo) do ...
+# the `length foo` is rewritten to `foo_len_$integer`
+```
+
+Similarly, when we pass arrays into functions, we should capture the length as a parameter:
+
+```
+def foo bar:array[int] ... = ...
+# the compiler will add a `bar_len_$integer` parameter implicitly...
+```
