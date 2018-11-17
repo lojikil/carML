@@ -79,10 +79,8 @@ def rewrite_names head:ref[AST] rewrites:NameMap => ref[AST] = {
         TIDENT => {
             set! name $ find_name (-> head value) rewrites
             set! x $ -> name tag
-            # XXX: I'm unpacking a tag because the compiler
-            # can't yet handle this as call + Binding
-            match x with
-                OptionString_Tag_SOMESTRING => (make_ident $ -> name m_1)
+            match name with
+                (OptionString.SomeString x) => (make_ident $ -> name $ -> members $ -> SOMESTRING_t m_1)
                 else => head
             end
         }

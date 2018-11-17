@@ -3853,6 +3853,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             } else if(sometmp->right->tag != TIN) {
                 return ASTLeft(0, 0, "for-form binding *must* be followed by an `in`...");
             }
+
             sometmp = readexpression(fdin);
 
             if(sometmp->tag == ASTLEFT) {
@@ -3865,11 +3866,6 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
 
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
-            } else if(sometmp->right->tag == TFATARROW) {
-                // in a `for ident in value => value` form
-                // we need to read:
-                // - another value (limit)
-                // - then a TDO
             } else if(sometmp->right->tag != TDO) {
                 return ASTLeft(0, 0, "for-form conditions *must* be followed by a `do`...");
             }
@@ -5955,6 +5951,23 @@ llcwalk(AST *head, int level, int final) {
                 cwalk(head->children[1], level + 1);
                 printf(";\n}");
             }
+            break;
+        case TFOR:
+            // so:
+            // the head->value is either an integral index OR
+            // some other iterative type. We need to have a
+            // special case for checking things like:
+            //
+            // for x in (range 0 10) do ...
+            //
+            // or
+            //
+            // for x in (iota 10) do ...
+            //
+            // so as to fuse these and remove interstitial
+            // objects for now, I guess it is safe to assume
+            // that head->value is an int, but i *really*
+            // need to get the type system *actually* rolling
             break;
         case TPARAMLIST:
             printf("(");

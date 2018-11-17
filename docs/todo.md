@@ -3,6 +3,7 @@
 A quick list of the current `TODO`s.
 
 1. Make rebinding for idents in `match` forms (`rewrite_match_bind.carml`)
+1. Fix `match` forms that have a call; memoize the call (but need types, sigh)
 1. Figure out both type specialization and generics to compiled form
 1. Fusion for `map`, `map!`, `foreach`, and so on.
 1. Variable Length Array (VLA) style
@@ -14,7 +15,7 @@ A quick list of the current `TODO`s.
 1. If we are adding those, may as well do full shunting yard and parse things nicely
 1. integrate `$` and `|>` with `$()`
 1. C version: convert `(foo [1 2 3 4])` to `let x:array[int] = [1 2 3 4] in (foo x)`
-1. Runtime, which should be pretty minimal
+1. Runtime, which should be pretty minimal. Look at Zig here, it has a smaller runtime than C!
 1. write an actual inclusion algorithm for the compiler to consume `use`d libraries
 1. OCaml/SML-style Modules, and their application to higher-kinded types
 1. `deque` and memory model
