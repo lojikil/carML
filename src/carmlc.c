@@ -416,6 +416,7 @@ istypeast(int tag) {
         case TTUPLET:
         case TFUNCTIONT:
         case TPROCEDURET:
+        case TCOMPLEXTYPE:
         case TSTRT:
         case TTAG: // user types 
         case TBOOLT:
@@ -4682,31 +4683,8 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             } else { // complex type
                 tmp = sometmp->right;
                 switch(tmp->tag) {
-                    case TARRAY:
-                    case TREF:
-                    case TDEQUET:
-                    case TFUNCTIONT:
-                    case TPROCEDURET:
-                    case TTUPLET:
-                        vectmp[idx] = tmp;
-                        idx++;
-                        sometmp = readexpression(fdin);
-                        if(sometmp->tag == ASTLEFT) {
-                            return sometmp;
-                        } else if(sometmp->right->tag != TARRAYLITERAL) {
-                            return ASTLeft(0, 0, "core complex types *must* have a type paramter.");
-                        }
-                        tmp = (AST *)hmalloc(sizeof(AST));
-                        tmp->tag = TCOMPLEXTYPE;
-
-                        ltmp = sometmp->right->lenchildren + 1;
-                        tmp->lenchildren = ltmp;
-                        tmp->children = (AST **)hmalloc(sizeof(AST *) * ltmp);
-                        tmp->children[0] = vectmp[idx - 1];
-                        for(int cidx = 1, tidx = 0; tidx < (ltmp - 1); cidx++, tidx++) {
-                            tmp->children[cidx] = sometmp->right->children[tidx];
-                        }
-                        head->children[0] = linearize_complex_type(tmp);
+                    case TCOMPLEXTYPE:
+                        head->children[0] = tmp;
                         break;
                     case TTAG:
                     default:
