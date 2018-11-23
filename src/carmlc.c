@@ -5093,6 +5093,35 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             }
             return ASTRight(head);
             break;
+        case TARRAY:
+        case TREF:
+        case TDEQUET:
+        case TFUNCTIONT:
+        case TPROCEDURET:
+        case TTUPLET:
+            tmp = (AST *)hmalloc(sizeof(AST));
+            tmp->tag = ltype;
+            vectmp[idx] = tmp;
+            idx++;
+            sometmp = readexpression(fdin);
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else if(sometmp->right->tag != TARRAYLITERAL) {
+                return ASTLeft(0, 0, "core complex types *must* have a type paramter.");
+            }
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TCOMPLEXTYPE;
+
+            ltmp = sometmp->right->lenchildren + 1;
+            head->lenchildren = ltmp;
+            head->children = (AST **)hmalloc(sizeof(AST *) * ltmp);
+            head->children[0] = vectmp[idx - 1];
+            // XXX: is this needed?
+            for(int cidx = 1, tidx = 0; tidx < (ltmp - 1); cidx++, tidx++) {
+                head->children[cidx] = sometmp->right->children[tidx];
+            }
+            head = linearize_complex_type(head);
+            return ASTRight(head);
         case THEX:
         case TOCT:
         case TBIN:
@@ -5101,12 +5130,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
         case TSTRING:
         case TCHAR:
         case TBOOL:
-        case TARRAY:
-        case TDEQUET:
-		case TPROCEDURET:
-		case TFUNCTIONT:
         case TCOMMA:
-        case TTUPLET:
         case TANY:
         case TAND:
         case TFALSE:
@@ -5121,7 +5145,6 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
         case TSEMI:
         case TFATARROW:
         case TPIPEARROW:
-        case TREF:
         case TGIVEN:
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = ltype;
