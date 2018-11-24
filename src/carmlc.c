@@ -4911,7 +4911,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         return sometmp;
                     } if(!istypeast(sometmp->right->tag)) {
                         return ASTLeft(0, 0, "a `:` form *must* be followed by a type definition...");
-                    } else if(issimpletypeast(sometmp->right->tag)) {
+                    } else if(issimpletypeast(sometmp->right->tag) || sometmp->right->tag == TCOMPLEXTYPE) {
                         vectmp[idx] = sometmp->right;
                         sometmp = llreadexpression(fdin, 1);
                         if(sometmp->tag == ASTLEFT) {
@@ -4930,55 +4930,22 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         tmp->children[1] = vectmp[idx];
                         vectmp[idx - 1] = tmp;
                     } else {
-                        /* complex type...
-                         h*/
-                        flag = idx;
-                        /* we hit a complex type,
-                         * now we're looking for 
-                         * either `of` or `=`.
+                        /* complex *user* type...
                          */
+                        flag = idx;
                         vectmp[idx++] = sometmp->right;
-                        typestate = 1; 
-                        while(sometmp->right->tag != TEQ) {
 
-                            sometmp = llreadexpression(fdin, 1);
-                            if(sometmp->right->tag == ASTLEFT) {
-                                return sometmp;
-                            }
+                        sometmp = llreadexpression(fdin, YES);
 
-                            switch(typestate) {
-                                case 0: // awaiting a type
-                                    if(!istypeast(sometmp->right->tag)) {
-                                        return ASTLeft(0, 0, "expected type in `:` form");
-                                    } else if(issimpletypeast(sometmp->right->tag)) {
-                                        typestate = 2;
-                                    } else {
-                                        typestate = 1;
-                                    }
-                                    vectmp[idx++] = sometmp->right;
-                                    break;
-                                case 1: // awaiting either TOF or an end
-                                    if(sometmp->right->tag == TOF) {
-                                        typestate = 0;
-                                    } else if(sometmp->right->tag == TARRAYLITERAL) {
-                                        tmp = sometmp->right;
-                                        for(int cidx = 0; cidx < tmp->lenchildren; cidx++, idx++) {
-                                            vectmp[idx] = tmp->children[cidx];
-                                        }
-                                        typestate = 2;
-                                    } else if(sometmp->right->tag == TNEWL || sometmp->right->tag == TSEMI) {
-                                        typestate = 3;
-                                    } else {
-                                        return ASTLeft(0, 0, "expected either a newline or a `;`");
-                                    }
-                                    break;
-                                case 2:
-                                case 3:
-                                    break;
-                            }
-                            if(typestate == 2 || typestate == 3) {
-                                break;
-                            }
+                        if(sometmp->tag == ASTLEFT) {
+                            return sometmp;
+                        } else if(sometmp->right->tag == TNEWL || sometmp->right->tag == TSEMI) {
+                            1;
+                        } else if(sometmp->right->tag == TARRAYLITERAL) {
+                            vectmp[idx] = sometmp->right;
+                            idx++;
+                        } else {
+                            return ASTLeft(0, 0, "a complex user type must be followed by either an array literal of types or a newline/semi-colon");
                         }
 
                         /* collapse the above type states here... */
@@ -5002,16 +4969,6 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         vectmp[flag - 1] = tmp;
                         idx = flag;
                         flag = 0;
-                        if(typestate != 3) {
-
-                            sometmp = llreadexpression(fdin, 1);
-
-                            if(sometmp->tag == ASTLEFT) {
-                                return sometmp;
-                            } else if(sometmp->right->tag != TSEMI && sometmp->right->tag != TNEWL && sometmp->right->tag != TEND) {
-                                return ASTLeft(0, 0, "a `record` type definition *must* be followed by a newline, a semicolon or an END");
-                            }
-                        }
                     }
                 } else if(sometmp->right->tag == TNEWL || sometmp->right->tag == TSEMI) {
                     tmp = (AST *)hmalloc(sizeof(AST));
