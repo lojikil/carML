@@ -3401,17 +3401,6 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
              * functions. I wonder if there should be a specific 
              * syntax for side-effecting functions...
              */
-            
-            #ifdef NEVERDEF
-            sometmp = readexpression(fdin);
-
-            if(sometmp->tag == ASTLEFT) {
-                return sometmp;
-            } else {
-                tmp = sometmp->right;
-            }
-            #endif
-
 
             /*
              * so, we have to change this a bit. Instead of reading
@@ -3525,11 +3514,11 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         } else if(!istypeast(sometmp->right->tag)) {
                             dprintf("somehow here, but... %d\n", sometmp->right->tag);
                             return ASTLeft(0, 0, "a `=>` form *must* be followed by a type definition...");
-                        } else if(issimpletypeast(sometmp->right->tag)) {
+                        } else if(issimpletypeast(sometmp->right->tag) || sometmp->right->tag == TCOMPLEXTYPE) {
                             debugln;
                             returntype = sometmp->right;
                             typestate = 6;
-                        } else { // complex type
+                        } else { // complex *user* type
                             debugln;
                             vectmp[idx] = sometmp->right;
                             flag = idx;
@@ -3542,8 +3531,6 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
 
                         if(sometmp->tag == ASTLEFT) {
                             return sometmp;
-                        } else if(sometmp->right->tag == TOF) {
-                            typestate = 22;
                         } else if(sometmp->right->tag == TARRAYLITERAL) {
                             tmp = sometmp->right;
                             for(int tidx = 0; tidx < tmp->lenchildren; tidx++, idx++) {
@@ -3579,32 +3566,6 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             typestate = 3;
                         } else {
                             return ASTLeft(0, 0, "a complex type in `=>` must be followed by `of`, `=`, or an array of types.");
-                        }
-                        break;
-                    case 22: // complex end result, but for return
-                        sometmp = readexpression(fdin);
-
-                        if(sometmp->tag == ASTLEFT) {
-                            return sometmp;
-                        } else if(issimpletypeast(sometmp->right->tag) || sometmp->right->tag == TARRAYLITERAL) {
-                            vectmp[idx] = sometmp->right;
-                            idx++;
-                            returntype = (AST *)hmalloc(sizeof(AST));
-                            returntype->tag = TCOMPLEXTYPE;
-                            returntype->lenchildren = idx - flag;
-                            returntype->children = (AST **)hmalloc(sizeof(AST *) * returntype->lenchildren);
-                            for(int cidx = 0, tidx = flag, tlen = returntype->lenchildren; cidx < tlen; cidx++, tidx++) {
-                                returntype->children[cidx] = vectmp[tidx];
-                            }
-                            idx = flag;
-                            flag = 0;
-                            typestate = 6;
-                        } else if(iscomplextypeast(sometmp->right->tag)) {
-                            vectmp[idx] = sometmp->right;
-                            idx++;
-                            typestate = 21;
-                        } else {
-                            return ASTLeft(0, 0, "`of` in `=>` complex type *must* be followed by a type or an array of types.");
                         }
                         break;
                     case 4: // type
