@@ -38,6 +38,7 @@ A quick list of the current `TODO`s.
 
 And completed items:
 
+1. **DONE** Fix type parsing code to be much simpler.
 1. **DONE** Fix (finally) the `match` form for variants/poly
 1. **DONE** Add complex types to `val`
 1. **DONE** Add complex types to records

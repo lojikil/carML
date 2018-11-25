@@ -19,9 +19,9 @@ def make_AST tag:int lenchildren:int children:array[ref[AST]] lenvalue:int value
     set! (-> res lenchildren) lenchildren
     set! (-> res children) children
     if (<> value NULL) then
-        set! (-> res value) $ strdup value
+        (set! (-> res value) $ strdup value)
     else
-        set! (-> res value) NULL
+        (set! (-> res value) NULL)
     set! (-> res lenvalue) lenvalue
     res
 }
