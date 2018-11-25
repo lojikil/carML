@@ -3569,8 +3569,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         }
                         break;
                     case 4: // type
-                    case 7: // of
-                        //dprintf("%%debug: typestate = %d, sometmp->right->tag = %d\n", typestate, sometmp->right->tag);
+                        dprintf("%%debug: typestate = %d, sometmp->right->tag = %d\n", typestate, sometmp->right->tag);
 
                         sometmp = readexpression(fdin);
 
@@ -3581,9 +3580,9 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             //dprintf("type: %d\n", sometmp->right->tag);
                             //debugln;
                             return ASTLeft(0, 0, "a `:` form *must* be followed by a type definition...");
-                        } else if(issimpletypeast(sometmp->right->tag)) { // simple type
+                        } else if(issimpletypeast(sometmp->right->tag) || sometmp->right->tag == TCOMPLEXTYPE) { // simple type
                             if(typestate == 4) {
-                                //debugln;
+                                debugln;
                                 tmp = (AST *)hmalloc(sizeof(AST));
                                 tmp->tag = TPARAMDEF;
                                 tmp->lenchildren = 2;
@@ -3592,34 +3591,6 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                                 tmp->children[1] = sometmp->right;
                                 vectmp[idx - 1] = tmp;
                                 typestate = 0;
-                            } else if(typestate == 7) {
-                                //debugln;
-                                vectmp[idx] = sometmp->right;
-                                AST *ctmp = (AST *)hmalloc(sizeof(AST));
-                                ctmp->tag = TCOMPLEXTYPE;
-                                ctmp->lenchildren = idx - flag;
-                                ctmp->children = (AST **)hmalloc(sizeof(AST *) * ctmp->lenchildren); 
-
-                                for(int tidx = flag + 1, cidx = 0; cidx < idx; cidx++, tidx++) {
-                                    ctmp->children[cidx] = vectmp[tidx];
-                                }
-
-                                if(fatflag) {
-                                    returntype = ctmp;
-                                    idx = fatflag;
-                                } else {
-                                    tmp = (AST *)hmalloc(sizeof(AST));
-                                    tmp->tag = TPARAMDEF;
-                                    tmp->lenchildren = 2;
-                                    tmp->children = (AST **)hmalloc(sizeof(AST *) * 2);
-                                    tmp->children[0] = vectmp[flag];
-                                    tmp->children[1] = ctmp;
-                                    idx = flag + 1;
-                                    vectmp[flag] = tmp;
-                                }
-
-                                typestate = 0;
-                                // need to collapse from flag -> idx
                             } else {
                                 returntype = sometmp->right;
                                 typestate = 6;
@@ -3645,9 +3616,6 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         // failing too (like after `=>`). Very close
                         if(sometmp->tag == ASTLEFT) {
                             return sometmp;
-                        } else if(sometmp->right->tag == TOF) {
-                            debugln;
-                            typestate = 7;
                         } else if(sometmp->right->tag == TIDENT) {
                             debugln;
                             typestate = 1;
@@ -3688,6 +3656,9 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                             if(fatflag && fatflag != idx) {
                                 returntype = ctmp;
                                 /*
+                                 * XXX: I think I fixed this the "correct" way mentioned below
+                                 * a long time ago, so this should all be reviewed and potentially
+                                 * purged...
                                  * so the "correct" way of doing this would be to actually
                                  * break out the state for return, and then duplicate the
                                  * code there. It would be context-free, and would work
