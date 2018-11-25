@@ -4811,8 +4811,10 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         } else if(sometmp->right->tag == TNEWL || sometmp->right->tag == TSEMI) {
                             1;
                         } else if(sometmp->right->tag == TARRAYLITERAL) {
-                            vectmp[idx] = sometmp->right;
-                            idx++;
+                            tmp = sometmp->right;
+                            for(int tidx = 0; tidx < tmp->lenchildren; tidx++, idx++) {
+                                vectmp[idx] = tmp->children[tidx];
+                            }
                         } else {
                             return ASTLeft(0, 0, "a complex user type must be followed by either an array literal of types or a newline/semi-colon");
                         }
