@@ -3076,72 +3076,45 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                     return sometmp;
                 } else if(!istypeast(sometmp->right->tag)) {
                     return ASTLeft(0, 0, "a `:` form *must* be followed by a type definition...");
-                } else if(issimpletypeast(sometmp->right->tag)) {
+                } else if(issimpletypeast(sometmp->right->tag) || sometmp->right->tag == TCOMPLEXTYPE) {
                     head->children[2] = sometmp->right;
                 } else {
-                    /* complex type...
+                    /* complex *user* type...
                      */
                     flag = idx;
                     /* we hit a complex type,
                      * now we're looking for 
                      * either `of` or `=`.
                      */
-                    vectmp[idx++] = sometmp->right;
+                    vectmp[idx] = sometmp->right;
+                    idx++;
                     typestate = 1; 
-                    while(sometmp->right->tag != TEQ) {
-                        sometmp = readexpression(fdin);
 
-                        if(sometmp->right->tag == ASTLEFT) {
-                            return sometmp;
-                        }
+                    sometmp = readexpression(fdin);
 
-                        switch(typestate) {
-                            case 0: // awaiting a type
-                                if(!istypeast(sometmp->right->tag)) {
-                                    return ASTLeft(0, 0, "expected type in `:` form");
-                                } else if(issimpletypeast(sometmp->right->tag)) {
-                                    typestate = 2;
-                                } else {
-                                    typestate = 1;
-                                }
-                                vectmp[idx++] = sometmp->right;
-                                break;
-                            case 1: // awaiting either TOF or an end
-                                if(sometmp->right->tag == TOF) {
-                                    typestate = 0;
-                                } else if(sometmp->right->tag == TARRAYLITERAL) {
-                                    tmp = sometmp->right;
-                                    for(int cidx = 0; cidx < tmp->lenchildren; cidx++, idx++) {
-                                        vectmp[idx] = tmp->children[cidx];
-                                    }
-                                    typestate = 2;
-                                } else if(sometmp->right->tag == TEQ) {
-                                    typestate = 3;
-                                } else {
-                                    return ASTLeft(0, 0, "expected either an `of` or a `=`");
-                                }
-                                break;
-                            case 2:
-                            case 3:
-                                break;
+                    if(sometmp->tag == ASTLEFT) {
+                        return sometmp;
+                    } else if(sometmp->right->tag == TARRAYLITERAL) {
+                        tmp = sometmp->right;
+                        AST *ctmp = (AST *)hmalloc(sizeof(AST));
+                        ctmp->tag = TCOMPLEXTYPE;
+                        ctmp->lenchildren = 1 + tmp->lenchildren;
+                        ctmp->children = (AST **)hmalloc(sizeof(AST *) * ctmp->lenchildren);
+                        ctmp->children[0] = vectmp[flag];
+                        for(int cidx = 1, tidx = 0; cidx < ctmp->lenchildren; cidx++, tidx++) {
+                            ctmp->children[cidx] = tmp->children[tidx];
                         }
-                        if(typestate == 2 || typestate == 3) {
-                            break;
-                        }
+                        ctmp = linearize_complex_type(ctmp);
+                        vectmp[flag] = ctmp;
+                        idx = flag;
+                        flag = 0;
+                        typestate = 2;
+                        head->children[2] = ctmp;
+                    } else if(sometmp->right->tag == TEQ) {
+                        typestate = 3;
+                    } else {
+                        return ASTLeft(0, 0, "`:` *must* be followed by a type in let/letrec");
                     }
-                    /* collapse the above type states here... */
-                    tmp = (AST *) hmalloc(sizeof(AST));
-                    tmp->tag = TCOMPLEXTYPE;
-                    tmp->lenchildren = idx - flag;
-                    tmp->children = (AST **) hmalloc(sizeof(AST *) * tmp->lenchildren);
-                    for(int cidx = 0, tidx = flag, tlen = tmp->lenchildren; cidx < tlen; cidx++, tidx++) {
-                        tmp->children[cidx] = vectmp[tidx];
-                    }
-                    tmp = linearize_complex_type(tmp);
-                    vectmp[flag] = tmp;
-                    idx = flag;
-                    flag = 0;
-                    head->children[2] = tmp;
                 }
                
                 if(typestate != 3) {
