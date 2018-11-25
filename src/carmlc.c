@@ -4782,7 +4782,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         if(sometmp->tag == ASTLEFT) {
                             return sometmp;
                         } else if(sometmp->right->tag == TNEWL || sometmp->right->tag == TSEMI) {
-                            1;
+                            (void)1;
                         } else if(sometmp->right->tag == TARRAYLITERAL) {
                             tmp = sometmp->right;
                             for(int tidx = 0; tidx < tmp->lenchildren; tidx++, idx++) {
