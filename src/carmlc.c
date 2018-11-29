@@ -4596,6 +4596,13 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                     return ASTLeft(0, 0, "a `:` form *must* be followed by a type definition...");
                 } else if(issimpletypeast(sometmp->right->tag)) {
                     head->children[1] = sometmp->right;
+                    sometmp = readexpression(fdin);
+                    if(sometmp->tag == ASTLEFT) {
+                        return sometmp;
+                    } else if(sometmp->right->tag != TEQ) {
+                        printf("here %d\n", __LINE__);
+                        return ASTLeft(0, 0, "a `val` type definition *must* be followed by an `=`...");
+                    }
                 } else {
                     tmp = sometmp->right;
                     switch(tmp->tag) {
