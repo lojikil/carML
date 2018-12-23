@@ -4973,7 +4973,9 @@ void
 mung_guard(AST *name, AST *guard) {
     AST *mcond = guard->children[0], *mguard = guard->children[1];
 
-    printf("(");
+    if(mcond->tag != TIDENT) {
+        printf("(");
+    }
     switch(mcond->tag) {
         case TFLOAT:
         case TINT:
@@ -5010,7 +5012,14 @@ mung_guard(AST *name, AST *guard) {
         default:
             break;
     }
-    printf(") && (");
+    if(mcond->tag != TIDENT) {
+        printf(") && (");
+    } else {
+        printf("(");
+        // rewrite the name here, need to do the
+        // same in the response as well...
+        //mguard = rewrite_ident(name, mguard);
+    }
     cwalk(mguard, 0);
     printf(")");
 }
