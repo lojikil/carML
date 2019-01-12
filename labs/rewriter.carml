@@ -1,0 +1,58 @@
+def rewrite needle:ref[AST] replace:ref[AST] haystack:ref[AST] => ref[AST] = {
+    var ret:ref[AST] = NULL
+    var idx:int = 0
+    var hlen:int = 0
+    var htag:int = 0
+    var hvlen:int = 0
+
+    # if we have a nil haystack, 
+    # just return it
+    when (eq? haystack NULL) do {
+        return ret
+    }
+
+    # decompose some values here
+    # ideally we would do this in a let/match,
+    # but we're still too low-level here for that.
+    # this code will help us do that decomposition...
+
+    set! hlen $ (-> haystack lenchildren)
+    set! htag $ (-> haystack tag)
+    set! hvlen $ (-> haystack lenvalue)
+
+    # actually check for the rewrite.
+    match tag with 
+        # if we have an identifier, simply check if it is the
+        # needle and, if it is, return the replacement value,
+        # otherwise return the haystack
+        TIDENT => if (eq? (strncmp (-> haystack value) (-> needle value) hvlen) 0) then
+                    (return replace)
+                else
+                    (return haystack)
+        # here we have something that has children
+        # iterate over the children, checking if the 
+        # child matches the needle, and calling nested
+        # rewriter for each if the child is a complex 
+        # AST
+        x given (> hlen 0) => {
+            # allocate our copy node.
+            # TINSTAAFL btw; we either pay
+            # memory complexity like this, when there is no match
+            # or we pay algorithmic complexity and iterate over 
+            # potential AST nodes twice, once to scan for matches
+            # and once to rewrite them.
+            # the gods of Big O and Big Theta demand sacrifice
+            set! ret $ hmalloc $ sizeof AST
+            set! (-> ret lenchildren) hlen
+            set! (-> ret tag) htag
+            set! (-> ret lenvalue) hvlen
+            set! (-> ret children) $ hmalloc $ * hlen $ sizeof ref[AST]
+            while (<= idx hlen) do {
+                set! (get (-> ret children) idx) $ rewrite needle replace $ (get (-> haystack children))
+                set! idx $ + idx 1
+            }
+        }
+        else => (set! ret haystack)
+    end
+    return ret
+}
