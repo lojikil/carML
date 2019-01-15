@@ -16,9 +16,9 @@ def rewrite needle:ref[AST] replace:ref[AST] haystack:ref[AST] => ref[AST] = {
     # but we're still too low-level here for that.
     # this code will help us do that decomposition...
 
-    set! hlen $ (-> haystack lenchildren)
-    set! htag $ (-> haystack tag)
-    set! hvlen $ (-> haystack lenvalue)
+    set! hlen $ -> haystack lenchildren
+    set! htag $ -> haystack tag
+    set! hvlen $ -> haystack lenvalue
 
     # actually check for the rewrite.
     match tag with 
@@ -48,7 +48,7 @@ def rewrite needle:ref[AST] replace:ref[AST] haystack:ref[AST] => ref[AST] = {
             set! (-> ret lenvalue) hvlen
             set! (-> ret children) $ hmalloc $ * hlen $ sizeof ref[AST]
             while (<= idx hlen) do {
-                set! (get (-> ret children) idx) $ rewrite needle replace $ (get (-> haystack children))
+                set! (get (-> ret children) idx) $ rewrite needle replace $ get (-> haystack children) idx
                 set! idx $ + idx 1
             }
         }
