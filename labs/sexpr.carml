@@ -9,4 +9,60 @@ type SExpression {
     Bool bool
     List array[SExpression]
     Array array[SExpression]
+    Error string
+}
+
+# add a simple reader system below
+# should be able to construct & read
+# SExpression-based syntax
+#
+# What will this be used for? Why,
+# for bootstrapping a compiler in carML
+# itself really.
+
+def is_whitespace ch:char => bool = {
+    match ch with
+        ' ' => true
+        '\t' => true
+        '\n' => true
+        '\v' => true
+        '\r' => true
+        '\l' => true
+        '\b' => true
+        else => false
+    end
+}
+
+def is_numeric ch:char => bool = {
+    match ch with
+        x given (&& (>= ch '0') (<= ch '9')) => true
+        '.' => true
+        else => false
+    end
+}
+
+def is_symbolic ch:char => bool = {
+    match ch with
+        '(' => false
+        ')' => false
+        '[' => false
+        ']' => false
+        '"' => false
+        '\'' => false
+        y given (is_whitespace ch) => false
+        else => true
+    end
+}
+
+def read fh:ref[FILE] => ref[SExpression] = {
+    val ch:char = fget(fh)
+    match ch with
+        '(' => (read_list fh)
+        '[' => (read_array fh)
+        '"' => (read_string fh)
+        x given (is_whitespace ch) => (read fh)
+        z given (is_numeric ch) => (read_number fh)
+        a given (is_symbolic ch) => (read_atom fh)
+        else => (SExpression.Error "unknown starting character")
+    end
 }
