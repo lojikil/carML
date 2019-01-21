@@ -1,3 +1,28 @@
+#@(#) SExpression library for carML
+#@(#) mainly aimed at getting the carML compiler out of the C system
+#@(#) should be mainly compatible with the SExpression-based IR that
+#@(#) carML/C generates.
+#
+# the shame is, given carML's current
+# type system, there are many work-arounds
+# required to make the below work:
+# - the type system can't tell ref[SExpression] can be flattened to SExpression
+# - some things should be automatically passed around as ref[Type] but you have to manually do that
+# - lots of ref[Any] could be turned into a `const`...
+#
+# probably lots of other hacks as I
+# go through it. Luckily, once I move
+# past where the C compiler is, I can
+# start to handle some of the debt I've
+# accrued.
+
+type Num {
+    # would be really nice if this could
+    # just be handled by a union[float int]
+    NInt int
+    NFloat float
+}
+
 type SExpression {
     Nil
     Cons SExpression SExpression
@@ -5,8 +30,12 @@ type SExpression {
     String string
     Int int
     Float float
+    Rational int int
+    Complex Num Num
     Char char
     Bool bool
+    # need to add length generation to
+    # the C compiler here
     List array[SExpression]
     Array array[SExpression]
     Error string
@@ -20,6 +49,12 @@ type SExpression {
 # for bootstrapping a compiler in carML
 # itself really.
 
+def peek_char fh:ref[FILE] => char = {
+    val ret:int = (fgetc fh)
+    val res:int = (ungetc ret fh)
+    ret
+}
+
 def is_whitespace ch:char => bool = {
     match ch with
         ' ' => true
@@ -31,6 +66,21 @@ def is_whitespace ch:char => bool = {
         '\b' => true
         else => false
     end
+}
+
+def take_while_white fh:ref[FILE] => char = {
+    # take... on... me...
+    # _softly_ take on me
+    # take... me... on...
+    # _softly_ take on me
+    # I'll be... gone...
+    # In a day or twoooooooo
+    # _synths_
+    var ch:int = (fgetc fh)
+    while (is_whitespace ch) do {
+        set! ch $ fgetc fh
+    }
+    ch
 }
 
 def is_numeric ch:char => bool = {
@@ -54,13 +104,42 @@ def is_symbolic ch:char => bool = {
     end
 }
 
-def read fh:ref[FILE] => ref[SExpression] = {
-    val ch:char = fget(fh)
+def read_list fh:ref[FILE] => SExpression = {
+
+}
+
+def read_array fh:ref[FILE] => SExpression = {
+
+}
+
+def read_char fh:ref[FILE] => SExpression = {
+
+}
+
+def read_atom fh:ref[FILE] => SExpression = {
+
+}
+
+def read_atom_partial fh:ref[FILE] cur:string => SExpression = {
+
+}
+
+# it would be nice to enrich types here
+# say that this is an SExpression, but also
+# that the only types it will return are
+# from Int, Float, Rational, Complex
+def read_number fh:ref[FILE] => SExpression = {
+
+}
+
+def sexpression_read fh:ref[FILE] => ref[SExpression] = {
+    val ch:char = (take_while_white fh)
     match ch with
         '(' => (read_list fh)
         '[' => (read_array fh)
         '"' => (read_string fh)
-        x given (is_whitespace ch) => (read fh)
+        '#' => (read_char fh)
+        x given (is_whitespace ch) => (sexpression_read fh)
         z given (is_numeric ch) => (read_number fh)
         a given (is_symbolic ch) => (read_atom fh)
         else => (SExpression.Error "unknown starting character")
