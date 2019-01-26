@@ -39,6 +39,12 @@ type SExpression {
     List array[SExpression]
     Array array[SExpression]
     Error string
+    # Maybe should have an internal type that
+    # isn't exported, and an external type that
+    # is, so as to remove the two constructors
+    # below...
+    EndList
+    EndArray
 }
 
 # add a simple reader system below
@@ -104,8 +110,21 @@ def is_symbolic ch:char => bool = {
     end
 }
 
-def read_list fh:ref[FILE] => SExpression = {
+def is_null_or_endp obj:SExpression => bool = {
 
+}
+
+def sexpression_append_b dst:SExpresssion src:SExpression = {
+
+}
+
+def read_list fh:ref[FILE] => SExpression = {
+    var ret:SExpression = (SExpression_Nil)
+    var tmp:SExpression = (sexpression_read fh)
+    while (not $ is_null_or_endp tmp) do {
+        sexpression_append_b ret tmp
+    }
+    ret
 }
 
 def read_array fh:ref[FILE] => SExpression = {
@@ -139,6 +158,8 @@ def sexpression_read fh:ref[FILE] => ref[SExpression] = {
         '[' => (read_array fh)
         '"' => (read_string fh)
         '#' => (read_char fh)
+        ')' => (SExpression.EndList)
+        ']' => (SExpression.EndArray)
         x given (is_whitespace ch) => (sexpression_read fh)
         z given (is_numeric ch) => (read_number fh)
         a given (is_symbolic ch) => (read_atom fh)
