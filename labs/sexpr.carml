@@ -111,7 +111,12 @@ def is_symbolic ch:char => bool = {
 }
 
 def is_null_or_endp obj:SExpression => bool = {
-
+    match obj with
+        (SExpression.EndList) => true
+        (SExpression.EndArray) => true
+        (SExpression.EndFile) => true
+        else => false
+    end
 }
 
 def sexpression_append_b dst:SExpresssion src:SExpression = {
@@ -128,7 +133,17 @@ def read_list fh:ref[FILE] => SExpression = {
 }
 
 def read_array fh:ref[FILE] => SExpression = {
-
+    var ret:array[SExpression] = (make-array SExpression 128)
+    var ret_length:int = 128
+    var tmp:SExpression = (sexpression_read fh)
+    var idx:int = 0
+    while (not $ is_null_or_endp tmp) do {
+        when (< idx ret_length) do {
+            set! (get ret idx) tmp
+            set! idx $ + idx 1
+        }
+    }
+    ret
 }
 
 def read_char fh:ref[FILE] => SExpression = {
