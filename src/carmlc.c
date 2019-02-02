@@ -5570,6 +5570,32 @@ llcwalk(AST *head, int level, int final) {
 
             printf(";");
             break;
+        case TEXTERN:
+            printf("extern ");
+            if(head->children[0]->tag == TCOMPLEXTYPE) {
+                tbuf = typespec2c(head->children[0], buf, head->value, 512);
+                printf("%s;", tbuf);
+            } else {
+                cwalk(head->children[0], 0);
+                printf(" %s;", head->value);
+            }
+            break;
+        case TDECLARE:
+            // so, the format of a TDECLARE is:
+            // 0. name
+            // 1. parameter list
+            // 2. (potentially nil) return value
+
+            if(head->children[2]->tag == TCOMPLEXTYPE) {
+                tbuf = typespec2c(head->children[2], buf, head->children[0]->value, 512);
+                printf("%s;", tbuf);
+            } else {
+                cwalk(head->children[2], 0);
+                printf(" %s;", head->children[0]->value);
+            }
+
+            cwalk(head->children[1], 0);
+            break;
         case TLET:
         case TLETREC:
             // need to do name rebinding...
@@ -5761,6 +5787,9 @@ llcwalk(AST *head, int level, int final) {
                 if(head->children[idx]->tag == TIDENT) {
                     dc_name = head->children[idx];
                     printf("void *%s", dc_name->value);
+                } else if(istypeast(head->children[idx]->tag)) {
+                    tbuf = typespec2c(head->children[idx],buf, nil, 512);
+                    printf("%s", tbuf);
                 } else {
                     // now we've reached a TPARAMDEF
                     // so just dump whatever is returned

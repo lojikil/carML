@@ -19,6 +19,12 @@ esac
 if [ ${#args} -gt 1 ] 
 then
     case $1 in
+        softdebug)
+            # this mode enables symbols, but does
+            # not enable debug print, to cut down
+            # on noise
+            echo "[soft debugging enabled]"
+            EXTRAFLAGS="-std=c99 -g" ;;
         debug)
             echo "[debugging enabled]"
             EXTRAFLAGS="-std=c99 -g -DDEBUG" ;;
