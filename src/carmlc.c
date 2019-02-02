@@ -5586,15 +5586,18 @@ llcwalk(AST *head, int level, int final) {
             // 1. parameter list
             // 2. (potentially nil) return value
 
-            if(head->children[2]->tag == TCOMPLEXTYPE) {
+            if(head->lenchildren == 2 || head->children[2] == nil) {
+                printf("void %s", head->children[0]->value);
+            } else if(head->children[2]->tag == TCOMPLEXTYPE) {
                 tbuf = typespec2c(head->children[2], buf, head->children[0]->value, 512);
-                printf("%s;", tbuf);
+                printf("%s", tbuf);
             } else {
                 cwalk(head->children[2], 0);
-                printf(" %s;", head->children[0]->value);
+                printf(" %s", head->children[0]->value);
             }
 
             cwalk(head->children[1], 0);
+            printf(";");
             break;
         case TLET:
         case TLETREC:
