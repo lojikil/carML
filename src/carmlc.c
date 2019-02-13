@@ -3174,7 +3174,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             head->tag = TDECLARE;
             head->lenchildren = 3;
             head->children = (AST **)hmalloc(sizeof(AST *) * 3);
-            int substate = 0, sp = 0;
+            int substate = 0, sp = 0, endflag = 0;
             AST *stack[32] = {nil};
             AST *ctmp = nil;
 
@@ -3188,150 +3188,61 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 head->children[0] = sometmp->right;
             }
 
-            sometmp = llreadexpression(fdin, YES);
-            tmp = sometmp->right;
-
             while(1) {
                 // need code in here to handle { refinements }
                 // although I'm on the fence about adding those
                 // refinements directly to the DECLARE form...
-                switch(substate) {
-                    case 0: // initial state
-                        if(sometmp->tag == ASTLEFT) {
-                            return sometmp;
-                        } else if(issimpletypeast(tmp->tag)) {
-                            if(!fatflag) {
-                                stack[sp] = tmp;
-                                sp++;
-                            } else {
-                                flag = 1;
-                                head->children[2] = tmp;
-                            }
-                        } else if(isbuiltincomplextypeast(tmp->tag)) {
-                            vectmp[idx] = tmp;
-                            idx++;
-                            substate = 1;
-                        } else if(tmp->tag == TTAG) {
-                            vectmp[idx] = tmp;
-                            idx++;
-                            substate = 2;
-                        } else if(tmp->tag == TUNIT) {
-                            if(!fatflag) {
-                                stack[sp] = tmp;
-                                sp++;
-                                substate = 3;
-                            } else {
-                                head->children[2] = tmp;
-                            }
-                        } else if(tmp->tag == TFATARROW) {
-                            fatflag = 1;
-                        } else if(tmp->tag == TNEWL) {
-                            flag = 1;
-                        } else {
-                            return ASTLeft(0, 0, "`declare` must have a type.");
-                        }
-                        break;
-                    case 1:
-                        if(sometmp->tag == ASTLEFT) {
-                            return sometmp;
-                        } else if(tmp->tag != TARRAYLITERAL) {
-                            return ASTLeft(0, 0, "`declare` built-in complex types *must* be followed by a type parameter.");
-                        } else {
-                            substate = 0;
-                            ctmp = (AST *)hmalloc(sizeof(AST));
-                            ctmp->tag = TCOMPLEXTYPE;
-                            ctmp->lenchildren = tmp->lenchildren + 1;
-                            ctmp->children = (AST **)hmalloc(sizeof(AST *) * (tmp->lenchildren + 1));
-                            ctmp->children[0] = vectmp[idx - 1];
-                            for(int cidx = 1, tidx = 0; cidx < (tmp->lenchildren + 1); cidx++, tidx++) {
-                                ctmp->children[cidx] = tmp->children[tidx];
-                            }
-                            idx = 0;
-                            if(!fatflag) {
-                                stack[sp] = linearize_complex_type(ctmp);
-                                sp++;
-                            } else {
-                                head->children[2] = linearize_complex_type(ctmp);
-                                flag = 1;
-                            }
-                        }
-                        break;
-                    case 2:
-                        if(sometmp->tag == ASTLEFT) {
-                            return sometmp;
-                        } else if(tmp->tag == TARRAYLITERAL) {
-                            substate = 0;
-                            ctmp = (AST *)hmalloc(sizeof(AST));
-                            ctmp->tag = TCOMPLEXTYPE;
-                            ctmp->lenchildren = tmp->lenchildren + 1;
-                            ctmp->children = (AST **)hmalloc(sizeof(AST *) * (tmp->lenchildren + 1));
-                            ctmp->children[0] = vectmp[idx - 1];
-                            for(int cidx = 1, tidx = 0; cidx < (tmp->lenchildren + 1); cidx++, tidx++) {
-                                ctmp->children[cidx] = tmp->children[tidx];
-                            }
-                            idx = 0;
-                            if(!fatflag) {
-                                stack[sp] = linearize_complex_type(ctmp);
-                                sp++;
-                            } else {
-                                head->children[2] = linearize_complex_type(ctmp);
-                            }
-                        } else if(issimpletypeast(tmp->tag)) {
-                            stack[sp] = vectmp[idx - 1];
-                            stack[sp + 1] = tmp;
-                            sp += 2;
-                            idx = 0;
-                            substate = 0;
-                        } else if(isbuiltincomplextypeast(tmp->tag)) {
-                            stack[sp] = vectmp[idx - 1];
-                            idx = 0;
-                            vectmp[idx] = tmp;
-                            idx++;
-                            sp++;
-                            substate = 1;
-                        } else if(tmp->tag == TTAG) {
-                            stack[sp] = vectmp[idx - 1];
-                            vectmp[idx - 1] = tmp;
-                            sp++;
-                        } else if(tmp->tag == TFATARROW) {
-                            stack[sp] = vectmp[idx - 1];
-                            sp++;
-                            fatflag = 1;
-                            substate = 0;
-                        } else if(tmp->tag == TNEWL) {
-                            head->children[2] = vectmp[idx - 1];
-                            flag = 1;
-                        } else {
-                            return ASTLeft(0, 0, "User type tags *must* be followed by either a type parameter, another type, or a newline");
-                        }
-                        break;
-                    case 3:
-                        if(sometmp->tag == ASTLEFT) {
-                            return sometmp;
-                        } else if(tmp->tag != TFATARROW) {
-                            return ASTLeft(0, 0, "a void-parameter list (aka unit) must be followed by a fat arrow (=>)");
-                        } else {
-                            fatflag = 1;
-                            substate = 0;
-                        }
-                        break;
-                }
-
-                if(flag == 1) {
-                    ctmp = (AST *)hmalloc(sizeof(AST));
-                    ctmp->tag = TPARAMLIST;
-                    ctmp->lenchildren = sp ;
-                    ctmp->children = (AST **)hmalloc(sizeof(AST *) * sp);
-                    for(int cidx = 0; cidx < sp; cidx++) {
-                        ctmp->children[cidx] = stack[cidx];
-                    }
-                    head->children[1] = ctmp;
-                    break;
-                }
-
                 sometmp = llreadexpression(fdin, YES);
                 tmp = sometmp->right;
+                if(sometmp->right == ASTLEFT) {
+                    return sometmp;
+                } else if(issimpletypeast(sometmp->right->tag)) {
+                    stack[sp] = tmp;
+                    sp++;
+                    substate = 0; 
+                } else if(isbuiltincomplextypeast(sometmp->right->tag)) {
+                    stack[sp] = tmp;
+                    sp++;
+                    substate = 0;
+                } else if(sometmp->right->tag == TTAG) {
+                    stack[sp] = tmp;
+                    substate = 1;
+                    sp++;
+                } else if(sometmp->right->tag == TARRAYLITERAL) {
+                    if(substate != 1) {
+                        return ASTLeft(0, 0, "array literal types *must* be proceeded by a builtin complex or Tag");
+                    }
+                    ctmp = (AST *)hmalloc(sizeof(AST));
+                    ctmp->type = TCOMPLEXTYPE;
+                    ctmp->lenchildren = 1 + tmp->lenchildren;
+                    ctmp->children = (AST **)hmalloc(sizeof(AST *) * ctmp->lenchildren);
+                    ctmp->children[0] = stack[sp - 1];
+                    for(int cidx = 1, tidx = 0; cidx < ctmp->lenchildren; cidx++, tidx++) {
+                        ctmp->children[cidx] = tmp->children[tidx];
+                    }
+                    ctmp = linearizecomplextype(ctmp);
+                } else if(sometmp->right->tag == TFATARROW) {
+
+                } else if(sometmp->right->tag == TNEWL) {
+
+                } else {
+                    return ASTLeft(0, 0, "declare's members *must* be types _or_ `=>`");
+                }
+
             }
+
+            ctmp = (AST *)hmalloc(sizeof(AST));
+            ctmp->tag = TPARAMLIST;
+            ctmp->lenchildren = sp ;
+            ctmp->children = (AST **)hmalloc(sizeof(AST *) * sp);
+            for(int cidx = 0; cidx < sp; cidx++) {
+                ctmp->children[cidx] = stack[cidx];
+            }
+            head->children[1] = ctmp;
+            break;
+
+            //sometmp = llreadexpression(fdin, YES);
+            //tmp = sometmp->right;
 
             return ASTRight(head);
         case TUSE:
