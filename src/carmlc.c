@@ -3213,18 +3213,22 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         return ASTLeft(0, 0, "array literal types *must* be proceeded by a builtin complex or Tag");
                     }
                     ctmp = (AST *)hmalloc(sizeof(AST));
-                    ctmp->type = TCOMPLEXTYPE;
+                    ctmp->tag = TCOMPLEXTYPE;
                     ctmp->lenchildren = 1 + tmp->lenchildren;
                     ctmp->children = (AST **)hmalloc(sizeof(AST *) * ctmp->lenchildren);
                     ctmp->children[0] = stack[sp - 1];
                     for(int cidx = 1, tidx = 0; cidx < ctmp->lenchildren; cidx++, tidx++) {
                         ctmp->children[cidx] = tmp->children[tidx];
                     }
-                    ctmp = linearizecomplextype(ctmp);
+                    ctmp = linearize_complex_type(ctmp);
+                    stack[sp - 1] = ctmp;
+                    substate = 0;
                 } else if(sometmp->right->tag == TFATARROW) {
-
+                    endflag = 1;
+                    substate = 0;
                 } else if(sometmp->right->tag == TNEWL) {
-
+                    endflag = 2;
+                    substate = 0;
                 } else {
                     return ASTLeft(0, 0, "declare's members *must* be types _or_ `=>`");
                 }
