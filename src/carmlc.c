@@ -3200,14 +3200,23 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                     stack[sp] = tmp;
                     sp++;
                     substate = 0; 
+                    if(endflag == 1) {
+                        endflag = 2;
+                    }
                 } else if(isbuiltincomplextypeast(sometmp->right->tag)) {
                     stack[sp] = tmp;
                     sp++;
                     substate = 0;
+                    if(endflag == 1) {
+                        endflag = 2;
+                    }
                 } else if(sometmp->right->tag == TTAG) {
                     stack[sp] = tmp;
                     substate = 1;
                     sp++;
+                    if(endflag == 1) {
+                        endflag = 2;
+                    }
                 } else if(sometmp->right->tag == TARRAYLITERAL) {
                     if(substate != 1) {
                         return ASTLeft(0, 0, "array literal types *must* be proceeded by a builtin complex or Tag");
@@ -3223,16 +3232,35 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                     ctmp = linearize_complex_type(ctmp);
                     stack[sp - 1] = ctmp;
                     substate = 0;
+                    if(endflag == 1) {
+                        endflag = 2;
+                    }
                 } else if(sometmp->right->tag == TFATARROW) {
+                    if(endflag == 1) {
+                        return ASTLeft(0, 0, "cannot have duplicate `=>` in declare");
+                    }
                     endflag = 1;
                     substate = 0;
                 } else if(sometmp->right->tag == TNEWL) {
-                    endflag = 2;
+                    if(endflag == 1) {
+                        return ASTLeft(0, 0, "`=>` must be followed by a type...");
+                    } else if(endflag == 2) {
+                        endflag = 3;
+                    } else {
+                        endflag = 4;
+                    }
                     substate = 0;
                 } else {
                     return ASTLeft(0, 0, "declare's members *must* be types _or_ `=>`");
                 }
 
+                if(endflag >= 3) {
+                    break;
+                }
+            }
+
+            if(endflag == 3) {
+                // pop the top of the stack, that's our return type
             }
 
             ctmp = (AST *)hmalloc(sizeof(AST));
