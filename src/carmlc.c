@@ -3178,6 +3178,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             AST *stack[32] = {nil};
             AST *ctmp = nil;
 
+            // parse our name
             sometmp = readexpression(fdin);
 
             if(sometmp->tag == ASTLEFT) {
@@ -3259,9 +3260,22 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 }
             }
 
+            // setup our return type...
+
             if(endflag == 3) {
                 // pop the top of the stack, that's our return type
+                head->children[2] = stack[sp - 1];
+                sp--;
+            } else {
+                // set the return type to TUNIT
+                ctmp = (AST *)hmalloc(sizeof(AST));
+                ctmp->tag = TUNIT;
+                ctmp->lenchildren = 0;
+                ctmp->children = nil;
+                head->children[2] = ctmp;
             }
+
+            // capture the rest of the parameter list
 
             ctmp = (AST *)hmalloc(sizeof(AST));
             ctmp->tag = TPARAMLIST;
@@ -3271,7 +3285,6 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 ctmp->children[cidx] = stack[cidx];
             }
             head->children[1] = ctmp;
-            break;
 
             //sometmp = llreadexpression(fdin, YES);
             //tmp = sometmp->right;
