@@ -1,0 +1,11 @@
+declare foo0 int => int
+@foo1 int
+@foo2 => int
+@foo3 Bar[int]
+@foo4 array[int]
+@foo5 => Bar[int]
+@foo6 => Bar
+@foo7 => Either[Bar[int] string]
+@foo8 Either[Bar[int] string] => int
+@foo9 => array[int]
+@foo10 int int array[int] Bar => Baz
