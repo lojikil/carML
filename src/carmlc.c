@@ -520,6 +520,8 @@ isvalueform(int tag) {
         return 1;
     } else if(tag == TIDENT) {
         return 1;
+    } else if(tag == TTAG) {
+        return 1;
     } else {
         return 0;
     }
@@ -5952,7 +5954,7 @@ llcwalk(AST *head, int level, int final) {
             } else if(final) {
                 llcwalk(head->children[1], level, YES);
             } else {
-                cwalk(head->children[1], level + 1);
+                cwalk(head->children[1], level);
                 printf(";");
             }
 
@@ -5972,9 +5974,9 @@ llcwalk(AST *head, int level, int final) {
                 cwalk(head->children[2], 0);
                 printf(";\n");
             } else if(final) {
-                llcwalk(head->children[2], level + 1, YES);
+                llcwalk(head->children[2], level, YES);
             } else {
-                cwalk(head->children[2], level + 1);
+                cwalk(head->children[2], level);
                 printf(";\n");
             }
 
@@ -6114,7 +6116,7 @@ llcwalk(AST *head, int level, int final) {
                         }
                     }
                 } else if(idx < (head->lenchildren - 1)) {
-                    cwalk(head->children[idx], level + 1);
+                    cwalk(head->children[idx], level);
                     if(!issyntacticform(head->children[idx]->tag)){
                         printf(";\n");
                     } else {
@@ -6130,9 +6132,9 @@ llcwalk(AST *head, int level, int final) {
                         printf(";\n");
                     } else {
                         if(final) {
-                            llcwalk(head->children[idx], level + 1, YES);
+                            llcwalk(head->children[idx], level, YES);
                         } else {
-                            cwalk(head->children[idx], level + 1);
+                            cwalk(head->children[idx], level);
                         }
                         if(!issyntacticform(head->children[idx]->tag)){
                             printf(";\n");
@@ -6143,10 +6145,11 @@ llcwalk(AST *head, int level, int final) {
                 }
             }
             break;
+        case TSEMI:
         case TEND:
             break;
         case TUNIT:
-            printf("()");
+            printf("void");
             break;
         default:
             printf("(tag %d)", head->tag);
