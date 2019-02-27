@@ -6099,6 +6099,15 @@ llcwalk(AST *head, int level, int final) {
             // need to be a special case for *0*, but rather only
             // if we're final == YES and we're at the last member
             // (which for a 1-ary BEGIN, that would be 0)
+            // TODO: I think we need to majorly refactor what's
+            // going on here. Instead of handling "return" and
+            // co. within the individual forms, we should rather
+            // eat the cycles in an extra call to cwalk, and allow
+            // the value forms to decide if it's a return or the
+            // like instead. Furthermore, this will allow us to
+            // just track some simple state here in each of the
+            // syntactic forms, rather than now where they are
+            // all rats nests of if's
             for(idx = 0; idx < head->lenchildren; idx++){
                 if(idx == 0) {
                     if(head->lenchildren == 1 && final && isvalueform(head->children[0]->tag)) {
