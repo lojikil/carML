@@ -5513,7 +5513,7 @@ llcwalk(AST *head, int level, int final) {
             if(head->lenchildren == 2) {
                 if(head->children[1]->tag == TCOMPLEXTYPE) {
                     tbuf = typespec2c(head->children[1], buf, head->value, 512);
-                    printf("%s= ", tbuf);
+                    printf("%s = ", tbuf);
                 } else {
                     cwalk(head->children[1], 0);
                     printf(" %s = ", head->value);
