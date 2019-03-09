@@ -5455,13 +5455,17 @@ llcwalk(AST *head, int level, int final) {
     char *tbuf = nil, buf[512] = {0}, rbuf[512] = {0}, *rtbuf = nil;
     AST *ctmp = nil, *htmp = nil;
 
-    for(; idx < level; idx++) {
-        printf("    ");
+    if(head->tag != TBEGIN) {
+        for(; idx < level; idx++) {
+            printf("    ");
+        }
     }
+
     if(head == nil) {
         printf("(nil)\n");
         return;
     }
+
     switch(head->tag) {
         case TFN:
         case TDEF:
@@ -5483,25 +5487,9 @@ llcwalk(AST *head, int level, int final) {
             }
 
             printf("{\n");
-            // we need to check if we have a primitive 
-            // value or a CALL here. Honestly, what does
-            // it mean to have a $() form here tho?
 
-            if(isvalueform(head->children[1]->tag)) {
-                for(; idx < level + 1; idx++) {
-                    printf("    ");
-                }
-                printf("return ");
-                cwalk(head->children[1], 0);
-                printf(";\n");
-            } else if(issyntacticform(head->children[1]->tag)) {
-                // does this need to be a thing? can we just pass
-                // the YES to llcwalk and let the lower level
-                // forms handle it?
-                llcwalk(head->children[1], level + 1, YES);
-            } else {
-                llcwalk(head->children[1], level + 1, YES);
-            }
+            llcwalk(head->children[1], level + 1, YES);
+
             printf("}");
             break;
         case TVAL:
@@ -5593,19 +5581,13 @@ llcwalk(AST *head, int level, int final) {
             // indent in here, because there's some
             // strange interactions between WHEN and
             // BEGIN forms. 
-            if(final && isvalueform(head->children[1]->tag)) {
-                indent(level + 1);
-                printf("return ");
-                cwalk(head->children[1], 0);
-                printf(";\n");
-            } else if(final) {
+            if(final) {
                 llcwalk(head->children[1], level + 1, YES);
             } else {
                 cwalk(head->children[1], level + 1);
                 if(head->children[1]->tag == TCALL) {
-                    printf(";");
+                    printf(";\n");
                 }
-                indent(level + 1);
             }
             indent(level);
             if(final){
@@ -5631,7 +5613,7 @@ llcwalk(AST *head, int level, int final) {
                 // need to demand a type here...
             }
 
-            // need to:
+            // TODO need to:
             // demand a type from the results
             // make sure it reifies
             // generate if/else 
@@ -5692,12 +5674,7 @@ llcwalk(AST *head, int level, int final) {
                     printf(") ");
                 }
                 printf("{\n");
-                if(final && isvalueform(htmp->children[tidx + 1]->tag)) {
-                    indent(level + 1);
-                    printf("return ");
-                    cwalk(htmp->children[tidx + 1], 0);
-                    printf(";\n");
-                } else if(final) {
+                if(final) {
                     llcwalk(htmp->children[tidx + 1], level + 1, YES);
                 } else {
                     cwalk(htmp->children[tidx + 1], level + 1);
@@ -5711,6 +5688,12 @@ llcwalk(AST *head, int level, int final) {
             printf("while(");
             cwalk(head->children[0], 0);
             printf("){\n");
+
+            // FIXME: I think this is wrong;
+            // we're not detecting if this is the
+            // final block here, and thus we end up
+            // in a situation wherein a while cannot
+            // have a return properly...
             if(head->children[1]->tag == TBEGIN) {
                 ctmp = head->children[1];
                 for(int widx = 0; widx < ctmp->lenchildren; widx++) {
@@ -5943,15 +5926,7 @@ llcwalk(AST *head, int level, int final) {
             cwalk(head->children[0], 0);
             printf("){\n");
 
-            // such a hack; I hate doing this at
-            // the compiler level. Should be done as
-            // a pass above.
-            if(final && isvalueform(head->children[1]->tag)) {
-                indent(level + 1);
-                printf("return ");
-                cwalk(head->children[1], 0);
-                printf(";");
-            } else if(final) {
+            if(final) {
                 llcwalk(head->children[1], level, YES);
             } else {
                 cwalk(head->children[1], level);
@@ -5966,14 +5941,7 @@ llcwalk(AST *head, int level, int final) {
 
             printf("} else {\n");
 
-            if(final && isvalueform(head->children[2]->tag)) {
-                for(idx = 0; idx < level + 1; idx++) {
-                    printf("    ");
-                }
-                printf("return ");
-                cwalk(head->children[2], 0);
-                printf(";\n");
-            } else if(final) {
+            if(final) {
                 llcwalk(head->children[2], level, YES);
             } else {
                 cwalk(head->children[2], level);
@@ -6108,49 +6076,17 @@ llcwalk(AST *head, int level, int final) {
             // just track some simple state here in each of the
             // syntactic forms, rather than now where they are
             // all rats nests of if's
-            for(idx = 0; idx < head->lenchildren; idx++){
-                if(idx == 0) {
-                    if(head->lenchildren == 1 && final && isvalueform(head->children[0]->tag)) {
-                        printf("return ");
-                        cwalk(head->children[idx], 0);
-                        printf(";\n");
-                    } else if(head->lenchildren == 1 && final) {
-                        llcwalk(head->children[idx], level, YES);
-                    } else {
-                        cwalk(head->children[idx], level);
-                        if(issyntacticform(head->children[idx]->tag)) {
-                            printf("\n");
-                        } else {
-                            printf(";\n");
-                        }
-                    }
-                } else if(idx < (head->lenchildren - 1)) {
-                    cwalk(head->children[idx], level);
-                    if(!issyntacticform(head->children[idx]->tag)){
-                        printf(";\n");
-                    } else {
-                        printf("\n");
-                    }
-                } else if(idx < head->lenchildren) {
-                    if(isvalueform(head->children[idx]->tag)) {
-                        indent(level);
-                        if(final) {
-                            printf("return ");
-                        }
-                        cwalk(head->children[idx], 0);
-                        printf(";\n");
-                    } else {
-                        if(final) {
-                            llcwalk(head->children[idx], level, YES);
-                        } else {
-                            cwalk(head->children[idx], level);
-                        }
-                        if(!issyntacticform(head->children[idx]->tag)){
-                            printf(";\n");
-                        } else {
-                            printf("\n");
-                        }
-                    }
+            for(idx = 0; idx < head->lenchildren; idx++) {
+                if(idx == (head->lenchildren - 1) && final) {
+                    llcwalk(head->children[idx], level, YES);
+                } else {
+                    llcwalk(head->children[idx], level, NO);
+                }
+
+                if(issyntacticform(head->children[idx]->tag)) {
+                    printf("\n");
+                } else {
+                    printf("\n;");
                 }
             }
             break;
