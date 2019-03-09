@@ -5456,9 +5456,7 @@ llcwalk(AST *head, int level, int final) {
     AST *ctmp = nil, *htmp = nil;
 
     if(head->tag != TBEGIN) {
-        for(; idx < level; idx++) {
-            printf("    ");
-        }
+        indent(level);
     }
 
     if(head == nil) {
@@ -5935,9 +5933,7 @@ llcwalk(AST *head, int level, int final) {
 
             printf("\n");
 
-            for(idx = 0; idx < level; idx++) {
-                printf("    ");
-            }
+            indent(level);
 
             printf("} else {\n");
 
@@ -5948,9 +5944,7 @@ llcwalk(AST *head, int level, int final) {
                 printf(";\n");
             }
 
-            for(idx = 0; idx < level; idx++) {
-                printf("    ");
-            }
+            indent(level);
 
             printf("}\n");
             break;
