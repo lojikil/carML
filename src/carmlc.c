@@ -5457,6 +5457,14 @@ llcwalk(AST *head, int level, int final) {
 
     if(head->tag != TBEGIN) {
         indent(level);
+
+        // if we have a value form (i.e. a call, an ident,
+        // a tag, or a literal), and we are in the final
+        // position of a syntactic block, prepend it with
+        // a return
+        if(isvalueform(head->tag) && final) {
+            printf("return ");
+        }
     }
 
     if(head == nil) {
@@ -5866,8 +5874,22 @@ llcwalk(AST *head, int level, int final) {
                 // is actually going to a `ref[SomeStruct]`, is that
                 // going to be a pain in the rear to fix?
                 if(head->lenchildren == 2) {
-                    printf("%s ", coperators[opidx]);
-                    cwalk(head->children[1], 0);
+                    // NOTE this code is a bit ugly,
+                    // but basically we don't want to punish
+                    // users who are being explicit with a
+                    // "return" operator call here
+                    // TODO I think this needs to be fixed anyway
+                    // as we should explicitly check that the
+                    // operator has the correct number of parameters
+                    if(!strncmp(head->children[0]->value, "return", 6)) {
+                        if(!final) {
+                            printf("return ");
+                        }
+                        cwalk(head->children[1], 0);
+                    } else {
+                        printf("%s ", coperators[opidx]);
+                        cwalk(head->children[1], 0);
+                    }
                 } else if(!strncmp(head->children[0]->value, "make-struct", 11)) {
                     printf("{ ");
                     for(int cidx = 1; cidx < head->lenchildren; cidx++) {
@@ -5949,8 +5971,6 @@ llcwalk(AST *head, int level, int final) {
             printf("}\n");
             break;
         case TIDENT:
-            printf("%s", head->value);
-            break;
         case TTAG:
             printf("%s", head->value);
             break;
@@ -6080,7 +6100,7 @@ llcwalk(AST *head, int level, int final) {
                 if(issyntacticform(head->children[idx]->tag)) {
                     printf("\n");
                 } else {
-                    printf("\n;");
+                    printf(";\n");
                 }
             }
             break;
