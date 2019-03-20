@@ -5496,7 +5496,11 @@ llcwalk(AST *head, int level, int final) {
 
             llcwalk(head->children[1], level + 1, YES);
 
-            printf("}");
+            if(isvalueform(head->children[1]->tag)) {
+                printf(";\n}");
+            } else {
+                printf("}");
+            }
             break;
         case TVAL:
         case TVAR:
