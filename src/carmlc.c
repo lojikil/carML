@@ -5593,18 +5593,17 @@ llcwalk(AST *head, int level, int final) {
             // BEGIN forms. 
             if(final) {
                 llcwalk(head->children[1], level + 1, YES);
+                if(isvalueform(head->children[1]->tag)) {
+                    printf(";\n");
+                }
             } else {
                 cwalk(head->children[1], level + 1);
-                if(head->children[1]->tag == TCALL) {
+                if(isvalueform(head->children[1]->tag)) {
                     printf(";\n");
                 }
             }
             indent(level);
-            if(final){
-                printf("}\n");
-            } else {
-                printf("}");
-            }
+            printf("}\n");
             break;
         case TMATCH:
             // there are several different strategies to
@@ -5707,14 +5706,31 @@ llcwalk(AST *head, int level, int final) {
             if(head->children[1]->tag == TBEGIN) {
                 ctmp = head->children[1];
                 for(int widx = 0; widx < ctmp->lenchildren; widx++) {
-                    cwalk(ctmp->children[widx], level + 1);
-                    printf(";\n");
+                    if(final && widx == (ctmp->lenchildren - 1)) {
+                        llcwalk(ctmp->children[widx], level + 1, YES);
+                    } else {
+                        cwalk(ctmp->children[widx], level + 1);
+                    }
+
+                    if(isvalueform(ctmp->children[widx]->tag)) {
+                        printf(";\n");
+                    }
                 }
                 indent(level);
-                printf("}");
+                printf("}\n");
             } else {
-                cwalk(head->children[1], level + 1);
-                printf(";\n}");
+                if(final) {
+                    llcwalk(head->children[1], level + 1, YES);
+                } else {
+                    cwalk(head->children[1], level + 1);
+                }
+
+                if(isvalueform(head->children[1]->tag)) {
+                    printf(";\n");
+                }
+
+                indent(level);
+                printf("}\n");
             }
             break;
         case TFOR:

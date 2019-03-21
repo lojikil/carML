@@ -8,3 +8,11 @@ def main ac : int al : array[string] => int = {
     }
     0
 }
+
+def bar lim:int => int = {
+    var foo : int = 0
+    while (< foo lim) do {
+        set! foo $ + foo 1
+        when (> foo 100) do foo
+    }
+}
