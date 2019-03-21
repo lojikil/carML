@@ -11,7 +11,7 @@ A quick list of the current `TODO`s.
 1. _TEST_: add more complex type tests  
 1. add test runner: parse SExpression output...
 1. Figure out a decent backing for Rust-style deques (possibly implemented from records + arrays)
-1. make `$` and `|>` work as they would in Haskell & OCaml/F# respectively.
+1. make `|>` work it would in OCaml/F#
 1. add `.` ala Haskell for "compose"? `f . g` becomes `(f (g x))`
 1. If we are adding those, may as well do full shunting yard and parse things nicely
 1. integrate `$` and `|>` with `$()`
@@ -87,6 +87,7 @@ And completed items:
 1. **DONE** fix complex type handling in `typespec2c`
 1. **DONE** fix match with `type`s
 1. **DONE** Investigate: currently there is a syntax ambiguity in `begin` forms: is `t` a unary function call, or an identifier? Fix: identifier
+1. **DONE** Make `$` work like it does in Haskell
 
 # Begin-style function calls
 
@@ -313,3 +314,19 @@ Similarly, when we pass arrays into functions, we should capture the length as a
 def foo bar:array[int] ... = ...
 # the compiler will add a `bar_len_$integer` parameter implicitly...
 ```
+
+# Memory Model
+
+To add to the above, I've been thinking about the memory model of carML... a lot. The problem
+I have is that I want to be able to both:
+
+- allow normal users not to think about how memory works
+- allow power users to precisely control how memory works
+
+So I *think* what I need to do is:
+
+1. add the antithesis of `ref`: `flat`, which requires stack allocation
+1. pass items by reference by default (`const *`)
+1. pass items by mutable reference when `ref` is in play (`ref[array[int]]`)
+1. pass items by value when `flat` is in play (`flat[array[int]]`)
+1. structs and the like then would _default_ to const refs unless the user specifies otherwise
