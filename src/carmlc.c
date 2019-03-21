@@ -5948,26 +5948,35 @@ llcwalk(AST *head, int level, int final) {
         case TIF:
             printf("if(");
             cwalk(head->children[0], 0);
-            printf("){\n");
+            printf(") {\n");
 
             if(final) {
-                llcwalk(head->children[1], level, YES);
+                llcwalk(head->children[1], level + 1, YES);
             } else {
-                cwalk(head->children[1], level);
+                cwalk(head->children[1], level + 1);
                 printf(";");
             }
 
-            printf("\n");
+            if(isvalueform(head->children[1]->tag)) {
+                printf(";\n");
+            } else {
+                printf("\n");
+            }
 
             indent(level);
 
             printf("} else {\n");
 
             if(final) {
-                llcwalk(head->children[2], level, YES);
+                llcwalk(head->children[2], level + 1, YES);
             } else {
-                cwalk(head->children[2], level);
+                cwalk(head->children[2], level + 1);
+            }
+
+            if(isvalueform(head->children[2]->tag)) {
                 printf(";\n");
+            } else {
+                printf("\n");
             }
 
             indent(level);
