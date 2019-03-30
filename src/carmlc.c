@@ -294,7 +294,7 @@ main(int ac, char **al) {
  / __/ _` | '__| |\\/| || |    \n\
 | (_| (_| | |  | |  | || |____\n\
  \\___\\__,_|_|  \\_|  |_/\\_____/\n");
-        printf("\t\tcarML/C 2018.2\n");
+        printf("\t\tcarML/C 2019.0\n");
         printf("(c) 2016-2018 lojikil, released under the ISC License.\n\n");
         printf("%%c - turns on C code generation\n%%quit/%%q - quits\n\n");
         do {
