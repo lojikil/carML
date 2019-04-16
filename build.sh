@@ -28,6 +28,10 @@ then
         debug)
             echo "[debugging enabled]"
             EXTRAFLAGS="-std=c99 -g -DDEBUG" ;;
+        strict)
+            echo "[strict mode]"
+            EXTRAFLAGS="-std=c99 -Wall -Werror"
+            ;;
         *)
             ;;
     esac

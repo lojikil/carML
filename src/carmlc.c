@@ -781,8 +781,8 @@ findtype(AST *head) {
 // out what *type* of signature we're generating...
 char *
 typespec2c(AST *typespec, char *dst, char *name, int len) {
-    int strstart = 0, typeidx = 0, rewrite = 0, speclen = 0, sp = 0, breakflag = 0;
-    char *typeval = nil, *typestack[16] = {nil};
+    int strstart = 0, speclen = 0;
+    char *typeval = nil;
     AST *tmp = nil;
 
     // we use the type stack to capture each level of a type...
@@ -944,8 +944,7 @@ next(FILE *fdin, char *buf, int buflen) {
      * item, so that we can return identifiers or
      * numbers.
      */
-    int state = 0, rc = 0, cur = 0, idx = 0, substate = 0, tagorident = TIDENT;
-    int defstate = 0;
+    int cur = 0, idx = 0, substate = 0, tagorident = TIDENT;
     cur = fgetc(fdin);
 
     /* we don't really care about whitespace other than
@@ -4005,8 +4004,8 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                         //printf("len == %d\n", tcall->lenchildren);
                         for(int i = 0; i < tcall->lenchildren; i++) {
                             //printf("i == %d\n", i);
-                            AST* ttmp = vectmp[flag + i];
-                            /*walk(ttmp, 0);
+                            /*AST* ttmp = vectmp[flag + i];
+                            walk(ttmp, 0);
                             printf("\n");*/
                             tcall->children[i] = vectmp[flag + i];
                             /*walk(tcall->children[i], 0);
@@ -4215,7 +4214,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             head->children = (AST **)hmalloc(sizeof(AST *) * 2);
 
             AST *nstack[128] = {nil};
-            int nsp = 0, collapse_complex = 0;
+            int nsp = 0;
 
             sometmp = readexpression(fdin);
 
@@ -4896,7 +4895,7 @@ mung_single_type(const char **pdecls, const int **plexemes, int len, int haltsta
  */
 void
 mung_variant_name(AST *name, AST *variant, int ref) {
-    char result[512] = {0}, varname[128] = {0}, constructor[128] = {0}, *src = variant->value;
+    char varname[128] = {0}, constructor[128] = {0}, *src = variant->value;
     int loc = 0, idx = 0, namelen = strlen(src);
     uint8_t flag = 0;
 
@@ -5370,8 +5369,8 @@ walk(AST *head, int level) {
 
 void
 generate_type_value(AST *head, const char *name) {
-    int midx = 0, cidx = 0;
-    char *tbuf = nil, buf[512] = {0}, *rtbuf = nil, rbuf[512] = {0};
+    int cidx = 0;
+    char buf[512] = {0}, *rtbuf = nil, rbuf[512] = {0};
     char *member = nil, membuf[512] = {0};
     // setup a nice definition...
     printf("%s\n%s_%s(", name, name, head->children[0]->value);
@@ -5411,8 +5410,8 @@ generate_type_value(AST *head, const char *name) {
 
 void
 generate_type_ref(AST *head, const char *name) {
-    int midx = 0, cidx = 0;
-    char *tbuf = nil, buf[512] = {0}, *rtbuf = nil, rbuf[512] = {0};
+    int cidx = 0;
+    char buf[512] = {0}, *rtbuf = nil, rbuf[512] = {0};
     char *member = nil, membuf[512] = {0};
     // setup a nice definition...
     printf("%s *\n%s_%s_ref(", name, name, head->children[0]->value);
@@ -5869,7 +5868,7 @@ llcwalk(AST *head, int level, int final) {
             break;
         case TARRAYLITERAL:
             printf("{");
-            for(int cidx; cidx < head->lenchildren; cidx++) {
+            for(int cidx = 0; cidx < head->lenchildren; cidx++) {
                 cwalk(head->children[cidx], 0);
                 if(cidx < (head->lenchildren - 1)){
                     printf(", ");
