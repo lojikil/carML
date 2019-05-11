@@ -1,0 +1,31 @@
+# a simple deque backing
+# just meant for testing, possibly for modes where 
+# we don't flatten types in C
+
+record RawDeque {
+    # really need to be able to say
+    # U32/U64 here
+    capacity: int
+    length: int
+    data: ref[any]
+}
+
+# have heap and stack-based make-helpers?
+# the heap-based helper
+# returns a GC-allocated RawDeque reference
+def make_RawDeque => ref[RawDeque] = {
+    var ret: ref[RawDeque] = nil
+    set! ret $ hmalloc $ sizeof RawDeque
+    set! (-> ret capacity) 64
+    set! (-> ret length) 0
+    set! (-> ret data) $ hmalloc $ * 64 $ sizeof RawDeque
+    ret
+}
+
+# the stack-based helper
+# returns a stack-allocated RawDeque
+def make_RawDeque_low => RawDeque = {
+    var ret: RawDeque = (make-struct 64 0 nil)
+    set! (. ret data) $ make-array any 64
+    ret
+}

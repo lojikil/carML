@@ -205,6 +205,7 @@ const char *coperators[] = {
     "->", "->",
     "get", "get",
     "make-struct", "make-struct",
+    "make-deque", "make-deque",
     "make-string", "make-string",
     "make-array", "make-array",
     "make", "make",
@@ -5918,6 +5919,8 @@ llcwalk(AST *head, int level, int final) {
                         }
                     }
                     printf("}");
+                } else if(!strncmp(head->children[0]->value, "make-deque", 10)) {
+
                 } else if(!strncmp(head->children[0]->value, "make-string", 11)) {
 
                 } else if(!strncmp(head->children[0]->value, "make-array", 10)) {
