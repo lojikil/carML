@@ -133,7 +133,7 @@ def read_list fh:ref[FILE] => SExpression = {
 }
 
 def read_array fh:ref[FILE] => SExpression = {
-    var ret:array[SExpression] = (make-array SExpression 128)
+    var ret:array[SExpression] = (make-array 128 $ SExpression.Nil)
     var ret_length:int = 128
     var tmp:SExpression = (sexpression_read fh)
     var idx:int = 0

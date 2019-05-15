@@ -26,6 +26,6 @@ def make_RawDeque => ref[RawDeque] = {
 # returns a stack-allocated RawDeque
 def make_RawDeque_low => RawDeque = {
     var ret: RawDeque = (make-struct 64 0 nil)
-    set! (. ret data) $ make-array any 64
+    set! (. ret data) $ make-array 64 nil
     ret
 }
