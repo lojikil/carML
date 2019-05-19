@@ -334,3 +334,20 @@ So I *think* what I need to do is:
 1. pass items by mutable reference when `ref` is in play (`ref[array[int]]`)
 1. pass items by value when `flat` is in play (`flat[array[int]]`)
 1. structs and the like then would _default_ to const refs unless the user specifies otherwise
+
+**note** I think we'll use `low` for this, because it's dissimilar to `float`
+
+## Decomposition
+
+I was thinking about this today:
+
+```
+# ...
+var foo:array[int] = (make-array int 10 0)
+# should become:
+var foo:array[int] = (model-approriate-allocator int 10)
+val foo_len = 10
+(memset_s foo (sizeof int) 10 0)
+```
+
+Basically, a nano-pass can rewrite arrays to be proper captures of setting up the VLAs, len, setting default values, &c.
