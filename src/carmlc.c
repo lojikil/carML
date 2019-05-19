@@ -826,16 +826,16 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
         if(name != nil) {
             snprintf(dst, len, "%s %s", typeval, name);
         } else {
-            snprintf(dst, len, "%s ", typeval);
+            snprintf(dst, len, "%s", typeval);
         }
         return dst;
     } else if(typespec->lenchildren == 1) {
         if(typespec->children[0]->tag == TTAG) {
-            snprintf(dst, len, "%s ", typespec->children[0]->value);
+            snprintf(dst, len, "%s", typespec->children[0]->value);
         } else {
             switch(typespec->children[0]->tag) {
                 case TSTRT:
-                    snprintf(dst, 10, "char * ");
+                    snprintf(dst, 10, "char *");
                     break;
                 case TDEQUET:
                     snprintf(dst, 10, "deque *");
@@ -846,7 +846,7 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
                 case TARRAY:
                 case TREF:
                 default:
-                    snprintf(dst, 10, "void * ");
+                    snprintf(dst, 10, "void *");
                     break;
             }
         }
@@ -856,7 +856,7 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
             if(islambdatypeast(typespec->children[0]->tag)) {
                 snprintf(&dst[strstart], 512 - strstart, "void (*%s)(void)", name); 
             } else {
-                snprintf(&dst[strstart], 512 - strstart, "%s ", name);
+                snprintf(&dst[strstart], 512 - strstart, "%s", name);
             }
         }
     } else if(typespec->lenchildren > 1 && islambdatypeast(typespec->children[0]->tag)) {
@@ -928,7 +928,7 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
 
         typeval = findtype(typespec);
 
-        snprintf(&dst[strstart], (len - strstart), "%s ", typeval);
+        snprintf(&dst[strstart], (len - strstart), "%s", typeval);
         strstart = strnlen(dst, len);
         if(name != nil) {
             snprintf(&dst[strstart], (len - strstart), "%s", name);
@@ -5924,13 +5924,17 @@ llcwalk(AST *head, int level, int final) {
                 } else if(!strncmp(head->children[0]->value, "make-string", 11)) {
 
                 } else if(!strncmp(head->children[0]->value, "make-array", 10)) {
-
+                    // TODO: this is a hack, to get carML lifted into itself
+                    // eventually, we need to actually detect what is going on,
+                    // and use the correct allocator. What I did here was to
+                    // basically assume that the user typed `heap-allocate`
+                    printf("(%s *)hmalloc(sizeof(%s) * %s)", head->children[1]->value, head->children[1]->value, head->children[2]->value);
                 } else if(!strncmp(head->children[0]->value, "make", 4)) {
 
                 } else if(!strncmp(head->children[0]->value, "stack-allocate", 14)) {
 
                 } else if(!strncmp(head->children[0]->value, "heap-allocate", 13)) {
-
+                    printf("(%s *)hmalloc(sizeof(%s) * %s)", head->children[1]->value, head->children[1]->value, head->children[2]->value);
                 } else if(!strncmp(head->children[0]->value, "region-allocate", 15)) {
 
                 } else {

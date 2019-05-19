@@ -10,7 +10,7 @@
 # actually quite happy that the code can already
 # be used this way.
 def main ac:int al:array[string] => int = {
-    var composition : array[int] = (make-array 256 0)
+    var composition : array[int] = (make-array int 256 0)
     var fh : ref of FILE = NULL
     var ch : int = 0
     var tmp : int = 0

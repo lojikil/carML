@@ -4,7 +4,6 @@ A quick list of the current `TODO`s.
 
 1. RawDeque (see `labs/rawdeque.carml`) as a test backing for Deques
 1. use RawDeque in specialized form to store a spaghetti stack of environment frames
-1. fix `make-array` (plus the VLA style mentioned below)
 1. use the environment frames to support typing (finally)
 1. Make rebinding for idents in `match` forms (`rewrite_match_bind.carml`)
 1. Make sure that things like `y given (> y 10)` are rewritten properly as well
@@ -43,6 +42,7 @@ A quick list of the current `TODO`s.
 
 And completed items:
 
+1. **DON** fix `make-array` (plus the VLA style mentioned below); uses GC by default for now, will fix in self-hosted version
 1. **DONE** Fix type parsing code to be much simpler.
 1. **DONE** Fix (finally) the `match` form for variants/poly
 1. **DONE** Add complex types to `val`
