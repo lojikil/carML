@@ -60,7 +60,8 @@ typedef enum {
     LPROCEDURET5, LPROCEDURET6, LPROCEDURET7, LANY0, LANY1,
     LAND0, LAND1, LAND2, LA0, LAN0, LEXTERN0, LEXTERN1, LEXTERN2,
     LEXTERN3, LEXTERN4, LGIVEN0, LGIVEN1, LGIVEN2, LGIVEN3,
-    LGIVEN4,
+    LGIVEN4, LLOW0, LLOW1, LU0, LUNION0, LUNION1, LUNION2,
+    LUNION3, LUNION4,
 } LexStates;
 
 /* AST tag enum.
@@ -87,7 +88,8 @@ typedef enum {
     TPIPEARROW, TUSERT, TVAR, TTAG, // 68
     TPARAMDEF, TTYPEDEF, TWHILE, TFOR, // 72
     TTUPLET, TFUNCTIONT, TPROCEDURET, // 75
-    TAND, TANY, TGUARD, TEXTERN, TGIVEN // 80
+    TAND, TANY, TGUARD, TEXTERN, TGIVEN, // 80
+    TLOW, TUNION, // 82
 } TypeTag;
 
 struct _AST {
@@ -1272,7 +1274,7 @@ next(FILE *fdin, char *buf, int buflen) {
                                     substate = LT0;
                                     break;
                                 case 'u':
-                                    substate = LUSE0;
+                                    substate = LU0;
                                     break;
                                 case 'v':
                                     substate = LVAL0;
@@ -2032,6 +2034,8 @@ next(FILE *fdin, char *buf, int buflen) {
                         case LL0:
                             if(cur == 'e') {
                                 substate = LLET1;
+                            } else if(cur == 'o') {
+                                substate = LLOW0;
                             } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
                                 ungetc(cur, fdin);
                                 buf[idx - 1] = '\0';
@@ -2103,6 +2107,28 @@ next(FILE *fdin, char *buf, int buflen) {
                             }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
                                 ungetc(cur, fdin);
                                 return TLETREC;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LLOW0:
+                            if(cur == 'w') {
+                                substate = LLOW1;
+                            } else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LLOW1:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TLOW;
                             } else {
                                 strncpy(buf, "malformed identifier", 512);
                                 return TERROR;
@@ -2717,6 +2743,19 @@ next(FILE *fdin, char *buf, int buflen) {
                                 return TERROR;
                             }
                             break;
+                        case LU0:
+                            if(cur == 's') {
+                                substate = LUSE1;
+                            } else if(cur == 'n') {
+                                substate = LUNION1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
                         case LUSE0: 
                             if(cur == 's') {
                                 substate = LUSE1;
@@ -2745,6 +2784,50 @@ next(FILE *fdin, char *buf, int buflen) {
                             }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
                                 ungetc(cur, fdin);
                                 return TUSE;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LUNION1:
+                            if(cur == 'i') {
+                                substate = LUNION2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LUNION2:
+                            if(cur == 'o') {
+                                substate = LUNION3;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LUNION3:
+                            if(cur == 'n') {
+                                substate = LUNION4;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LUNION4:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TUNION;
                             } else {
                                 strncpy(buf, "malformed identifier", 512);
                                 return TERROR;
@@ -4810,6 +4893,8 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
         case TFUNCTIONT:
         case TPROCEDURET:
         case TTUPLET:
+        case TUNION:
+        case TLOW:
             tmp = (AST *)hmalloc(sizeof(AST));
             tmp->tag = ltype;
             vectmp[idx] = tmp;
@@ -5173,6 +5258,12 @@ walk(AST *head, int level) {
             break;
         case TREF:
             printf("(type ref)");
+            break;
+        case TLOW:
+            printf("(type low)");
+            break;
+        case TUNION:
+            printf("(type union)");
             break;
         case TCOMPLEXTYPE:
             printf("(complex-type ");
