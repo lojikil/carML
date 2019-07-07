@@ -424,10 +424,12 @@ istypeast(int tag) {
         case TTAG: // user types 
         case TBOOLT:
         case TREF:
+        case TLOW:
+        case TUNION:
         case TANY:
-            return 1;
+            return YES;
         default:
-            return 0;
+            return NO;
     }
 }
 
@@ -441,9 +443,9 @@ issimpletypeast(int tag) {
         case TSTRT:
         case TBOOLT:
         case TANY:
-            return 1;
+            return YES;
         default:
-            return 0;
+            return NO;
     }
 }
 int
@@ -454,8 +456,19 @@ isbuiltincomplextypeast(int tag) {
 		case TTUPLET:
         case TFUNCTIONT:
         case TPROCEDURET:
+        // NOTE:
+        // are the following *actually
+        // built-in complex types?
+        // when we flatten arrays and such,
+        // it means that *ALL* things are
+        // just complex types. Could make
+        // a BUILT-IN complex type holder
+        // and then a more generic complex
+        // type
         case TCOMPLEXTYPE:
         case TREF:
+        case TLOW:
+        case TUNION:
             return YES;
         default:
             return NO;
@@ -473,6 +486,8 @@ iscomplextypeast(int tag) {
         case TPROCEDURET:
         case TCOMPLEXTYPE:
         case TREF:
+        case TLOW:
+        case TUNION:
         case TTAG: // user types 
             return 1;
         //case TARRAYLITERAL:
