@@ -2,6 +2,8 @@
 
 args="$@"
 EXTRAFLAGS="-std=c99"
+LIBLOC="$HOME/homebrew/lib"
+INCLOC="$HOME/homebrew/include"
 
 os=`uname`
 
@@ -38,4 +40,4 @@ then
 fi
 
 echo "building carML/c carmlc.c"
-cc $EXTRAFLAGS -o carmlc ./src/carmlc.c -L ~/homebrew/lib/ -I ~/homebrew/include/ -lgc && echo "[build success]" || echo "[build failed]"
+cc $EXTRAFLAGS -o carmlc ./src/carmlc.c -L $LIBLOC -I $INCLOC -lgc && echo "[build success]" || echo "[build failed]"
