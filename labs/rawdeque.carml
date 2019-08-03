@@ -18,7 +18,7 @@ def make_RawDeque => ref[RawDeque] = {
     set! ret $ hmalloc $ sizeof RawDeque
     set! (-> ret capacity) 64
     set! (-> ret length) 0
-    set! (-> ret data) $ heap-allocate RawDeque 64
+    set! (-> ret data) $ hmalloc $ * 64 $ sizeof RawDeque
     ret
 }
 
@@ -26,6 +26,6 @@ def make_RawDeque => ref[RawDeque] = {
 # returns a stack-allocated RawDeque
 def make_RawDeque_low => RawDeque = {
     var ret: RawDeque = (make-struct 64 0 nil)
-    set! (. ret data) $ make-array int 64 nil
+    set! (. ret data) $ make-array nil 64
     ret
 }

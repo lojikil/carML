@@ -1,0 +1,69 @@
+# @(#) a simple woodchips simulation
+# @(#) we have a world, and ants that have
+# @(#) simple rules: wander until you see a woodchip
+# @(#) - if you have a woodchip, put down your woodchip
+# @(#) - if you don't have a woodchip, pick that one up
+#
+#
+# This also raises that I need to *finally* do certain things
+# - foreach and array fusion
+# - figure out a memory model so that `ref` isn't required
+# (basically, allow the compiler to figure out when we want a ref,
+# unless we *say explicitly* that we want a ref)
+# - get make, make-array, make-string, &c. working
+# - Just generally make things more functional, less imperative
+# - figure out if I'm really going to keep types and records
+# (having both seems redundant, and we could have a smaller language...)
+
+record SimMatrix {
+    x:int
+    y:int
+    data:ref[char]
+}
+
+def make_SimMatrix x:int y:int => ref[SimMatrix] = {
+    var ret:ref[SimMatrix] = (hmalloc $ sizeof SimMatrix)
+    var total:int = (* x y)
+    set! (-> ret x) x
+    set! (-> ret y) y
+    set! (-> ret data) $ hmalloc $ * total $ sizeof char
+    ret
+}
+
+# I *really* need to work on inlining...
+# helper methods like this could be easily inlined
+def get_SimMatrix x:int y:int mat:ref[SimMatrix] => char = {
+    # this actually raises an interesting problem
+    # when you say (-> mat x) do you mean the *NAME* x
+    # or the scoped variable x? There almost has to be 
+    # distinction of forms that operate on variables and
+    # those that operate on the values those variables 
+    # hold
+    val total:int = (* (-> mat x) (-> mat y))
+    var offset:int = (* x y)
+    when (<= total offset) do {
+        set! offset $ - offset total
+    }
+    get (-> mat data) offset
+}
+
+def set_SimMatrix x:int y:int mat:ref[SimMatrix] value:char = {
+    val total:int = (* (-> mat x) (-> mat y))
+    var offset:int = (* x y)
+    when (<= total offset) do {
+        set! offset $ - offset total
+    }
+    set! (get (-> mat data) offset) value
+}
+
+# we can encode state:
+# 0 - nothing here
+# 1 - an ant here
+# 2 - a woodchip
+# 3 - an ant carrying a woodchip
+# 4 - an ant *and* a woodchip (the and just set it down)
+
+def main ac:int al:ref[string] => int = {
+    var mat:ref[SimMatrix] = (make-SimMatrix 10 10)
+    0
+}
