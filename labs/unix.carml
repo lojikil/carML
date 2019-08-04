@@ -1,5 +1,5 @@
-# a simple Unix/Posix interaction library
-# just a test to see what it would be like.
+# @(#) a simple Unix/Posix interaction library
+# @(#) just a test to see what it would be like.
 
 type UnixResult {
     Ok int

@@ -18,42 +18,62 @@
 record SimMatrix {
     x:int
     y:int
+    length:int
     data:ref[char]
 }
 
 def make_SimMatrix x:int y:int => ref[SimMatrix] = {
     var ret:ref[SimMatrix] = (hmalloc $ sizeof SimMatrix)
-    var total:int = (* x y)
-    set! (-> ret x) x
-    set! (-> ret y) y
-    set! (-> ret data) $ hmalloc $ * total $ sizeof char
+    val total:int = (* x y)
+    set! ret->x x
+    set! ret->y y
+    set! ret->length total
+    set! ret->data $ hmalloc $ * total $ sizeof char
     ret
 }
 
 # I *really* need to work on inlining...
 # helper methods like this could be easily inlined
 def get_SimMatrix x:int y:int mat:ref[SimMatrix] => char = {
+    # XXX (lojikil):
     # this actually raises an interesting problem
     # when you say (-> mat x) do you mean the *NAME* x
     # or the scoped variable x? There almost has to be 
     # distinction of forms that operate on variables and
     # those that operate on the values those variables 
     # hold
-    val total:int = (* (-> mat x) (-> mat y))
+    # XXX (lojikil):
+    # when I was originally designing things, I was heading
+    # towards a SRFI-9/SRFI-57/Haskell style system wherein
+    # Records have named accessors, like types do. Then those
+    # a rewritten to C. Right now, I'll use C-style accessors
+    # similar to OCaml, but I do like the named accessor style
+    # better. Why? Because it can be treated like a function
+    # that is rewritten to a low-level accessor based on the
+    # typing decisions made by the compiler. This also supports
+    # making `type` and `record` close to equivalent, since there's
+    # no *real* need to have a distinction there; a record could
+    # just be a type with no other variants.
+
     var offset:int = (* x y)
-    when (<= total offset) do {
-        set! offset $ - offset total
+    when (<= mat->length offset) do {
+        set! offset $ - offset mat->length
     }
-    get (-> mat data) offset
+    get mat->data offset
 }
 
 def set_SimMatrix x:int y:int mat:ref[SimMatrix] value:char = {
-    val total:int = (* (-> mat x) (-> mat y))
     var offset:int = (* x y)
-    when (<= total offset) do {
-        set! offset $ - offset total
+    when (<= mat->length offset) do {
+        set! offset $ - offset mat->length
     }
-    set! (get (-> mat data) offset) value
+    set! (get mat->data offset) value
+}
+
+def calc_offset x:int y:int mat:ref[SimMatrix] => int = {
+    var offset:int = (* x y)
+    when (<= mat->length offset) do (set! offset $ - offset mat->length)
+    offset
 }
 
 # we can encode state:
@@ -62,8 +82,21 @@ def set_SimMatrix x:int y:int mat:ref[SimMatrix] value:char = {
 # 2 - a woodchip
 # 3 - an ant carrying a woodchip
 # 4 - an ant *and* a woodchip (the and just set it down)
+# the tough part is, what direction is that ant heading?
+# the update process for each ant's movement could determine the
+# direction the ant is moving prior to "looking" for woodchips
+# ants can only pick up woodchips in the direction they can "see"
+# which is forwards
+#
+# eventually it would be fun to make this into a "turtles" library
+# so that folks can do some simple simulations in carML too, esp
+# since carML also uses my work on tatwyd (a PowerLogo-alike)
 
 def main ac:int al:ref[string] => int = {
+    (GC_INIT)
     var mat:ref[SimMatrix] = (make-SimMatrix 10 10)
+    printf "x: %d\n" mat->x
+    printf "y: %d\n" mat->y
+    printf "length: %d\n" mat->length
     0
 }
