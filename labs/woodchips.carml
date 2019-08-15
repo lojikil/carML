@@ -103,9 +103,9 @@ def construct_board mat:ref[SimMatrix] = {
     var chipcount:int = 0
     printf "woodchip count: %d\n" totalchipcount
     while (< idx mat->length) do {
-        when (&& (< chipcount totalchipcount) (eq? 1 $ arc4random_uniform 2)) do {
+        when (&& (< chipcount totalchipcount) (>= 20 $ arc4random_uniform 100)) do {
             # if we haven't exceeded the 30% of the board being woodchips and our
-            # coin toss is heads, set a woodchip here
+            # guess exceeds some threshold, set a woodchip here
             set! (get mat->data idx) 2
             set! chipcount $ + chipcount 1
         }
