@@ -1,3 +1,6 @@
+# @(#) a simple rewriter
+# @(#) given a needle:ref[AST], replace it with replace:ref[AST]
+
 def rewrite needle:ref[AST] replace:ref[AST] haystack:ref[AST] => ref[AST] = {
     var ret:ref[AST] = NULL
     var idx:int = 0

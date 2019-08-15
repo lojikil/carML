@@ -1,9 +1,10 @@
-# recreating the AST type from carML/c here
-# as a carML record. Were I to clean-room
-# this properly, I'd obviously use variants.
-# However, this at least allows me to test
-# a rewriter without having to link the 
-# entire carML/c code base here...
+# @(#) a match rewriter
+# @(#) recreating the AST type from carML/c here
+# @(#) as a carML record. Were I to clean-room
+# @(#) this properly, I'd obviously use variants.
+# @(#) However, this at least allows me to test
+# @(#) a rewriter without having to link the 
+# @(#) entire carML/c code base here...
 
 record AST {
     tag:U32 # FIXME: need to define C-level types...

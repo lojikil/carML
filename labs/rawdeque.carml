@@ -1,6 +1,6 @@
-# a simple deque backing
-# just meant for testing, possibly for modes where 
-# we don't flatten types in C
+# @(#) a simple deque backing
+# @(#) just meant for testing, possibly for modes where 
+# @(#) we don't flatten types in C
 
 record RawDeque {
     # really need to be able to say

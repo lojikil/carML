@@ -1,3 +1,4 @@
+# @(#) a simple character frequency counter
 # it's interesting...
 # the current state of carML's RTS is such that
 # the code I have to write is quite imperative.

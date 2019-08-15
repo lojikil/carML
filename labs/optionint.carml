@@ -1,5 +1,5 @@
-# a simple test case for working with `type` forms
-# and making sure the C output is correct.
+# @(#) a simple test case for working with `type` forms
+# @(#) and making sure the C output is correct.
 
 type OptionInt {
     Some int
