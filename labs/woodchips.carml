@@ -76,6 +76,43 @@ def calc_offset x:int y:int mat:ref[SimMatrix] => int = {
     offset
 }
 
+# XXX (lojikil) I do need to fix detection of
+# `return` in functions that are void and such
+# also, make it so that you can call something
+# that technically returns (like printf) but ignore
+# that return. I dislike `let () = (printf ...)`
+# but maybe that isn't a terrible idea either...
+def print_SimMatrix mat:ref[SimMatrix] = {
+    var idx:int = 0
+    while (< idx mat->length) do {
+        when (&& (eq? 0 $ % idx mat->x) (!= idx 0)) do {
+            printf "\n"
+        }
+        printf "%d " $ get mat->data idx
+        set! idx $ + idx 1
+    }
+    printf "\n"
+}
+
+def construct_board mat:ref[SimMatrix] = {
+    # NOTE we don't want more than 30% of the board
+    # to be woodchips
+    val upperbound:int = (/ mat->length 3)
+    val totalchipcount:int = (arc4random_uniform upperbound)
+    var idx:int = 0
+    var chipcount:int = 0
+    printf "woodchip count: %d\n" totalchipcount
+    while (< idx mat->length) do {
+        when (&& (< chipcount totalchipcount) (eq? 1 $ arc4random_uniform 2)) do {
+            # if we haven't exceeded the 30% of the board being woodchips and our
+            # coin toss is heads, set a woodchip here
+            set! (get mat->data idx) 2
+            set! chipcount $ + chipcount 1
+        }
+        set! idx $ + idx 1
+    }
+}
+
 # we can encode state:
 # 0 - nothing here
 # 1 - an ant here
@@ -94,9 +131,12 @@ def calc_offset x:int y:int mat:ref[SimMatrix] => int = {
 
 def main ac:int al:ref[string] => int = {
     (GC_INIT)
-    var mat:ref[SimMatrix] = (make-SimMatrix 10 10)
+    var mat:ref[SimMatrix] = (make_SimMatrix 10 10)
     printf "x: %d\n" mat->x
     printf "y: %d\n" mat->y
     printf "length: %d\n" mat->length
+    print_SimMatrix mat
+    construct_board mat
+    print_SimMatrix mat
     0
 }
