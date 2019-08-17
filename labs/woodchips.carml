@@ -22,6 +22,13 @@ record SimMatrix {
     data:ref[char]
 }
 
+record Ant {
+    x:int
+    y:int
+    carrying:bool
+    direction:int # which "direction" (cardinal) is the ant facing?
+}
+
 def make_SimMatrix x:int y:int => ref[SimMatrix] = {
     var ret:ref[SimMatrix] = (hmalloc $ sizeof SimMatrix)
     val total:int = (* x y)
@@ -29,6 +36,15 @@ def make_SimMatrix x:int y:int => ref[SimMatrix] = {
     set! ret->y y
     set! ret->length total
     set! ret->data $ hmalloc $ * total $ sizeof char
+    ret
+}
+
+def make_Ant max_x:int max_y:int => ref[Ant] = {
+    var ret:ref[Ant] = (hmalloc $ sizeof Ant)
+    var rndx:int = (arc4random_uniform max_x)
+    var rndy:int = (arc4random_uniform max_y)
+    set! ret->x rndx
+    set! ret->y rndy
     ret
 }
 
@@ -113,6 +129,25 @@ def construct_board mat:ref[SimMatrix] = {
     }
 }
 
+def place_ant ant:ref[Ant] mat:ref[SimMatrix] = {
+    var offset:int = (* ant->x ant->y)
+    val total:int = mat->length
+    var value:char = 0
+    var res:char = 0
+    when (> offset total) do {
+        set! offset $ - offset total
+    }
+    set! value $ get mat->data offset
+    match value with
+        0 => (set! res 1)
+        1 => (set! res 1) # can there be two ants?
+        2 => (set! res 4)
+        3 => (set! res 3) # can there be two ants?
+        4 => (set! res 4)
+    end
+    set! (get mat->data offset) res
+}
+
 # we can encode state:
 # 0 - nothing here
 # 1 - an ant here
@@ -132,11 +167,13 @@ def construct_board mat:ref[SimMatrix] = {
 def main ac:int al:ref[string] => int = {
     (GC_INIT)
     var mat:ref[SimMatrix] = (make_SimMatrix 10 10)
+    var ant:ref[Ant] = (make_Ant 10 10)
     printf "x: %d\n" mat->x
     printf "y: %d\n" mat->y
     printf "length: %d\n" mat->length
     print_SimMatrix mat
     construct_board mat
+    place_ant ant mat
     print_SimMatrix mat
     0
 }
