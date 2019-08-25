@@ -17,6 +17,15 @@
 # - VLAs need to add a $NAME_len param to lambdas
 # - need to fix `for` loop as well as `foreach` and co
 # - Fix `void` detection for adding a `return` in C
+# - Fix the ability of match & co to return a value
+# (currently this leads to a lot of code redundancy,
+# `set! foo $ match x with ...`
+# is so much cleaner than:
+# ```
+# match x with
+#     0 +> set! foo...
+# ```
+# )
 
 record SimMatrix {
     x:int
@@ -152,12 +161,35 @@ def place_ant ant:ref[Ant] mat:ref[SimMatrix] = {
     set! (get mat->data offset) res
 }
 
+# we calculate a value (either x or y) to move
+# an object (such as an ant) and support wrapping
+# the object back around to max/min
+def constrained_offset v:int max_v:int => int = {
+    mod v max_v
+}
+
 def check_woodchip ant:ref[Ant] mat:ref[SimMatrix] = {
+    var woodchip_loc:int = 0
+    match ant->direction with
+        0 => (set! woodchip_loc $ mul ant->x $ mod (sub ant->y 1) mat->y)
+        1 => (set! woodchip_loc $ mul ant->x $ mod (add ant->y 1) mat->y)
+        2 => (set! woodchip_loc $ mul ant->y $ mod (add ant->x 1) mat->x)
+        3 => (set! woodchip_loc $ mul ant->y $ mod (sub ant->x 1) mat->x)
+    end
+
+    # - if we are carrying a woodchip, we need to place the current woodchip
+    # down and then change to a new direct
+    # - if we are *not* carrying a woodchip, pick this one up
 
 }
 
 def move_ant ant:ref[Ant] mat:ref[SimMatrix] = {
-
+    match ant->direction with
+        0 => 0
+        1 => 1
+        2 => 2
+        3 => 3
+    end
 }
 
 # TODO (lojikil): I need to get VLAs working as expeted, so that
