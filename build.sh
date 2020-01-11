@@ -5,6 +5,14 @@ EXTRAFLAGS="-std=c99"
 LIBLOC="$HOME/homebrew/lib"
 INCLOC="$HOME/homebrew/include"
 
+if [ ! -d "$LIBLOC" ]; then
+    LIBLOC="/usr/local/lib"
+fi
+
+if [ ! -d "$INCLOC" ]; then
+    INCLOC="/usr/local/include"
+fi
+
 os=`uname`
 
 case $os in

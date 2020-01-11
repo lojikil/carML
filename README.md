@@ -18,9 +18,8 @@ I've experimented publicly with my PLT designs tho.
 
 # Name
 
-I've experimented with multiple names; HotelML (named for "The HotelML" in NJ) & Melomys (a specious of mouse) were two contenders. However,
-my (now ex-)partner and I were in NYC, where we grabbed coffee from Starbucks. She's a big fan of caramel 
-macchiattos, which Starbucks labels as "carml mac", and thus I've named it after her.
+I've experimented with multiple names; HotelML (named for "The HotelML" in NJ) & Melomys (a specious of mouse) were two contenders.
+However, I was grabbing caramel macchiattos, which Starbucks labels as "carml mac", and thus named it after the drink.
 
 # Syntax
 
