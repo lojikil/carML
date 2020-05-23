@@ -69,7 +69,7 @@ main(void) {
 
     for(; idx < 32; idx++) {
         // first pass, generate uniform names
-        randnames[idx] = randname(buf, 128, YES);
+        randnames[idx] = strdup(randname(buf, 128, YES));
     }    
 
     /*
@@ -89,15 +89,42 @@ main(void) {
         // need to time these and record the timings...
         retrieve(foo, randnames[idx], &val);
         printf("%s:%ld\n", randnames[idx], val);
+    }
+
+    /*
+     * repeatedly look up a value...
+     */
+    val = arc4random_uniform(32);
+    for(idx = 0; idx < 256; idx++) {
+        if(exists(foo, randnames[val])) {
+            printf("yes, it exists...\n");
+        } else
+            printf("no, it doesn't!\n");
+        }
+    }
+
+    /*
+     * repeatedly store a value...
+     */
+    val = arc4random_uniform(32);
+    for(idx = 0; idx < 256; idx++) {
+        store(foo, randnames[val], arc4random());
     }
 
     // ok, now that we've done that, stress test the whole thing...
     clear(foo);
 
+    for(idx = 0; idx < 32; idx++) {
+        free(randnames[idx]);
+    }
+
+    /*
+     * larger smoke test...
+     */
 
     for(; idx < 32; idx++) {
         // first pass, generate uniform names
-        randnames[idx] = randname(buf, 128, NO);
+        randnames[idx] = strdup(randname(buf, 128, NO));
     }    
 
     /*
@@ -117,6 +144,32 @@ main(void) {
         // need to time these and record the timings...
         retrieve(foo, randnames[idx], &val);
         printf("%s:%ld\n", randnames[idx], val);
+    }
+
+    /*
+     * repeatedly look up a value...
+     */
+    val = arc4random_uniform(32);
+    for(idx = 0; idx < 256; idx++) {
+        if(exists(foo, randnames[val])) {
+            printf("yes, it exists...\n");
+        } else
+            printf("no, it doesn't!\n");
+        }
+    }
+
+    /*
+     * repeatedly store a value...
+     */
+    val = arc4random_uniform(32);
+    for(idx = 0; idx < 256; idx++) {
+        store(foo, randnames[val], arc4random());
+    }
+
+    clear(dict);
+
+    for(idx = 0; idx < 32; idx++) {
+        free(randnames[idx]);
     }
 
     return 0;
