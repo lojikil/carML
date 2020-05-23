@@ -5793,8 +5793,10 @@ llcwalk(AST *head, int level, int final) {
                     llcwalk(htmp->children[tidx + 1], level + 1, YES);
                 } else {
                     cwalk(htmp->children[tidx + 1], level + 1);
-                    printf(";\n");
                 }
+                // this is probably wrong for certain forms
+                // need to check this more thoroughly...
+                printf(";\n");
             }
             indent(level);
             printf("}\n");
