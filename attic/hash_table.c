@@ -18,6 +18,8 @@
  * @(#) - worst-case retrieval time
  * @(#) - are there collisions?
  * @(#) - performance of long names vs short names
+ * @(#) - repeated stores
+ * @(#) - repeated lookups
  * @(#)
  * @(#) and for each, we want to ignore the time taken to generate random names and 
  * @(#) the like. We also want to keep track of how long it takes for short names vs
@@ -63,7 +65,7 @@ main(void) {
     // march this upwards until it no longer makes sense...
     char *randnames[32] = {0};
     char buf[128] = {0};
-    uint32_t idx = 0;
+    uint32_t idx = 0, val = 0;
 
     for(; idx < 32; idx++) {
         // first pass, generate uniform names
@@ -75,6 +77,9 @@ main(void) {
      */
     for(idx = 0; idx < 32; idx++) {
         // need to time these and record the timings...
+        val = arc4random();
+        store(foo, randnames[idx], val);
+        printf("%s:%ld\n", randnames[idx], val);
     }
 
     /*
@@ -82,6 +87,8 @@ main(void) {
      */
     for(idx = 0; idx < 32; idx++) {
         // need to time these and record the timings...
+        retrieve(foo, randnames[idx], &val);
+        printf("%s:%ld\n", randnames[idx], val);
     }
 
     // ok, now that we've done that, stress test the whole thing...
@@ -98,6 +105,9 @@ main(void) {
      */
     for(idx = 0; idx < 32; idx++) {
         // need to time these and record the timings...
+        val = arc4random();
+        store(foo, randnames[idx], val);
+        printf("%s:%ld\n", randnames[idx], val);
     }
 
     /*
@@ -105,6 +115,8 @@ main(void) {
      */
     for(idx = 0; idx < 32; idx++) {
         // need to time these and record the timings...
+        retrieve(foo, randnames[idx], &val);
+        printf("%s:%ld\n", randnames[idx], val);
     }
 
     return 0;
