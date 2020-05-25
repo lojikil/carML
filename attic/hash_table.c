@@ -30,6 +30,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <sys/time.h>
 
 struct _DICT {
     uint64_t keys[128];
@@ -65,7 +66,12 @@ main(void) {
     // march this upwards until it no longer makes sense...
     char *randnames[32] = {0};
     char buf[128] = {0};
-    uint32_t idx = 0, val = 0;
+    uint32_t idx = 0, val = 0, time_idx = 0;
+    // store all run times, then calculate average cases
+    suseconds_t runtimes[256], avg_s_store, avg_r_store;
+    suseconds_t avg_s_retrieve, avg_r_retrieve;
+    // hold all our various interstitial timing information
+    struct timeval stime, etime;
 
     for(; idx < 32; idx++) {
         // first pass, generate uniform names
@@ -78,7 +84,11 @@ main(void) {
     for(idx = 0; idx < 32; idx++) {
         // need to time these and record the timings...
         val = arc4random();
+        gettimeofday(&stime, nil);
         store(foo, randnames[idx], val);
+        gettimeofday(&etime, nil);
+        runtimes[time_idx] = etime.tv_usec - stime.tv_usec;
+        time_idx++;
         printf("%s:%ld\n", randnames[idx], val);
     }
 
@@ -87,7 +97,11 @@ main(void) {
      */
     for(idx = 0; idx < 32; idx++) {
         // need to time these and record the timings...
+        gettimeofday(&stime, nil);
         retrieve(foo, randnames[idx], &val);
+        gettimeofday(&etime, nil);
+        runtimes[time_idx] = etime.tv_usec - stime.tv_usec;
+        time_idx++;
         printf("%s:%ld\n", randnames[idx], val);
     }
 
@@ -96,19 +110,30 @@ main(void) {
      */
     val = arc4random_uniform(32);
     for(idx = 0; idx < 256; idx++) {
+        gettimeofday(&stime, nil);
         if(exists(foo, randnames[val])) {
             printf("yes, it exists...\n");
         } else
             printf("no, it doesn't!\n");
         }
+        gettimeofday(&etime, nil);
+        runtimes[time_idx] = etime.tv_usec - stime.tv_usec;
+        time_idx++;
     }
 
     /*
      * repeatedly store a value...
      */
-    val = arc4random_uniform(32);
+    tidx = arc4random_uniform(32);
     for(idx = 0; idx < 256; idx++) {
-        store(foo, randnames[val], arc4random());
+        // using val here so that I can remove
+        // arc4random from the timing loop...
+        val = arc4random();
+        gettimeofday(&stime, nil);
+        store(foo, randnames[tidx], val);
+        gettimeofday(&etime, nil);
+        runtimes[time_idx] = etime.tv_usec - stime.tv_usec;
+        time_idx++;
     }
 
     // ok, now that we've done that, stress test the whole thing...
