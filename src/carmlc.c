@@ -272,6 +272,8 @@ main(int ac, char **al) {
         }
         if(ac > 2 && !strncmp(al[2], "+c", 2)) {
             walkflag = 1;
+        } else if(ac > 2 && !strncmp(al[2], "+g", 2)) {
+            walkflag = 2;
         }
         do {
             ret = readexpression(fdin);
@@ -284,7 +286,7 @@ main(int ac, char **al) {
             if(tmp->tag != TNEWL && tmp->tag != TEOF) {
                 if(walkflag == 1) {
                     cwalk(tmp, 0);
-                else if(walkflag == 2) {
+                } else if(walkflag == 2) {
                     gwalk(tmp, 0);
                 } else {
                     walk(tmp, 0);
@@ -303,7 +305,7 @@ main(int ac, char **al) {
  \\___\\__,_|_|  \\_|  |_/\\_____/\n");
         printf("\t\tcarML/C 2019.0\n");
         printf("(c) 2016-2018 lojikil, released under the ISC License.\n\n");
-        printf("%%c - turns on C code generation\n%%quit/%%q - quits\n\n");
+        printf("%%c - turns on C code generation\n%%g - turns on Golang generation\n%%quit/%%q - quits\n\n");
         do {
             printf(">>> ");
             ret = readexpression(stdin);
@@ -323,9 +325,18 @@ main(int ac, char **al) {
                 } else if(tmp->tag == TIDENT && !strncmp(tmp->value, "%c", 2)) {
                     walkflag = !walkflag;
                     printf("[!] C generation is: %s", (walkflag ? "on" : "off"));
+                } else if(tmp->tag == TIDENT && !strncmp(tmp->value, "%g", 2)) {
+                    if(walkflag != 2) {
+                        walkflag = 2;
+                    } else {
+                        walkflag = 0;
+                    }
+                    printf("[!] Golang generation is: %s", (walkflag ? "on" : "off"));
                 } else if(tmp->tag != TNEWL) {
-                    if(walkflag) {
+                    if(walkflag == 1) {
                         cwalk(tmp, 0);
+                    } else if(walkflag == 2) {
+                        gwalk(tmp, 0);
                     } else {
                         walk(tmp, 0);
                     }
@@ -6290,24 +6301,28 @@ llgwalk(AST *head, int level, int final) {
     switch(head->tag) {
         case TFN:
         case TDEF:
-            if(head->tag == TFN) {
-                // need to lift lambdas...
-                printf("(fn ");
-            } else {
-                if(head->lenchildren == 3) {
-                    gwalk(head->children[2], 0);
-                } else {
-                    printf("void");
-                }
-                printf("\n%s", head->value);
+            // print the declaration
+            printf("func ");
+
+            // if we have a `def`, print the name
+            if(head->tag == TDEF) {
+                printf("%s", head->value);
             }
+
+            // walk the parameter list, print () if none
             if(head->children[0] != nil) {
                 gwalk(head->children[0], level);
             } else {
                 printf("()");
             }
 
-            printf("{\n");
+            printf(" ");
+
+            // generate the return type
+            if(head->lenchildren == 3) {
+                gwalk(head->children[2], 0);
+            }
+            printf(" {\n");
 
             llgwalk(head->children[1], level + 1, YES);
 
