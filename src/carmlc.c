@@ -20,6 +20,7 @@
 #define NO  0
 #define hmalloc GC_MALLOC
 #define cwalk(head, level) llcwalk(head, level, NO)
+#define gwalk(head, level) llgwalk(head, level, NO)
 
 /* Lexical analysis states.
  * basically, the tokenizer is a 
@@ -237,6 +238,7 @@ AST *linearize_complex_type(AST *);
 void indent(int);
 void walk(AST *, int);
 void llcwalk(AST *, int, int);
+void llgwalk(AST *, int, int);
 void generate_type_value(AST *, const char *); // generate a type/poly constructor
 void generate_type_ref(AST *, const char *); // generate a type/poly reference constructor
 int compile(FILE *, FILE *);
@@ -280,8 +282,10 @@ main(int ac, char **al) {
 
             tmp = ret->right;
             if(tmp->tag != TNEWL && tmp->tag != TEOF) {
-                if(walkflag) {
+                if(walkflag == 1) {
                     cwalk(tmp, 0);
+                else if(walkflag == 2) {
+                    gwalk(tmp, 0);
                 } else {
                     walk(tmp, 0);
                 }
@@ -6238,6 +6242,711 @@ llcwalk(AST *head, int level, int final) {
                     llcwalk(head->children[idx], level, YES);
                 } else {
                     llcwalk(head->children[idx], level, NO);
+                }
+
+                if(issyntacticform(head->children[idx]->tag)) {
+                    printf("\n");
+                } else {
+                    printf(";\n");
+                }
+            }
+            break;
+        case TSEMI:
+        case TEND:
+            break;
+        case TUNIT:
+            printf("void");
+            break;
+        default:
+            printf("(tag %d)", head->tag);
+            break;
+    }
+    return;
+}
+
+void
+llgwalk(AST *head, int level, int final) {
+    int idx = 0, opidx = -1;
+    char *tbuf = nil, buf[512] = {0}, rbuf[512] = {0}, *rtbuf = nil;
+    AST *ctmp = nil, *htmp = nil;
+
+    if(head->tag != TBEGIN) {
+        indent(level);
+
+        // if we have a value form (i.e. a call, an ident,
+        // a tag, or a literal), and we are in the final
+        // position of a syntactic block, prepend it with
+        // a return
+        if(isvalueform(head->tag) && final) {
+            printf("return ");
+        }
+    }
+
+    if(head == nil) {
+        printf("(nil)\n");
+        return;
+    }
+
+    switch(head->tag) {
+        case TFN:
+        case TDEF:
+            if(head->tag == TFN) {
+                // need to lift lambdas...
+                printf("(fn ");
+            } else {
+                if(head->lenchildren == 3) {
+                    gwalk(head->children[2], 0);
+                } else {
+                    printf("void");
+                }
+                printf("\n%s", head->value);
+            }
+            if(head->children[0] != nil) {
+                gwalk(head->children[0], level);
+            } else {
+                printf("()");
+            }
+
+            printf("{\n");
+
+            llgwalk(head->children[1], level + 1, YES);
+
+            if(isvalueform(head->children[1]->tag)) {
+                printf(";\n}");
+            } else {
+                printf("}");
+            }
+            break;
+        case TVAL:
+        case TVAR:
+            if(head->tag == TVAL) {
+                printf("const ");
+            }
+
+            if(head->lenchildren == 2) {
+                if(head->children[1]->tag == TCOMPLEXTYPE) {
+                    tbuf = typespec2c(head->children[1], buf, head->value, 512);
+                    printf("%s = ", tbuf);
+                } else {
+                    gwalk(head->children[1], 0);
+                    printf(" %s = ", head->value);
+                }
+            } else {
+                printf("void *");
+                printf(" %s = ", head->value);
+            }
+
+
+            gwalk(head->children[0], 0);
+
+            printf(";");
+            break;
+        case TEXTERN:
+            printf("extern ");
+            if(head->children[0]->tag == TCOMPLEXTYPE) {
+                tbuf = typespec2c(head->children[0], buf, head->value, 512);
+                printf("%s;", tbuf);
+            } else {
+                gwalk(head->children[0], 0);
+                printf(" %s;", head->value);
+            }
+            break;
+        case TDECLARE:
+            // so, the format of a TDECLARE is:
+            // 0. name
+            // 1. parameter list
+            // 2. (potentially nil) return value
+
+            if(head->lenchildren == 2 || head->children[2] == nil) {
+                printf("void %s", head->children[0]->value);
+            } else if(head->children[2]->tag == TCOMPLEXTYPE) {
+                tbuf = typespec2c(head->children[2], buf, head->children[0]->value, 512);
+                printf("%s", tbuf);
+            } else {
+                gwalk(head->children[2], 0);
+                printf(" %s", head->children[0]->value);
+            }
+
+            gwalk(head->children[1], 0);
+            printf(";");
+            break;
+        case TLET:
+        case TLETREC:
+            // need to do name rebinding...
+            // but I think that's best meant
+            // for a nanopass...
+            if(head->tag == TLET) {
+                printf("(let ");
+            } else {
+                printf("(letrec ");
+            }
+
+            printf("%s ", head->value);
+
+            gwalk(head->children[0], 0);
+            
+            if(head->lenchildren == 3) {
+                /* if we have a type,
+                 * go ahead and print it.
+                 */
+                printf(" ");
+                gwalk(head->children[2], 0);
+            }
+
+            printf("\n");
+            gwalk(head->children[1], level + 1);
+
+            printf(")");
+            break;
+        case TWHEN:
+            printf("if(");
+            gwalk(head->children[0], 0);
+            printf("){\n");
+            // there are some ugly extra calls to
+            // indent in here, because there's some
+            // strange interactions between WHEN and
+            // BEGIN forms. 
+            if(final) {
+                llgwalk(head->children[1], level + 1, YES);
+                if(isvalueform(head->children[1]->tag)) {
+                    printf(";\n");
+                }
+            } else {
+                gwalk(head->children[1], level + 1);
+                if(isvalueform(head->children[1]->tag)) {
+                    printf(";\n");
+                }
+            }
+            indent(level);
+            printf("}\n");
+            break;
+        case TMATCH:
+            // there are several different strategies to
+            // use here...
+            // 1. simple if-then-else chain for things like string compares
+            // 2. switch block (can use FNV1a for strings => switch, straight for int/float)
+            // 3. unpacking ADTs means we have to detect tag & collate those cases together
+
+            if(head->children[0]->tag == TIDENT) {
+                ctmp = head->children[0];
+            } else {
+                ctmp = (AST *)hmalloc(sizeof(AST));
+                ctmp->tag = TIDENT;
+                snprintf(&buf[0], 512, "l%d", rand());
+
+                // need to demand a type here...
+            }
+
+            // TODO need to:
+            // demand a type from the results
+            // make sure it reifies
+            // generate if/else 
+            // handle bindings
+            // for now, just roll with it
+            htmp = head->children[1];
+            for(int tidx = 0; tidx < htmp->lenchildren; tidx+=2) {
+                if(tidx == 0) {
+                    printf("if(");
+                } else if(htmp->children[tidx]->tag == TELSE) {
+                    indent(level);
+                    printf("} else ");
+                } else {
+                    indent(level);
+                    printf("} else if(");
+                }
+
+                if(htmp->children[tidx]->tag != TELSE) {
+                    switch(htmp->children[tidx]->tag) {
+                        case TFLOAT:
+                        case TINT:
+                        case TTAG:
+                            printf("%s == %s", ctmp->value, htmp->children[tidx]->value);
+                            break;
+                        case TTRUE:
+                            // could possibly use stdbool here as well
+                            // but currently just encoding directly to
+                            // integers
+                            printf("%s == 1", ctmp->value);
+                            break;
+                        case TFALSE:
+                            printf("%s == 0", ctmp->value);
+                            break;
+                        case TCHAR:
+                            printf("%s == '%s'", ctmp->value, htmp->children[tidx]->value);
+                            break;
+                        case TSTRING:
+                            printf("!strncmp(%s, \"%s\", %lu)", ctmp->value, htmp->children[tidx]->value, strlen(htmp->children[tidx]->value));
+                            break;
+                        case THEX:
+                        case TOCT:
+                        case TBIN:
+                            printf("%s == ", ctmp->value);
+                            gwalk(htmp->children[tidx], 0);
+                            break;
+                        case TARRAYLITERAL:
+                        case TIDENT:
+                            break;
+                        case TCALL:
+                            mung_variant_name(ctmp, htmp->children[tidx]->children[0], NO);
+                            break;
+                        case TGUARD:
+                            mung_guard(ctmp, htmp->children[tidx]);
+                            break;
+                        default:
+                            break;
+                    }
+                    printf(") ");
+                }
+                printf("{\n");
+                if(final) {
+                    llgwalk(htmp->children[tidx + 1], level + 1, YES);
+                } else {
+                    gwalk(htmp->children[tidx + 1], level + 1);
+                }
+                // this is probably wrong for certain forms
+                // need to check this more thoroughly...
+                printf(";\n");
+            }
+            indent(level);
+            printf("}\n");
+            break;
+        case TWHILE:
+            printf("while(");
+            gwalk(head->children[0], 0);
+            printf("){\n");
+
+            // FIXME: I think this is wrong;
+            // we're not detecting if this is the
+            // final block here, and thus we end up
+            // in a situation wherein a while cannot
+            // have a return properly...
+            if(head->children[1]->tag == TBEGIN) {
+                ctmp = head->children[1];
+                for(int widx = 0; widx < ctmp->lenchildren; widx++) {
+                    if(final && widx == (ctmp->lenchildren - 1)) {
+                        llgwalk(ctmp->children[widx], level + 1, YES);
+                    } else {
+                        gwalk(ctmp->children[widx], level + 1);
+                    }
+
+                    if(isvalueform(ctmp->children[widx]->tag)) {
+                        printf(";\n");
+                    }
+                }
+                indent(level);
+                printf("}\n");
+            } else {
+                if(final) {
+                    llgwalk(head->children[1], level + 1, YES);
+                } else {
+                    gwalk(head->children[1], level + 1);
+                }
+
+                if(isvalueform(head->children[1]->tag)) {
+                    printf(";\n");
+                }
+
+                indent(level);
+                printf("}\n");
+            }
+            break;
+        case TFOR:
+            // so:
+            // the head->value is either an integral index OR
+            // some other iterative type. We need to have a
+            // special case for checking things like:
+            //
+            // for x in (range 0 10) do ...
+            //
+            // or
+            //
+            // for x in (iota 10) do ...
+            //
+            // so as to fuse these and remove interstitial
+            // objects for now, I guess it is safe to assume
+            // that head->value is an int, but i *really*
+            // need to get the type system *actually* rolling
+            break;
+        case TPARAMLIST:
+            printf("(");
+            for(;idx < head->lenchildren; idx++) {
+                AST *dc_type = nil, *dc_name = nil;
+                if(head->children[idx]->tag == TIDENT) {
+                    dc_name = head->children[idx];
+                    printf("void *%s", dc_name->value);
+                } else if(istypeast(head->children[idx]->tag)) {
+                    tbuf = typespec2c(head->children[idx],buf, nil, 512);
+                    printf("%s", tbuf);
+                } else {
+                    // now we've reached a TPARAMDEF
+                    // so just dump whatever is returned
+                    // by typespec2c
+                    dc_type = head->children[idx]->children[1];
+                    dc_name = head->children[idx]->children[0];
+                    tbuf = typespec2c(dc_type, buf, dc_name->value, 512);
+                    if(tbuf != nil) {
+                        printf("%s", tbuf);
+                    } else {
+                        printf("void *");
+                    }
+                }
+
+                if(idx < (head->lenchildren - 1)){
+                    printf(", ");
+                }
+            }
+            printf(")");
+            break;
+        case TPARAMDEF:
+            gwalk(head->children[1], 0);
+            printf(" ");
+            gwalk(head->children[0], 0);
+            break;
+        case TARRAY:
+            printf("(type array)");
+            break;
+        case TCOMPLEXTYPE:
+            tbuf = typespec2c(head, buf, nil, 512); 
+            if(tbuf != nil) {
+                printf("%s", tbuf);
+            } else {
+                printf("void *");
+            }
+            break;
+        case TTYPE:
+        case TPOLY:
+            // setup our name
+            tbuf = upcase(head->value, &buf[0], 512);
+            htmp = head->children[1];
+
+            // generate our enum for the various tags for this
+            // type/poly (forEach constructor thereExists |Tag|)
+            printf("enum Tags_%s {\n", tbuf);
+            for(int cidx = 0; cidx < htmp->lenchildren; cidx++) {
+                indent(level + 1);
+                // I hate this, but it works
+                rtbuf = upcase(htmp->children[cidx]->children[0]->value, rbuf, 512);
+                printf("TAG_%s_%s,\n", head->value, rtbuf);
+            }
+            printf("};\n");
+
+            // generate the rough structure to hold all 
+            // constructor members 
+            printf("typedef struct %s_t {\n", tbuf);
+            indent(level + 1);
+            printf("int tag;\n");
+            indent(level + 1);
+            printf("union {\n");
+            // first pass: 
+            // - dump all constructors into a union struct.
+            // - upcase the constructor name
+            // TODO: move structs to top-level structs?
+            // TODO: optimization for null members (like None in Optional)
+            // TODO: naming struct members based on names given by users
+            // TODO: inline records
+            for(int cidx = 0; cidx < htmp->lenchildren; cidx++) {
+                debugln;
+                indent(level + 2);
+                printf("struct {\n");
+                ctmp = htmp->children[cidx];
+                debugln;
+                for(int midx = 1; midx < ctmp->lenchildren; midx++) {
+                    debugln;
+                    dprintf("type tag of ctmp: %d\n", ctmp->tag);
+                    dprintf("midx: %d, len: %d\n", midx, ctmp->lenchildren);
+                    indent(level + 3);
+                    snprintf(buf, 512, "m_%d", midx);
+                    debugln;
+                    dprintf("walking children...\n");
+                    dwalk(ctmp->children[midx], level);
+                    dprintf("done walking children...\n");
+                    dprintf("ctmp->children[%d] == null? %s\n", midx, ctmp->children[midx] == nil ? "yes" : "no");
+                    rtbuf = typespec2c(ctmp->children[midx], rbuf, buf, 512);
+                    printf("%s;\n", rtbuf);
+                    debugln;
+                }
+                indent(level + 2);
+                tbuf = upcase(ctmp->children[0]->value, buf, 512);
+                printf("} %s_t;\n", buf);
+            }
+            indent(level + 1);
+            printf("} members;\n");
+            printf("} %s;\n", head->value);
+
+            // ok, now we have generated the structure, now we
+            // need to generate the constructors.
+            // we need to do two passes at that:
+            // - one pass with values
+            // - one pass with references
+
+            for(int cidx = 0; cidx < htmp->lenchildren; cidx++) {
+                generate_type_value(htmp->children[cidx], head->value);
+                generate_type_ref(htmp->children[cidx], head->value);
+            }
+            break;
+        case TARRAYLITERAL:
+            printf("{");
+            for(int cidx = 0; cidx < head->lenchildren; cidx++) {
+                gwalk(head->children[cidx], 0);
+                if(cidx < (head->lenchildren - 1)){
+                    printf(", ");
+                }
+            }
+            printf("}");
+            break;
+        case TCALL:
+            // do the lookup of idents here, and if we have
+            // a C operator, use that instead
+
+            opidx = iscoperator(head->children[0]->value);
+
+            if(head->children[0]->tag == TIDENT && opidx != -1) {
+                // low-level construtors like `make-struct` and
+                // company need to be optimized here... also,
+                // how oppinionated should they be? `make-struct`
+                // is generally meant for just laying out a struct
+                // on stack; if a user defines a memory model of
+                // heap, should we abide? also it's dumb; a user
+                // might use `make-struct` to layout something that
+                // is actually going to a `ref[SomeStruct]`, is that
+                // going to be a pain in the rear to fix?
+                if(head->lenchildren == 2) {
+                    // NOTE this code is a bit ugly,
+                    // but basically we don't want to punish
+                    // users who are being explicit with a
+                    // "return" operator call here
+                    // TODO I think this needs to be fixed anyway
+                    // as we should explicitly check that the
+                    // operator has the correct number of parameters
+                    if(!strncmp(head->children[0]->value, "return", 6)) {
+                        if(!final) {
+                            printf("return ");
+                        }
+                        gwalk(head->children[1], 0);
+                    } else {
+                        printf("%s ", coperators[opidx]);
+                        gwalk(head->children[1], 0);
+                    }
+                } else if(!strncmp(head->children[0]->value, "make-struct", 11)) {
+                    printf("{ ");
+                    for(int cidx = 1; cidx < head->lenchildren; cidx++) {
+                        gwalk(head->children[cidx], 0);
+                        if(cidx < (head->lenchildren - 1)) {
+                            printf(", ");
+                        }
+                    }
+                    printf("}");
+                } else if(!strncmp(head->children[0]->value, "make-deque", 10)) {
+
+                } else if(!strncmp(head->children[0]->value, "make-string", 11)) {
+
+                } else if(!strncmp(head->children[0]->value, "make-array", 10)) {
+                    // TODO: this is a hack, to get carML lifted into itself
+                    // eventually, we need to actually detect what is going on,
+                    // and use the correct allocator. What I did here was to
+                    // basically assume that the user typed `heap-allocate`
+                    printf("(%s *)hmalloc(sizeof(%s) * %s)", head->children[1]->value, head->children[1]->value, head->children[2]->value);
+                } else if(!strncmp(head->children[0]->value, "make", 4)) {
+
+                } else if(!strncmp(head->children[0]->value, "stack-allocate", 14)) {
+
+                } else if(!strncmp(head->children[0]->value, "heap-allocate", 13)) {
+                    printf("(%s *)hmalloc(sizeof(%s) * %s)", head->children[1]->value, head->children[1]->value, head->children[2]->value);
+                } else if(!strncmp(head->children[0]->value, "region-allocate", 15)) {
+
+                } else {
+                    gwalk(head->children[1], 0);
+                    if(!strncmp(head->children[0]->value, ".", 2)) {
+                        printf("%s", coperators[opidx]);
+                        gwalk(head->children[2], 0);
+                    } else if(!strncmp(head->children[0]->value, "->", 2)) {
+                        printf("%s", coperators[opidx]);
+                        gwalk(head->children[2], 0);
+                    } else if(!strncmp(head->children[0]->value, "get", 3)) {
+                        printf("[");
+                        gwalk(head->children[2], 0);
+                        printf("]");
+                    } else {
+                        printf(" %s ", coperators[opidx]);
+                        gwalk(head->children[2], 0);
+                    }
+                }
+            } else if(head->lenchildren == 1) {
+                printf("%s()", head->children[0]->value);
+            } else {
+                printf("%s(", head->children[0]->value);
+                for(int i = 1; i < head->lenchildren; i++) {
+                    gwalk(head->children[i], 0);
+                    if(i < (head->lenchildren - 1)) {
+                        printf(", ");
+                    }
+                }
+                printf(")");
+            }
+            break;
+        case TIF:
+            printf("if(");
+            gwalk(head->children[0], 0);
+            printf(") {\n");
+
+            if(final) {
+                llgwalk(head->children[1], level + 1, YES);
+            } else {
+                gwalk(head->children[1], level + 1);
+                printf(";");
+            }
+
+            if(isvalueform(head->children[1]->tag)) {
+                printf(";\n");
+            } else {
+                printf("\n");
+            }
+
+            indent(level);
+
+            printf("} else {\n");
+
+            if(final) {
+                llgwalk(head->children[2], level + 1, YES);
+            } else {
+                gwalk(head->children[2], level + 1);
+            }
+
+            if(isvalueform(head->children[2]->tag)) {
+                printf(";\n");
+            } else {
+                printf("\n");
+            }
+
+            indent(level);
+
+            printf("}\n");
+            break;
+        case TIDENT:
+        case TTAG:
+            printf("%s", head->value);
+            break;
+        case TBOOL:
+            /* really, would love to introduce a higher-level
+             * boolean type, but not sure I care all that much
+             * for the initial go-around in C...
+             */
+            if(head->value[0] == 0) {
+                printf("1"); 
+            } else {
+                printf("0");
+            }
+            break;
+        case TCHAR:
+            switch(head->value[0]) {
+                case '\n':
+                    printf("'\\n'");
+                    break;
+                case '\r':
+                    printf("'\\r'");
+                    break;
+                case '\t':
+                    printf("'\\t'");
+                    break;
+                case '\v':
+                    printf("'\\v'");
+                    break;
+                case '\0':
+                    printf("'\\0'");
+                    break;
+                case '\'':
+                    printf("'\''");
+                    break;
+                default:
+                    printf("'%c'", head->value[0]);
+                    break;
+            }
+            break;
+        case TFLOAT:
+            printf("%sf", head->value);
+            break;
+        case TFALSE:
+        case TTRUE:
+            if(head->tag == TFALSE) {
+                printf("false");
+            } else {
+                printf("true");
+            }
+            break;
+        case THEX:
+            printf("0x%s", head->value);
+            break;
+        case TOCT:
+            printf("0%s", head->value);
+            break;
+        case TBIN:
+            printf("%lu", strtol(head->value, NULL, 2));
+            break;
+        case TINT:
+            printf("%s", head->value);
+            break;
+        case TINTT:
+            printf("int");
+            break;
+        case TFLOATT:
+            printf("float");
+            break;
+        case TBOOLT:
+            printf("bool");
+            break;
+        case TCHART:
+            printf("char");
+            break;
+        case TSTRT:
+            /* make a fat version of this?
+             * or just track the length every
+             * where?
+             */
+            printf("char *");
+            break;
+        case TSTRING:
+            printf("\"%s\"", head->value);
+            break;
+        case TRECORD:
+            printf("typedef struct %s %s;\nstruct %s {\n", head->value, head->value, head->value);
+            for(int i = 0; i < head->lenchildren; i++) {
+                gwalk(head->children[i], level + 1);
+                if(i < (head->lenchildren - 1)) {
+                    printf("\n");
+                }
+            }
+            printf("\n};");
+            break;
+        case TRECDEF:
+            if(head->lenchildren == 2) {
+                gwalk(head->children[1], 0);
+            } else {
+                printf("void *");
+            }
+            printf(" ");
+            gwalk(head->children[0], 0);
+            printf(";");
+            break;
+        case TBEGIN:
+            // TODO: this code is super ugly & can be cleaned up
+            // clean up idea could be that there doesn't _really_
+            // need to be a special case for *0*, but rather only
+            // if we're final == YES and we're at the last member
+            // (which for a 1-ary BEGIN, that would be 0)
+            // TODO: I think we need to majorly refactor what's
+            // going on here. Instead of handling "return" and
+            // co. within the individual forms, we should rather
+            // eat the cycles in an extra call to gwalk, and allow
+            // the value forms to decide if it's a return or the
+            // like instead. Furthermore, this will allow us to
+            // just track some simple state here in each of the
+            // syntactic forms, rather than now where they are
+            // all rats nests of if's
+            for(idx = 0; idx < head->lenchildren; idx++) {
+                if(idx == (head->lenchildren - 1) && final) {
+                    llgwalk(head->children[idx], level, YES);
+                } else {
+                    llgwalk(head->children[idx], level, NO);
                 }
 
                 if(issyntacticform(head->children[idx]->tag)) {

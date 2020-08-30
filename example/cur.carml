@@ -49,7 +49,7 @@ def blaz x:int y:int z:int => int = {
 def baz x y z = if (>= x y) then z else x
 
 #declare baz bool any -> unit
-@baz bool any => ()
+@bar bool any => void
 def bar0 x y = when x do y
 
 # constant
