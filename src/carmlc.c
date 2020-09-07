@@ -6333,11 +6333,11 @@ llgwalk(AST *head, int level, int final) {
             }
             break;
         case TVAL:
+            printf("const %s = ", head->value);
+            gwalk(head->children[0], 0);
+            printf(";");
+            break;
         case TVAR:
-            if(head->tag == TVAL) {
-                printf("const ");
-            }
-
             if(head->lenchildren == 2) {
                 if(head->children[1]->tag == TCOMPLEXTYPE) {
                     tbuf = typespec2c(head->children[1], buf, head->value, 512);
@@ -6414,9 +6414,9 @@ llgwalk(AST *head, int level, int final) {
             printf(")");
             break;
         case TWHEN:
-            printf("if(");
+            printf("if ");
             gwalk(head->children[0], 0);
-            printf("){\n");
+            printf(" {\n");
             // there are some ugly extra calls to
             // indent in here, because there's some
             // strange interactions between WHEN and
@@ -6461,13 +6461,13 @@ llgwalk(AST *head, int level, int final) {
             htmp = head->children[1];
             for(int tidx = 0; tidx < htmp->lenchildren; tidx+=2) {
                 if(tidx == 0) {
-                    printf("if(");
+                    printf("if ");
                 } else if(htmp->children[tidx]->tag == TELSE) {
                     indent(level);
-                    printf("} else ");
+                    printf(" } else ");
                 } else {
                     indent(level);
-                    printf("} else if(");
+                    printf("} else if ");
                 }
 
                 if(htmp->children[tidx]->tag != TELSE) {
@@ -6481,16 +6481,16 @@ llgwalk(AST *head, int level, int final) {
                             // could possibly use stdbool here as well
                             // but currently just encoding directly to
                             // integers
-                            printf("%s == 1", ctmp->value);
+                            printf("%s", ctmp->value);
                             break;
                         case TFALSE:
-                            printf("%s == 0", ctmp->value);
+                            printf("!%s", ctmp->value);
                             break;
                         case TCHAR:
                             printf("%s == '%s'", ctmp->value, htmp->children[tidx]->value);
                             break;
                         case TSTRING:
-                            printf("!strncmp(%s, \"%s\", %lu)", ctmp->value, htmp->children[tidx]->value, strlen(htmp->children[tidx]->value));
+                            printf("%s == \"%s\"", ctmp->value, htmp->children[tidx]->value);
                             break;
                         case THEX:
                         case TOCT:
@@ -6510,7 +6510,7 @@ llgwalk(AST *head, int level, int final) {
                         default:
                             break;
                     }
-                    printf(") ");
+                    printf(" ");
                 }
                 printf("{\n");
                 if(final) {
@@ -6800,25 +6800,18 @@ llgwalk(AST *head, int level, int final) {
             }
             break;
         case TIF:
-            printf("if(");
+            printf("if ");
             gwalk(head->children[0], 0);
-            printf(") {\n");
+            printf(" {\n");
 
             if(final) {
                 llgwalk(head->children[1], level + 1, YES);
             } else {
                 gwalk(head->children[1], level + 1);
-                printf(";");
             }
 
-            if(isvalueform(head->children[1]->tag)) {
-                printf(";\n");
-            } else {
-                printf("\n");
-            }
-
+            printf("\n");
             indent(level);
-
             printf("} else {\n");
 
             if(final) {
@@ -6827,14 +6820,8 @@ llgwalk(AST *head, int level, int final) {
                 gwalk(head->children[2], level + 1);
             }
 
-            if(isvalueform(head->children[2]->tag)) {
-                printf(";\n");
-            } else {
-                printf("\n");
-            }
-
+            printf("\n");
             indent(level);
-
             printf("}\n");
             break;
         case TIDENT:
