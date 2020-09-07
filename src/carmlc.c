@@ -6834,9 +6834,9 @@ llgwalk(AST *head, int level, int final) {
              * for the initial go-around in C...
              */
             if(head->value[0] == 0) {
-                printf("1"); 
+                printf("true"); 
             } else {
-                printf("0");
+                printf("false");
             }
             break;
         case TCHAR:
@@ -6904,58 +6904,39 @@ llgwalk(AST *head, int level, int final) {
              * or just track the length every
              * where?
              */
-            printf("char *");
+            printf("string");
             break;
         case TSTRING:
             printf("\"%s\"", head->value);
             break;
         case TRECORD:
-            printf("typedef struct %s %s;\nstruct %s {\n", head->value, head->value, head->value);
+            printf("type %s struct {\n", head->value);
             for(int i = 0; i < head->lenchildren; i++) {
                 gwalk(head->children[i], level + 1);
                 if(i < (head->lenchildren - 1)) {
                     printf("\n");
                 }
             }
-            printf("\n};");
+            printf("\n}");
             break;
         case TRECDEF:
             if(head->lenchildren == 2) {
                 gwalk(head->children[1], 0);
             } else {
-                printf("void *");
+                printf("interface{}");
             }
             printf(" ");
             gwalk(head->children[0], 0);
             printf(";");
             break;
         case TBEGIN:
-            // TODO: this code is super ugly & can be cleaned up
-            // clean up idea could be that there doesn't _really_
-            // need to be a special case for *0*, but rather only
-            // if we're final == YES and we're at the last member
-            // (which for a 1-ary BEGIN, that would be 0)
-            // TODO: I think we need to majorly refactor what's
-            // going on here. Instead of handling "return" and
-            // co. within the individual forms, we should rather
-            // eat the cycles in an extra call to gwalk, and allow
-            // the value forms to decide if it's a return or the
-            // like instead. Furthermore, this will allow us to
-            // just track some simple state here in each of the
-            // syntactic forms, rather than now where they are
-            // all rats nests of if's
             for(idx = 0; idx < head->lenchildren; idx++) {
                 if(idx == (head->lenchildren - 1) && final) {
                     llgwalk(head->children[idx], level, YES);
                 } else {
                     llgwalk(head->children[idx], level, NO);
                 }
-
-                if(issyntacticform(head->children[idx]->tag)) {
-                    printf("\n");
-                } else {
-                    printf(";\n");
-                }
+                printf("\n");
             }
             break;
         case TSEMI:
