@@ -257,7 +257,8 @@ int issyntacticform(int);
 int isprimitivevalue(int);
 int isvalueform(int);
 int iscoperator(const char *);
-char *typespec2c(AST *, char *, char*, int);
+char *typespec2c(AST *, char *, char *, int);
+char *typespec2g(AST *, char *, char *, int);
 char *findtype(AST *);
 
 int
@@ -970,6 +971,44 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
             strstart = strnlen(dst, len);
         }
     }
+    return dst;
+}
+
+char *
+typespec2g(AST *typespec, char *dst, char *name, int len) {
+    char tmpbuf[32] = {0}, *staticname = nil;
+    int idx = 0;
+
+    switch(typespec->tag) {
+        case TSTRT:
+            staticname = "string";
+            break;
+        case TFLOATT:
+            staticname = "float";
+            break;
+        case TINTT:
+            staticname = "int";
+            break;
+        case TCHART:
+            staticname = "int32";
+            break;
+        case TTAG:
+            staticname = typespec->value;
+            break;
+        case TARRAY:
+            staticname = "[]";
+            break;
+        case TANY:
+            staticname = "interface{}";
+            break;
+        case TBOOL:
+            staticname = "bool";
+            break;
+        case TCOMPLEXTYPE:
+            // iterate over types
+            break;
+    }
+
     return dst;
 }
 
@@ -6595,9 +6634,9 @@ llgwalk(AST *head, int level, int final) {
                 AST *dc_type = nil, *dc_name = nil;
                 if(head->children[idx]->tag == TIDENT) {
                     dc_name = head->children[idx];
-                    printf("void *%s", dc_name->value);
+                    printf("%s interface{}", dc_name->value);
                 } else if(istypeast(head->children[idx]->tag)) {
-                    tbuf = typespec2c(head->children[idx],buf, nil, 512);
+                    tbuf = typespec2g(head->children[idx],buf, nil, 512);
                     printf("%s", tbuf);
                 } else {
                     // now we've reached a TPARAMDEF
@@ -6605,11 +6644,11 @@ llgwalk(AST *head, int level, int final) {
                     // by typespec2c
                     dc_type = head->children[idx]->children[1];
                     dc_name = head->children[idx]->children[0];
-                    tbuf = typespec2c(dc_type, buf, dc_name->value, 512);
+                    tbuf = typespec2g(dc_type, buf, dc_name->value, 512);
                     if(tbuf != nil) {
                         printf("%s", tbuf);
                     } else {
-                        printf("void *");
+                        printf("interface {}");
                     }
                 }
 
@@ -6628,7 +6667,7 @@ llgwalk(AST *head, int level, int final) {
             printf("(type array)");
             break;
         case TCOMPLEXTYPE:
-            tbuf = typespec2c(head, buf, nil, 512); 
+            tbuf = typespec2g(head, buf, nil, 512);
             if(tbuf != nil) {
                 printf("%s", tbuf);
             } else {
