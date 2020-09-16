@@ -21,6 +21,8 @@
 #define hmalloc GC_MALLOC
 #define cwalk(head, level) llcwalk(head, level, NO)
 #define gwalk(head, level) llgwalk(head, level, NO)
+#define indent(level) llindent(level, NO)
+#define gindent(level) llindent(level, YES)
 
 /* Lexical analysis states.
  * basically, the tokenizer is a 
@@ -68,6 +70,7 @@ typedef enum {
 /* AST tag enum.
  * basically, this is all the AST types, and is
  * used both for determining the type of AST
+#define gindent(level) llindent(level, YES)
  * that is represented within the tree, as well as
  * returned from the tokenizer to say what type
  * of object it thinks is in buffer
@@ -235,7 +238,7 @@ ASTEither *ASTRight(AST *);
 ASTOffset *ASTOffsetLeft(int, int, char *, int);
 ASTOffset *ASTOffsetRight(AST *, int);
 AST *linearize_complex_type(AST *);
-void indent(int);
+void llindent(int, int);
 void walk(AST *, int);
 void llcwalk(AST *, int, int);
 void llgwalk(AST *, int, int);
@@ -5098,12 +5101,16 @@ mung_guard(AST *name, AST *guard) {
 }
 
 void
-indent(int level) {
+llindent(int level, int usetabsp) {
     // should probably look to inline this
     // basically what we are replacing is the
     // inlined version of the same
     for(int idx = 0; idx < level; idx++) {
-        printf("    ");
+        if(usetabsp == YES) {
+            printf("\t");
+        } else {
+            printf("    ");
+        }
     }
 }
 
@@ -6282,7 +6289,7 @@ llgwalk(AST *head, int level, int final) {
     AST *ctmp = nil, *htmp = nil;
 
     if(head->tag != TBEGIN) {
-        indent(level);
+        gindent(level);
 
         // if we have a value form (i.e. a call, an ident,
         // a tag, or a literal), and we are in the final
@@ -6418,7 +6425,7 @@ llgwalk(AST *head, int level, int final) {
             gwalk(head->children[0], 0);
             printf(" {\n");
             // there are some ugly extra calls to
-            // indent in here, because there's some
+            // gindent in here, because there's some
             // strange interactions between WHEN and
             // BEGIN forms. 
             if(final) {
@@ -6432,7 +6439,7 @@ llgwalk(AST *head, int level, int final) {
                     printf(";\n");
                 }
             }
-            indent(level);
+            gindent(level);
             printf("}\n");
             break;
         case TMATCH:
@@ -6463,10 +6470,10 @@ llgwalk(AST *head, int level, int final) {
                 if(tidx == 0) {
                     printf("if ");
                 } else if(htmp->children[tidx]->tag == TELSE) {
-                    indent(level);
+                    gindent(level);
                     printf(" } else ");
                 } else {
-                    indent(level);
+                    gindent(level);
                     printf("} else if ");
                 }
 
@@ -6522,7 +6529,7 @@ llgwalk(AST *head, int level, int final) {
                 // need to check this more thoroughly...
                 printf(";\n");
             }
-            indent(level);
+            gindent(level);
             printf("}\n");
             break;
         case TWHILE:
@@ -6548,7 +6555,7 @@ llgwalk(AST *head, int level, int final) {
                         printf(";\n");
                     }
                 }
-                indent(level);
+                gindent(level);
                 printf("}\n");
             } else {
                 if(final) {
@@ -6561,7 +6568,7 @@ llgwalk(AST *head, int level, int final) {
                     printf(";\n");
                 }
 
-                indent(level);
+                gindent(level);
                 printf("}\n");
             }
             break;
@@ -6638,7 +6645,7 @@ llgwalk(AST *head, int level, int final) {
             // type/poly (forEach constructor thereExists |Tag|)
             printf("enum Tags_%s {\n", tbuf);
             for(int cidx = 0; cidx < htmp->lenchildren; cidx++) {
-                indent(level + 1);
+                gindent(level + 1);
                 // I hate this, but it works
                 rtbuf = upcase(htmp->children[cidx]->children[0]->value, rbuf, 512);
                 printf("TAG_%s_%s,\n", head->value, rtbuf);
@@ -6648,9 +6655,9 @@ llgwalk(AST *head, int level, int final) {
             // generate the rough structure to hold all 
             // constructor members 
             printf("typedef struct %s_t {\n", tbuf);
-            indent(level + 1);
+            gindent(level + 1);
             printf("int tag;\n");
-            indent(level + 1);
+            gindent(level + 1);
             printf("union {\n");
             // first pass: 
             // - dump all constructors into a union struct.
@@ -6661,7 +6668,7 @@ llgwalk(AST *head, int level, int final) {
             // TODO: inline records
             for(int cidx = 0; cidx < htmp->lenchildren; cidx++) {
                 debugln;
-                indent(level + 2);
+                gindent(level + 2);
                 printf("struct {\n");
                 ctmp = htmp->children[cidx];
                 debugln;
@@ -6669,7 +6676,7 @@ llgwalk(AST *head, int level, int final) {
                     debugln;
                     dprintf("type tag of ctmp: %d\n", ctmp->tag);
                     dprintf("midx: %d, len: %d\n", midx, ctmp->lenchildren);
-                    indent(level + 3);
+                    gindent(level + 3);
                     snprintf(buf, 512, "m_%d", midx);
                     debugln;
                     dprintf("walking children...\n");
@@ -6680,11 +6687,11 @@ llgwalk(AST *head, int level, int final) {
                     printf("%s;\n", rtbuf);
                     debugln;
                 }
-                indent(level + 2);
+                gindent(level + 2);
                 tbuf = upcase(ctmp->children[0]->value, buf, 512);
                 printf("} %s_t;\n", buf);
             }
-            indent(level + 1);
+            gindent(level + 1);
             printf("} members;\n");
             printf("} %s;\n", head->value);
 
@@ -6811,7 +6818,7 @@ llgwalk(AST *head, int level, int final) {
             }
 
             printf("\n");
-            indent(level);
+            gindent(level);
             printf("} else {\n");
 
             if(final) {
@@ -6821,7 +6828,7 @@ llgwalk(AST *head, int level, int final) {
             }
 
             printf("\n");
-            indent(level);
+            gindent(level);
             printf("}\n");
             break;
         case TIDENT:
