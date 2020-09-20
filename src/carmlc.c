@@ -6661,79 +6661,16 @@ llgwalk(AST *head, int level, int final) {
             if(tbuf != nil) {
                 printf("%s", tbuf);
             } else {
-                printf("void *");
+                printf("interface{}");
             }
             break;
         case TTYPE:
         case TPOLY:
-            // setup our name
-            tbuf = upcase(head->value, &buf[0], 512);
-            htmp = head->children[1];
-
-            // generate our enum for the various tags for this
-            // type/poly (forEach constructor thereExists |Tag|)
-            printf("enum Tags_%s {\n", tbuf);
-            for(int cidx = 0; cidx < htmp->lenchildren; cidx++) {
-                gindent(level + 1);
-                // I hate this, but it works
-                rtbuf = upcase(htmp->children[cidx]->children[0]->value, rbuf, 512);
-                printf("TAG_%s_%s,\n", head->value, rtbuf);
-            }
-            printf("};\n");
-
-            // generate the rough structure to hold all 
-            // constructor members 
-            printf("typedef struct %s_t {\n", tbuf);
-            gindent(level + 1);
-            printf("int tag;\n");
-            gindent(level + 1);
-            printf("union {\n");
-            // first pass: 
-            // - dump all constructors into a union struct.
-            // - upcase the constructor name
-            // TODO: move structs to top-level structs?
-            // TODO: optimization for null members (like None in Optional)
-            // TODO: naming struct members based on names given by users
-            // TODO: inline records
-            for(int cidx = 0; cidx < htmp->lenchildren; cidx++) {
-                debugln;
-                gindent(level + 2);
-                printf("struct {\n");
-                ctmp = htmp->children[cidx];
-                debugln;
-                for(int midx = 1; midx < ctmp->lenchildren; midx++) {
-                    debugln;
-                    dprintf("type tag of ctmp: %d\n", ctmp->tag);
-                    dprintf("midx: %d, len: %d\n", midx, ctmp->lenchildren);
-                    gindent(level + 3);
-                    snprintf(buf, 512, "m_%d", midx);
-                    debugln;
-                    dprintf("walking children...\n");
-                    dwalk(ctmp->children[midx], level);
-                    dprintf("done walking children...\n");
-                    dprintf("ctmp->children[%d] == null? %s\n", midx, ctmp->children[midx] == nil ? "yes" : "no");
-                    rtbuf = typespec2c(ctmp->children[midx], rbuf, buf, 512);
-                    printf("%s;\n", rtbuf);
-                    debugln;
-                }
-                gindent(level + 2);
-                tbuf = upcase(ctmp->children[0]->value, buf, 512);
-                printf("} %s_t;\n", buf);
-            }
-            gindent(level + 1);
-            printf("} members;\n");
-            printf("} %s;\n", head->value);
-
-            // ok, now we have generated the structure, now we
-            // need to generate the constructors.
-            // we need to do two passes at that:
-            // - one pass with values
-            // - one pass with references
-
-            for(int cidx = 0; cidx < htmp->lenchildren; cidx++) {
-                generate_type_value(htmp->children[cidx], head->value);
-                generate_type_ref(htmp->children[cidx], head->value);
-            }
+            // we need to:
+            // 1. Generate a top-level interface
+            // 2. Generate a struct per constructor
+            // 3. Generate a `isFoo`-style function for each struct to be of the interface type
+            // 4. Add any helper methods
             break;
         case TARRAYLITERAL:
             printf("{");
