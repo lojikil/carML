@@ -6651,6 +6651,7 @@ llgwalk(AST *head, int level, int final) {
                 } else if(istypeast(head->children[idx]->tag)) {
                     tbuf = typespec2g(head->children[idx],buf, nil, 512);
                     printf("%s", tbuf);
+                    tbuf[0] = nul;
                 } else {
                     // now we've reached a TPARAMDEF
                     // so just dump whatever is returned
@@ -6663,6 +6664,7 @@ llgwalk(AST *head, int level, int final) {
                     } else {
                         printf("interface {}");
                     }
+                    tbuf[0] = nul;
                 }
 
                 if(idx < (head->lenchildren - 1)){
