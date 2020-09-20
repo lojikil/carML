@@ -6871,14 +6871,13 @@ llgwalk(AST *head, int level, int final) {
             printf("\n}");
             break;
         case TRECDEF:
+            gwalk(head->children[0], 0);
+            printf(" ");
             if(head->lenchildren == 2) {
                 gwalk(head->children[1], 0);
             } else {
                 printf("interface{}");
             }
-            printf(" ");
-            gwalk(head->children[0], 0);
-            printf(";");
             break;
         case TBEGIN:
             for(idx = 0; idx < head->lenchildren; idx++) {
