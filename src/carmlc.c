@@ -979,33 +979,48 @@ typespec2g(AST *typespec, char *dst, char *name, int len) {
     char tmpbuf[32] = {0}, *staticname = nil;
     int idx = 0;
 
+    if(name != nil) {
+        strcat(dst, name);
+        strncat(dst, " ", 1);
+    }
+
     switch(typespec->tag) {
         case TSTRT:
-            staticname = "string";
+            strncat(dst, "string", 6);
             break;
         case TFLOATT:
-            staticname = "float";
+            strncat(dst, "float", 5);
             break;
         case TINTT:
-            staticname = "int";
+            strncat(dst, "int", 3);
             break;
         case TCHART:
-            staticname = "int32";
+            strncat(dst, "int32", 5);
             break;
         case TTAG:
-            staticname = typespec->value;
+            strncat(dst, typespec->value, typespec->lenvalue);
             break;
         case TARRAY:
-            staticname = "[]";
+            strncat(dst, "[]", 2);
             break;
         case TANY:
-            staticname = "interface{}";
+            strncat(dst, "interface{}", 11);
             break;
         case TBOOL:
-            staticname = "bool";
+            strncat(dst, "bool", 4);
             break;
         case TCOMPLEXTYPE:
-            // iterate over types
+            // iterate over typesA
+            for(int idx = 0; idx < typespec->lenchildren; idx ++) {
+                typespec2g(typespec->children[idx], tmpbuf, nil, 32);
+                strncat(dst, tmpbuf, 32);
+                if(typespec->children[idx]->tag != TARRAY && typespec->children[idx]->tag != TREF){
+                    strncat(dst, " ", 1);
+                }
+                tmpbuf[0] = nul;
+            }
+            break;
+        default:
             break;
     }
 
@@ -6386,21 +6401,19 @@ llgwalk(AST *head, int level, int final) {
         case TVAR:
             if(head->lenchildren == 2) {
                 if(head->children[1]->tag == TCOMPLEXTYPE) {
-                    tbuf = typespec2c(head->children[1], buf, head->value, 512);
-                    printf("%s = ", tbuf);
+                    tbuf = typespec2g(head->children[1], buf, head->value, 512);
+                    printf("var %s = ", tbuf);
                 } else {
+                    printf("var %s ", head->value);
                     gwalk(head->children[1], 0);
-                    printf(" %s = ", head->value);
+                    printf(" = ");
                 }
             } else {
-                printf("void *");
-                printf(" %s = ", head->value);
+                printf(" %s := ", head->value);
             }
-
 
             gwalk(head->children[0], 0);
 
-            printf(";");
             break;
         case TEXTERN:
             printf("extern ");
@@ -6943,7 +6956,7 @@ llgwalk(AST *head, int level, int final) {
             printf("bool");
             break;
         case TCHART:
-            printf("char");
+            printf("int32");
             break;
         case TSTRT:
             /* make a fat version of this?
