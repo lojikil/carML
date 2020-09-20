@@ -6388,7 +6388,7 @@ llgwalk(AST *head, int level, int final) {
             llgwalk(head->children[1], level + 1, YES);
 
             if(isvalueform(head->children[1]->tag)) {
-                printf(";\n}");
+                printf("\n}");
             } else {
                 printf("}");
             }
@@ -6416,33 +6416,8 @@ llgwalk(AST *head, int level, int final) {
 
             break;
         case TEXTERN:
-            printf("extern ");
-            if(head->children[0]->tag == TCOMPLEXTYPE) {
-                tbuf = typespec2c(head->children[0], buf, head->value, 512);
-                printf("%s;", tbuf);
-            } else {
-                gwalk(head->children[0], 0);
-                printf(" %s;", head->value);
-            }
-            break;
         case TDECLARE:
-            // so, the format of a TDECLARE is:
-            // 0. name
-            // 1. parameter list
-            // 2. (potentially nil) return value
-
-            if(head->lenchildren == 2 || head->children[2] == nil) {
-                printf("void %s", head->children[0]->value);
-            } else if(head->children[2]->tag == TCOMPLEXTYPE) {
-                tbuf = typespec2c(head->children[2], buf, head->children[0]->value, 512);
-                printf("%s", tbuf);
-            } else {
-                gwalk(head->children[2], 0);
-                printf(" %s", head->children[0]->value);
-            }
-
-            gwalk(head->children[1], 0);
-            printf(";");
+            // there are no externs or forward declarations in go
             break;
         case TLET:
         case TLETREC:
@@ -6483,12 +6458,12 @@ llgwalk(AST *head, int level, int final) {
             if(final) {
                 llgwalk(head->children[1], level + 1, YES);
                 if(isvalueform(head->children[1]->tag)) {
-                    printf(";\n");
+                    printf("\n");
                 }
             } else {
                 gwalk(head->children[1], level + 1);
                 if(isvalueform(head->children[1]->tag)) {
-                    printf(";\n");
+                    printf("\n");
                 }
             }
             gindent(level);
