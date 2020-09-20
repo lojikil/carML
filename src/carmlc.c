@@ -6560,44 +6560,22 @@ llgwalk(AST *head, int level, int final) {
             printf("}\n");
             break;
         case TWHILE:
-            printf("while(");
+            printf("for ");
             gwalk(head->children[0], 0);
-            printf("){\n");
+            printf(" {\n");
 
-            // FIXME: I think this is wrong;
-            // we're not detecting if this is the
-            // final block here, and thus we end up
-            // in a situation wherein a while cannot
-            // have a return properly...
-            if(head->children[1]->tag == TBEGIN) {
-                ctmp = head->children[1];
-                for(int widx = 0; widx < ctmp->lenchildren; widx++) {
-                    if(final && widx == (ctmp->lenchildren - 1)) {
-                        llgwalk(ctmp->children[widx], level + 1, YES);
-                    } else {
-                        gwalk(ctmp->children[widx], level + 1);
-                    }
-
-                    if(isvalueform(ctmp->children[widx]->tag)) {
-                        printf(";\n");
-                    }
-                }
-                gindent(level);
-                printf("}\n");
+            if(final) {
+                llgwalk(head->children[1], level + 1, YES);
             } else {
-                if(final) {
-                    llgwalk(head->children[1], level + 1, YES);
-                } else {
-                    gwalk(head->children[1], level + 1);
-                }
-
-                if(isvalueform(head->children[1]->tag)) {
-                    printf(";\n");
-                }
-
-                gindent(level);
-                printf("}\n");
+                gwalk(head->children[1], level + 1);
             }
+
+            if(isvalueform(head->children[1]->tag)) {
+                printf(";\n");
+            }
+
+            gindent(level);
+            printf("}\n");
             break;
         case TFOR:
             // so:
