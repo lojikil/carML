@@ -244,6 +244,7 @@ void llcwalk(AST *, int, int);
 void llgwalk(AST *, int, int);
 void generate_type_value(AST *, const char *); // generate a type/poly constructor
 void generate_type_ref(AST *, const char *); // generate a type/poly reference constructor
+void generate_golang_type(AST *, const char *); // generate a golang type
 int compile(FILE *, FILE *);
 int iswhite(int);
 int isident(int);
@@ -5632,6 +5633,21 @@ generate_type_ref(AST *head, const char *name) {
 }
 
 void
+generate_golang_type(AST *head, const char *parent) {
+    AST *ttmp = head->children[0];
+    int cidx = 1;
+    printf("type %s struct {\n", ttmp->value);
+    for(; cidx < head->lenchildren; cidx++) {
+        gindent(1);
+        printf("m_%d ", cidx);
+        gwalk(head->children[cidx], 0);
+        printf("\n");
+    }
+    printf("}\n");
+    printf("func (%s) is%s() {}\n", ttmp->value, parent);
+}
+
+void
 llcwalk(AST *head, int level, int final) {
     int idx = 0, opidx = -1;
     char *tbuf = nil, buf[512] = {0}, rbuf[512] = {0}, *rtbuf = nil;
@@ -6643,12 +6659,22 @@ llgwalk(AST *head, int level, int final) {
             }
             break;
         case TTYPE:
-        case TPOLY:
             // we need to:
             // 1. Generate a top-level interface
             // 2. Generate a struct per constructor
             // 3. Generate a `isFoo`-style function for each struct to be of the interface type
             // 4. Add any helper methods
+            printf("type %s interface {\n", head->value);
+            gindent(level + 1);
+            printf("is%s()\n}\n", head->value);
+            for(int cidx = 0; cidx < head->children[1]->lenchildren; cidx++) {
+                generate_golang_type(head->children[1]->children[cidx], head->value);
+            }
+            break;
+        case TPOLY:
+            // polymorphic ADTs need to be handled like the above, but
+            // with some monomorphizing in here somewhere, like Flyweight Go
+            // or the like, I think
             break;
         case TARRAYLITERAL:
             printf("{");
