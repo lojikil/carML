@@ -999,7 +999,25 @@ typespec2g(AST *typespec, char *dst, char *name, int len) {
             strncat(dst, "int32", 5);
             break;
         case TTAG:
-            strncat(dst, typespec->value, typespec->lenvalue);
+            if(!strncmp(typespec->value, "U8", 2)) {
+                strncat(dst, "uint8", 5);
+            } else if(!strncmp(typespec->value, "U16", 3)) {
+                strncat(dst, "uint16", 6);
+            } else if(!strncmp(typespec->value, "U32", 3)) {
+                strncat(dst, "uint32", 6);
+            } else if(!strncmp(typespec->value, "U64", 3)) {
+                strncat(dst, "uint64", 6);
+            } else if(!strncmp(typespec->value, "I8", 2)) {
+                strncat(dst, "int8", 5);
+            } else if(!strncmp(typespec->value, "I16", 3)) {
+                strncat(dst, "int16", 6);
+            } else if(!strncmp(typespec->value, "I32", 3)) {
+                strncat(dst, "int32", 6);
+            } else if(!strncmp(typespec->value, "I64", 3)) {
+                strncat(dst, "int64", 6);
+            } else {
+                strncat(dst, typespec->value, typespec->lenvalue);
+            }
             break;
         case TARRAY:
             strncat(dst, "[]", 2);
