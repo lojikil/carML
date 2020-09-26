@@ -6820,8 +6820,15 @@ llgwalk(AST *head, int level, int final) {
             printf("}\n");
             break;
         case TIDENT:
-        case TTAG:
             printf("%s", head->value);
+            break;
+        case TTAG:
+            tbuf = typespec2g(head, buf, nil, 512);
+            if(tbuf != nil) {
+                printf("%s", tbuf);
+            } else {
+                printf("interface{}");
+            }
             break;
         case TBOOL:
             /* really, would love to introduce a higher-level
