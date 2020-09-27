@@ -5010,7 +5010,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             if(sometmp->tag == ASTLEFT) {
                 return sometmp;
             } else if(sometmp->right->tag != TARRAYLITERAL) {
-                return ASTLeft(0, 0, "core complex types *must* have a type paramter.");
+                return ASTLeft(0, 0, "core complex types *must* have a type parameter.");
             }
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = TCOMPLEXTYPE;
