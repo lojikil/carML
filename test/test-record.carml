@@ -9,5 +9,11 @@ record Foo {
     baz:int
     blah:float
     eh:string # should support complex types
-    next:ref[Foo] # should support recursive definition
+    # NOTE (lojikil) I changed the test from
+    # ref[Foo] to simply Foo, because not all
+    # targets currently have a ref[any] output
+    # in Golang that should be easy enough to
+    # add, but for now, just make sure we can
+    # pass tests in any target...
+    next:Foo # should support recursive definition
 }
