@@ -4,6 +4,7 @@ args="$@"
 EXTRAFLAGS="-std=c99"
 LIBLOC="$HOME/homebrew/lib"
 INCLOC="$HOME/homebrew/include"
+BINLOC=""
 
 if [ ! -d "$LIBLOC" ]; then
     LIBLOC="/usr/local/lib"
@@ -26,7 +27,7 @@ case $os in
         ;;
 esac
 
-if [ ${#args} -gt 1 ] 
+if [ $# -gt 0 ]
 then
     case $1 in
         softdebug)
@@ -42,6 +43,15 @@ then
             echo "[strict mode]"
             EXTRAFLAGS="-std=c99 -Wall -Werror"
             ;;
+        install)
+            echo "[installing]"
+            if [ $# -gt 1 ]
+            then
+                BINLOC=$2
+            else
+                BINLOC="$HOME/opt/bin"
+            fi
+            ;;
         *)
             ;;
     esac
@@ -49,3 +59,11 @@ fi
 
 echo "building carML/c carmlc.c"
 cc $EXTRAFLAGS -o carmlc ./src/carmlc.c -L $LIBLOC -I $INCLOC -lgc && echo "[build success]" || echo "[build failed]"
+
+
+if [ -d "$BINLOC" ]
+then
+    echo "installing to" $BINLOC
+    strip carmlc
+    cp carmlc $BINLOC
+fi
