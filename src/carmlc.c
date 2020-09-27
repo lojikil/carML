@@ -4253,6 +4253,7 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
         case TIDENT:
             head = (AST *)hmalloc(sizeof(AST));
             head->value = hstrdup(buffer);
+            head->lenvalue = strlen(buffer);
             head->tag = ltype;
             return ASTRight(head);
         case TCALL:
