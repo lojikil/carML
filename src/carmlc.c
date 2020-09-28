@@ -978,7 +978,7 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
 char *
 typespec2g(AST *typespec, char *dst, char *name, int len) {
     char tmpbuf[32] = {0}, *staticname = nil;
-    int idx = 0;
+    int idx = 0, flag = 0;
 
     if(name != nil) {
         strcat(dst, name);
@@ -1022,6 +1022,9 @@ typespec2g(AST *typespec, char *dst, char *name, int len) {
         case TARRAY:
             strncat(dst, "[]", 2);
             break;
+        case TREF:
+            strncat(dst, "*", 1);
+            break;
         case TANY:
             strncat(dst, "interface{}", 11);
             break;
@@ -1029,14 +1032,27 @@ typespec2g(AST *typespec, char *dst, char *name, int len) {
             strncat(dst, "bool", 4);
             break;
         case TCOMPLEXTYPE:
-            // iterate over typesA
-            for(int idx = 0; idx < typespec->lenchildren; idx ++) {
+            // iterate over types
+            if(typespec->children[0]->tag == TTUPLET) {
+                flag = 1;
+                strncat(dst, "struct {", 8);
+                idx = 1;
+            }
+
+            for(; idx < typespec->lenchildren; idx ++) {
                 typespec2g(typespec->children[idx], tmpbuf, nil, 32);
                 strncat(dst, tmpbuf, 32);
-                if(typespec->children[idx]->tag != TARRAY && typespec->children[idx]->tag != TREF){
+                if(flag) {
+                    strncat(dst, "; ", 2);
+                } else if(typespec->children[idx]->tag != TARRAY && typespec->children[idx]->tag != TREF){
                     strncat(dst, " ", 1);
                 }
                 tmpbuf[0] = nul;
+            }
+
+            if(flag) {
+                flag = 0;
+                strncat(dst, "}", 1);
             }
             break;
         default:
