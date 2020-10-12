@@ -6147,7 +6147,10 @@ llcwalk(AST *head, int level, int final) {
                     }
                 } else if(!strncmp(head->children[0]->value, "make-struct", 11)) {
                     printf("{ ");
-                    for(int cidx = 1; cidx < head->lenchildren; cidx++) {
+                    // NOTE (lojikil) make-struct now accepts the name of the
+                    // struct, just like make-array does, but we don't need
+                    // it in C, only in Golang
+                    for(int cidx = 2; cidx < head->lenchildren; cidx++) {
                         cwalk(head->children[cidx], 0);
                         if(cidx < (head->lenchildren - 1)) {
                             printf(", ");
@@ -6755,8 +6758,11 @@ llgwalk(AST *head, int level, int final) {
                         gwalk(head->children[1], 0);
                     }
                 } else if(!strncmp(head->children[0]->value, "make-struct", 11)) {
+                    // NOTE (lojikil) in Go we need to print the name of the struct
+                    // when allocating it here...
+                    gwalk(head->children[1], 0);
                     printf("{ ");
-                    for(int cidx = 1; cidx < head->lenchildren; cidx++) {
+                    for(int cidx = 2; cidx < head->lenchildren; cidx++) {
                         gwalk(head->children[cidx], 0);
                         if(cidx < (head->lenchildren - 1)) {
                             printf(", ");
@@ -6772,15 +6778,12 @@ llgwalk(AST *head, int level, int final) {
                     // eventually, we need to actually detect what is going on,
                     // and use the correct allocator. What I did here was to
                     // basically assume that the user typed `heap-allocate`
-                    printf("(%s *)hmalloc(sizeof(%s) * %s)", head->children[1]->value, head->children[1]->value, head->children[2]->value);
+                    printf("make([]%s, %s)", head->children[1]->value, head->children[2]->value);
                 } else if(!strncmp(head->children[0]->value, "make", 4)) {
 
                 } else if(!strncmp(head->children[0]->value, "stack-allocate", 14)) {
-
                 } else if(!strncmp(head->children[0]->value, "heap-allocate", 13)) {
-                    printf("(%s *)hmalloc(sizeof(%s) * %s)", head->children[1]->value, head->children[1]->value, head->children[2]->value);
                 } else if(!strncmp(head->children[0]->value, "region-allocate", 15)) {
-
                 } else {
                     gwalk(head->children[1], 0);
                     if(!strncmp(head->children[0]->value, ".", 2)) {
