@@ -6536,8 +6536,10 @@ llgwalk(AST *head, int level, int final) {
                 ctmp = (AST *)hmalloc(sizeof(AST));
                 ctmp->tag = TIDENT;
                 snprintf(&buf[0], 512, "l%d", rand());
-
-                // need to demand a type here...
+                ctmp->value = hstrdup(buf);
+                gindent(level);
+                printf("%s := ", ctmp->value);
+                gwalk(head->children[0], 0);
             }
 
             // TODO need to:
@@ -6547,47 +6549,36 @@ llgwalk(AST *head, int level, int final) {
             // handle bindings
             // for now, just roll with it
             htmp = head->children[1];
+            if(htmp->children[0]->tag == TCALL) {
+                printf("switch %s := %s.(type) {", ctmp->value, ctmp->value);
+            } else {
+                printf("switch %s {\n", ctmp->value);
+            }
             for(int tidx = 0; tidx < htmp->lenchildren; tidx+=2) {
-                if(tidx == 0) {
-                    printf("if ");
-                } else if(htmp->children[tidx]->tag == TELSE) {
-                    gindent(level);
-                    printf(" } else ");
-                } else {
-                    gindent(level);
-                    printf("} else if ");
-                }
-
                 if(htmp->children[tidx]->tag != TELSE) {
+                    gindent(level + 1);
+                    printf("case ");
                     switch(htmp->children[tidx]->tag) {
                         case TFLOAT:
                         case TINT:
                         case TTAG:
-                            printf("%s == %s", ctmp->value, htmp->children[tidx]->value);
-                            break;
+                        case TIDENT:
                         case TTRUE:
-                            // could possibly use stdbool here as well
-                            // but currently just encoding directly to
-                            // integers
-                            printf("%s", ctmp->value);
-                            break;
                         case TFALSE:
-                            printf("!%s", ctmp->value);
+                            printf("%s", htmp->children[tidx]->value);
                             break;
                         case TCHAR:
-                            printf("%s == '%s'", ctmp->value, htmp->children[tidx]->value);
+                            printf("'%s'", htmp->children[tidx]->value);
                             break;
                         case TSTRING:
-                            printf("%s == \"%s\"", ctmp->value, htmp->children[tidx]->value);
+                            printf("\"%s\"", htmp->children[tidx]->value);
                             break;
                         case THEX:
                         case TOCT:
                         case TBIN:
-                            printf("%s == ", ctmp->value);
                             gwalk(htmp->children[tidx], 0);
                             break;
                         case TARRAYLITERAL:
-                        case TIDENT:
                             break;
                         case TCALL:
                             mung_variant_name(ctmp, htmp->children[tidx]->children[0], NO);
@@ -6598,17 +6589,17 @@ llgwalk(AST *head, int level, int final) {
                         default:
                             break;
                     }
-                    printf(" ");
-                }
-                printf("{\n");
-                if(final) {
-                    llgwalk(htmp->children[tidx + 1], level + 1, YES);
+                    printf(":\n");
                 } else {
-                    gwalk(htmp->children[tidx + 1], level + 1);
+                    gindent(level + 1);
+                    printf("default:\n");
                 }
-                // this is probably wrong for certain forms
-                // need to check this more thoroughly...
-                printf(";\n");
+                if(final) {
+                    llgwalk(htmp->children[tidx + 1], level + 2, YES);
+                } else {
+                    gwalk(htmp->children[tidx + 1], level + 2);
+                }
+                printf("\n");
             }
             gindent(level);
             printf("}\n");
