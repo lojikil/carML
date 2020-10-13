@@ -17,6 +17,6 @@ def from_string src:string => Json = {
 
 }
 
-def to_string src:Json dst:string = {
+def to_string src:Json => string {
     ()
 }

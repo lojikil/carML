@@ -308,8 +308,8 @@ main(int ac, char **al) {
  / __/ _` | '__| |\\/| || |    \n\
 | (_| (_| | |  | |  | || |____\n\
  \\___\\__,_|_|  \\_|  |_/\\_____/\n");
-        printf("\t\tcarML/C 2019.0\n");
-        printf("(c) 2016-2018 lojikil, released under the ISC License.\n\n");
+        printf("\t\tcarML/C 2020.3\n");
+        printf("(c) 2016-2020 lojikil, released under the ISC License.\n\n");
         printf("%%c - turns on C code generation\n%%g - turns on Golang generation\n%%quit/%%q - quits\n\n");
         do {
             printf(">>> ");
