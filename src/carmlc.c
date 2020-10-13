@@ -6550,7 +6550,7 @@ llgwalk(AST *head, int level, int final) {
             // for now, just roll with it
             htmp = head->children[1];
             if(htmp->children[0]->tag == TCALL) {
-                printf("switch %s := %s.(type) {", ctmp->value, ctmp->value);
+                printf("switch %s := %s.(type) {\n", ctmp->value, ctmp->value);
             } else {
                 printf("switch %s {\n", ctmp->value);
             }
