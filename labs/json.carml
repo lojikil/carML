@@ -3,20 +3,20 @@
 #@(#) be interesting vis-a-vis certain allocation techniques.
 
 type Json {
-    JsonError string
-    JsonNull
-    JsonInt int
-    JsonFloat float
-    JsonString string
-    JsonBool bool
-    JsonArray array[Json]
-    JSonObject array[tuple[string Json]]
+    Error string
+    Null
+    Int int
+    Float float
+    String string
+    Bool bool
+    Array array[Json]
+    Object array[tuple[string Json]]
 }
 
 def from_string src:string => Json = {
 
 }
 
-def to_string src:Json => string {
+def to_string src:Json => string = {
     ()
 }

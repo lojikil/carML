@@ -227,7 +227,7 @@ char *upcase(const char *, char *, int);
 char *downcase(const char *, char *, int);
 char *hstrdup(const char *);
 int next(FILE *, char *, int);
-void mung_variant_name(AST *, AST *, int);
+void mung_variant_name(AST *, AST *, int, int);
 void mung_guard(AST *, AST *);
 AST *mung_declare(const char **, const int **, int, int);
 ASTOffset *mung_single_type(const char **, const int **, int, int, int);
@@ -5103,7 +5103,7 @@ mung_single_type(const char **pdecls, const int **plexemes, int len, int haltsta
  * foo.tag == TAG_OptionInt_SOME
  */
 void
-mung_variant_name(AST *name, AST *variant, int ref) {
+mung_variant_name(AST *name, AST *variant, int ref, int golang) {
     char varname[128] = {0}, constructor[128] = {0}, *src = variant->value;
     int loc = 0, idx = 0, namelen = strlen(src);
     uint8_t flag = 0;
@@ -5126,10 +5126,14 @@ mung_variant_name(AST *name, AST *variant, int ref) {
         }
     }
     constructor[idx] = '\0';
-    upcase((const char *)&constructor[0], (char *)&constructor[0], 128);
+    if(!golang) {
+        upcase((const char *)&constructor[0], (char *)&constructor[0], 128);
+    }
 
     if(ref) {
         printf("%s->tag == TAG_%s_%s", name->value, varname, constructor);
+    } else if (golang) {
+        printf("%s_%s", varname, constructor);
     } else {
         printf("%s.tag == TAG_%s_%s", name->value, varname, constructor);
     }
@@ -5173,7 +5177,7 @@ mung_guard(AST *name, AST *guard) {
         case TIDENT:
             break;
         case TCALL:
-            mung_variant_name(name, mcond->children[0], NO);
+            mung_variant_name(name, mcond->children[0], NO, NO);
             break;
         default:
             break;
@@ -5671,7 +5675,7 @@ void
 generate_golang_type(AST *head, const char *parent) {
     AST *ttmp = head->children[0];
     int cidx = 1;
-    printf("type %s struct {\n", ttmp->value);
+    printf("type %s_%s struct {\n", parent, ttmp->value);
     for(; cidx < head->lenchildren; cidx++) {
         gindent(1);
         printf("m_%d ", cidx);
@@ -5679,7 +5683,7 @@ generate_golang_type(AST *head, const char *parent) {
         printf("\n");
     }
     printf("}\n");
-    printf("func (%s) is%s() {}\n", ttmp->value, parent);
+    printf("func (%s_%s) is%s() {}\n", parent, ttmp->value, parent);
 }
 
 void
@@ -5905,7 +5909,7 @@ llcwalk(AST *head, int level, int final) {
                         case TIDENT:
                             break;
                         case TCALL:
-                            mung_variant_name(ctmp, htmp->children[tidx]->children[0], NO);
+                            mung_variant_name(ctmp, htmp->children[tidx]->children[0], NO, NO);
                             break;
                         case TGUARD:
                             mung_guard(ctmp, htmp->children[tidx]);
@@ -6581,7 +6585,7 @@ llgwalk(AST *head, int level, int final) {
                         case TARRAYLITERAL:
                             break;
                         case TCALL:
-                            mung_variant_name(ctmp, htmp->children[tidx]->children[0], NO);
+                            mung_variant_name(ctmp, htmp->children[tidx]->children[0], NO, YES);
                             break;
                         case TGUARD:
                             mung_guard(ctmp, htmp->children[tidx]);
@@ -6955,7 +6959,7 @@ llgwalk(AST *head, int level, int final) {
         case TEND:
             break;
         case TUNIT:
-            printf("void");
+            printf("interface {}");
             break;
         default:
             printf("(tag %d)", head->tag);
