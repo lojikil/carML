@@ -17,6 +17,24 @@ def from_string src:string => Json = {
 
 }
 
+def tuple_to_string src:tuple[string Json] => string = {
+    strings.join "," $ make-array string (_1 src) (to_string $ _2 src)
+}
+
+# intersting, hitting a bug in carml/C here...
+# so two things happened:
+# 1. I forgot to add a #\) to the Json.Object call below, and that caused a crash
+# 1. I forgot to add an `end`, which exacerbated it...
+# intersting!
 def to_string src:Json => string = {
-    ()
+    match src with
+        (Json.Error x) => "10"
+        (Json.Null) => "null"
+        (Json.Int x) => "11"
+        (Json.Float x) => "12"
+        (Json.String x) => "13"
+        (Json.Bool x) => "14"
+        (Json.Array x) => (strings.format "[%s]" $ strings.join "," $ map to_string x)
+        (Json.Object x) => (strings.format "{%s}" $ strings.join "," $ map tuple_to_string x)
+    end
 }
