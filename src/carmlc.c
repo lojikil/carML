@@ -310,7 +310,8 @@ main(int ac, char **al) {
  \\___\\__,_|_|  \\_|  |_/\\_____/\n");
         printf("\t\tcarML/C 2020.3\n");
         printf("(c) 2016-2020 lojikil, released under the ISC License.\n\n");
-        printf("%%c - turns on C code generation\n%%g - turns on Golang generation\n%%quit/%%q - quits\n\n");
+        printf("%%c - turns on C code generation\n%%g - turns on Golang generation\n%%quit/%%q - quits\n");
+        printf("%%dir - dumps the current execution environment\n\n");
         do {
             printf(">>> ");
             ret = readexpression(stdin);
@@ -337,6 +338,9 @@ main(int ac, char **al) {
                         walkflag = 0;
                     }
                     printf("[!] Golang generation is: %s", (walkflag ? "on" : "off"));
+                } else if (tmp->tag == TIDENT && !strncmp(tmp->value, "%dir", 4)) {
+                    // dump the environment currently known...
+                    printf("dumping the environment:\n");
                 } else if(tmp->tag != TNEWL) {
                     if(walkflag == 1) {
                         cwalk(tmp, 0);
