@@ -1,0 +1,176 @@
+#@(#) A Miniture SExpression library for carML
+#@(#) mainly aimed at getting the carML compiler out of the C system
+#@(#) should be mainly compatible with the SExpression-based IR that
+#@(#) carML/C generates.
+#@(#) Meant to help even FURTHER accelerate the bootstrap process,
+#@(#) since it's smaller than a full SExpression library, and works
+#@(#) with the Golang output
+#
+# the shame is, given carML's current
+# type system, there are many work-arounds
+# required to make the below work:
+# - the type system can't tell ref[SExpression] can be flattened to SExpression
+# - some things should be automatically passed around as ref[Type] but you have to manually do that
+# - lots of ref[Any] could be turned into a `const`...
+#
+# probably lots of other hacks as I
+# go through it. Luckily, once I move
+# past where the C compiler is, I can
+# start to handle some of the debt I've
+# accrued.
+
+type Num {
+    # would be really nice if this could
+    # just be handled by a union[float int]
+    NInt int
+    NFloat float
+}
+
+type SExpression {
+    Nil
+    Atom string
+    String string
+    Int int
+    Float float
+    Char char
+    List array[SExpression]
+    Error string
+    # Maybe should have an internal type that
+    # isn't exported, and an external type that
+    # is, so as to remove the two constructors
+    # below...
+    EndList
+    EndArray
+}
+
+# add a simple reader system below
+# should be able to construct & read
+# SExpression-based syntax
+#
+# What will this be used for? Why,
+# for bootstrapping a compiler in carML
+# itself really.
+
+def is_whitespace ch:char => bool = {
+    match ch with
+        ' ' => true
+        '\t' => true
+        '\n' => true
+        '\v' => true
+        '\r' => true
+        '\l' => true
+        '\b' => true
+        else => false
+    end
+}
+
+def take_while_white src:string start:int => char = {
+    # take... on... me...
+    # _softly_ take on me
+    # take... me... on...
+    # _softly_ take on me
+    # I'll be... gone...
+    # In a day or twoooooooo
+    # _synths_
+    var idx:int = start
+    var ch:char = (get src start)
+    # I *hate* how low level this is...
+    while (is_whitespace ch) do {
+        set! ch $ get src idx
+        set! idx $ + idx 1
+    }
+    ch
+}
+
+def is_numeric ch:char => bool = {
+    match ch with
+        x given (&& (>= ch '0') (<= ch '9')) => true
+        '.' => true
+        else => false
+    end
+}
+
+def is_symbolic ch:char => bool = {
+    match ch with
+        '(' => false
+        ')' => false
+        '[' => false
+        ']' => false
+        '"' => false
+        '\'' => false
+        y given (is_whitespace ch) => false
+        else => true
+    end
+}
+
+def is_null_or_endp obj:SExpression => bool = {
+    match obj with
+        (SExpression.EndList) => true
+        (SExpression.EndArray) => true
+        (SExpression.EndFile) => true
+        else => false
+    end
+}
+
+def sexpression_append_b dst:SExpresssion src:SExpression = {
+
+}
+
+def read_list fh:ref[FILE] => SExpression = {
+    var ret:SExpression = (SExpression_Nil)
+    var tmp:SExpression = (sexpression_read fh)
+    while (not $ is_null_or_endp tmp) do {
+        sexpression_append_b ret tmp
+    }
+    ret
+}
+
+def read_array fh:ref[FILE] => SExpression = {
+    var ret:array[SExpression] = (make-array SExpression 128 $ SExpression.Nil)
+    var ret_length:int = 128
+    var tmp:SExpression = (sexpression_read fh)
+    var idx:int = 0
+    while (not $ is_null_or_endp tmp) do {
+        when (< idx ret_length) do {
+            set! (get ret idx) tmp
+            set! idx $ + idx 1
+        }
+    }
+    ret
+}
+
+def read_char fh:ref[FILE] => SExpression = {
+
+}
+
+def read_atom fh:ref[FILE] => SExpression = {
+
+}
+
+def read_atom_partial fh:ref[FILE] cur:string => SExpression = {
+
+}
+
+# it would be nice to enrich types here
+# say that this is an SExpression, but also
+# that the only types it will return are
+# from Int, Float, Rational, Complex
+def read_number  => SExpression = {
+
+}
+
+def sexpression_read src:string start:int => SExpression = {
+    val ch:char = (take_while_white fh)
+    match ch with
+        '(' => (read_list fh)
+        '[' => (read_array fh)
+        '"' => (read_string fh)
+        '#' => (read_char fh)
+        ')' => (SExpression.EndList)
+        ']' => (SExpression.EndArray)
+        x given (is_whitespace ch) => (sexpression_read fh)
+        z given (is_numeric ch) => (read_number fh)
+        a given (is_symbolic ch) => (read_atom fh)
+        else => (SExpression.Error "unknown starting character")
+    end
+}
