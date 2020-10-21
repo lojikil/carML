@@ -19,13 +19,6 @@
 # start to handle some of the debt I've
 # accrued.
 
-type Num {
-    # would be really nice if this could
-    # just be handled by a union[float int]
-    NInt int
-    NFloat float
-}
-
 type SExpression {
     Nil
     Atom string
@@ -41,6 +34,7 @@ type SExpression {
     # below...
     EndList
     EndArray
+    EndFile
 }
 
 # add a simple reader system below
@@ -105,6 +99,7 @@ def is_symbolic ch:char => bool = {
 
 def is_null_or_endp obj:SExpression => bool = {
     match obj with
+        (SExpression.Null) => true
         (SExpression.EndList) => true
         (SExpression.EndArray) => true
         (SExpression.EndFile) => true
@@ -116,7 +111,7 @@ def sexpression_append_b dst:SExpresssion src:SExpression = {
 
 }
 
-def read_list fh:ref[FILE] => SExpression = {
+def read_list src:string offset:int => SExpression = {
     var ret:SExpression = (SExpression_Nil)
     var tmp:SExpression = (sexpression_read fh)
     while (not $ is_null_or_endp tmp) do {
@@ -125,7 +120,7 @@ def read_list fh:ref[FILE] => SExpression = {
     ret
 }
 
-def read_array fh:ref[FILE] => SExpression = {
+def read_array src:string offset:int => SExpression = {
     var ret:array[SExpression] = (make-array SExpression 128 $ SExpression.Nil)
     var ret_length:int = 128
     var tmp:SExpression = (sexpression_read fh)
@@ -139,15 +134,15 @@ def read_array fh:ref[FILE] => SExpression = {
     ret
 }
 
-def read_char fh:ref[FILE] => SExpression = {
+def read_char src:string offset:int => SExpression = {
 
 }
 
-def read_atom fh:ref[FILE] => SExpression = {
+def read_atom src:string offset:int => SExpression = {
 
 }
 
-def read_atom_partial fh:ref[FILE] cur:string => SExpression = {
+def read_atom_partial src:string offset:int cur:string => SExpression = {
 
 }
 
@@ -155,7 +150,7 @@ def read_atom_partial fh:ref[FILE] cur:string => SExpression = {
 # say that this is an SExpression, but also
 # that the only types it will return are
 # from Int, Float, Rational, Complex
-def read_number  => SExpression = {
+def read_number src:string => SExpression = {
 
 }
 
@@ -163,7 +158,7 @@ def sexpression_read src:string start:int => SExpression = {
     val ch:char = (take_while_white fh)
     match ch with
         '(' => (read_list fh)
-        '[' => (read_array fh)
+        #'[' => (read_array fh)
         '"' => (read_string fh)
         '#' => (read_char fh)
         ')' => (SExpression.EndList)
