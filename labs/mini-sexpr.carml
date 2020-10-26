@@ -58,7 +58,7 @@ def is_whitespace ch:char => bool = {
     end
 }
 
-def take_while_white src:string start:int => char = {
+def take_while_white src:string start:int => int = {
     # take... on... me...
     # _softly_ take on me
     # take... me... on...
@@ -73,7 +73,7 @@ def take_while_white src:string start:int => char = {
         set! ch $ get src idx
         set! idx $ + idx 1
     }
-    ch
+    idx
 }
 
 def is_numeric ch:char => bool = {
@@ -111,16 +111,11 @@ def sexpression_append_b dst:SExpresssion src:SExpression = {
 
 }
 
+# we really don't need much else beyond this part here
+# we could honestly do this with append=>array as well,
+# which would basically treat this as a stack, maybe by
+# backing with a dequeue?
 def read_list src:string offset:int => SExpression = {
-    var ret:SExpression = (SExpression_Nil)
-    var tmp:SExpression = (sexpression_read fh)
-    while (not $ is_null_or_endp tmp) do {
-        sexpression_append_b ret tmp
-    }
-    ret
-}
-
-def read_array src:string offset:int => SExpression = {
     var ret:array[SExpression] = (make-array SExpression 128 $ SExpression.Nil)
     var ret_length:int = 128
     var tmp:SExpression = (sexpression_read fh)
@@ -155,17 +150,25 @@ def read_number src:string => SExpression = {
 }
 
 def sexpression_read src:string start:int => SExpression = {
-    val ch:char = (take_while_white fh)
+    # this would be so much nicer as a tuple here
+    # we need a few things tho:
+    # 1. unboxing tuple[char int] (for example) in Golang returns
+    # 1. destructuring bind (`var ch, idx : tuple[char int] = ...`)
+    # 1. making a `make-tuple` and allowing `,` in CALL
+    var idx:int = (take_while_white src start)
+    val ch:char = (get src idx)
     match ch with
         '(' => (read_list fh)
         #'[' => (read_array fh)
         '"' => (read_string fh)
-        '#' => (read_char fh)
-        ')' => (SExpression.EndList)
-        ']' => (SExpression.EndArray)
+        '#' => (read_char src )
+        # news to fix these, make-struct assumes > 1
+        # args in the code gen...
+        ')' => (make-struct SExpression.EndList)
+        ']' => (make-struct SExpression.EndArray)
         x given (is_whitespace ch) => (sexpression_read fh)
         z given (is_numeric ch) => (read_number fh)
         a given (is_symbolic ch) => (read_atom fh)
-        else => (SExpression.Error "unknown starting character")
+        else => (make-struct SExpression.Error "unknown starting character")
     end
 }
