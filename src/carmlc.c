@@ -6150,6 +6150,8 @@ llcwalk(AST *head, int level, int final) {
                         }
                         cwalk(head->children[1], 0);
                     } else {
+                        // XXX (lojikil) this introduces a bug for certain
+                        // edge cases: `make-struct Foo` hits this path...
                         printf("%s ", coperators[opidx]);
                         cwalk(head->children[1], 0);
                     }
@@ -6753,6 +6755,8 @@ llgwalk(AST *head, int level, int final) {
                         }
                         gwalk(head->children[1], 0);
                     } else {
+                        // XXX (lojikil) this introduces a bug for certain
+                        // edge cases: `make-struct Foo` hits this path...
                         printf("%s ", coperators[opidx]);
                         gwalk(head->children[1], 0);
                     }
