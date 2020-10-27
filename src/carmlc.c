@@ -6136,25 +6136,11 @@ llcwalk(AST *head, int level, int final) {
                 // might use `make-struct` to layout something that
                 // is actually going to a `ref[SomeStruct]`, is that
                 // going to be a pain in the rear to fix?
-                if(head->lenchildren == 2) {
-                    // NOTE this code is a bit ugly,
-                    // but basically we don't want to punish
-                    // users who are being explicit with a
-                    // "return" operator call here
-                    // TODO I think this needs to be fixed anyway
-                    // as we should explicitly check that the
-                    // operator has the correct number of parameters
-                    if(!strncmp(head->children[0]->value, "return", 6)) {
-                        if(!final) {
-                            printf("return ");
-                        }
-                        cwalk(head->children[1], 0);
-                    } else {
-                        // XXX (lojikil) this introduces a bug for certain
-                        // edge cases: `make-struct Foo` hits this path...
-                        printf("%s ", coperators[opidx]);
-                        cwalk(head->children[1], 0);
+                if(!strncmp(head->children[0]->value, "return", 6)) {
+                    if(!final) {
+                        printf("return ");
                     }
+                    cwalk(head->children[1], 0);
                 } else if(!strncmp(head->children[0]->value, "make-struct", 11)) {
                     printf("{ ");
                     // NOTE (lojikil) make-struct now accepts the name of the
@@ -6185,6 +6171,9 @@ llcwalk(AST *head, int level, int final) {
                     printf("(%s *)hmalloc(sizeof(%s) * %s)", head->children[1]->value, head->children[1]->value, head->children[2]->value);
                 } else if(!strncmp(head->children[0]->value, "region-allocate", 15)) {
 
+                } else if(!strncmp(head->children[0]->value, "not", 3)) {
+                    printf("!");
+                    cwalk(head->children[1], 0);
                 } else {
                     cwalk(head->children[1], 0);
                     if(!strncmp(head->children[0]->value, ".", 2)) {
