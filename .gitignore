@@ -6,3 +6,4 @@ carmlc
 *.dSYM
 staging/*
 .idea/*
+.DS_Store

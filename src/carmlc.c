@@ -6741,25 +6741,11 @@ llgwalk(AST *head, int level, int final) {
                 // might use `make-struct` to layout something that
                 // is actually going to a `ref[SomeStruct]`, is that
                 // going to be a pain in the rear to fix?
-                if(head->lenchildren == 2) {
-                    // NOTE this code is a bit ugly,
-                    // but basically we don't want to punish
-                    // users who are being explicit with a
-                    // "return" operator call here
-                    // TODO I think this needs to be fixed anyway
-                    // as we should explicitly check that the
-                    // operator has the correct number of parameters
-                    if(!strncmp(head->children[0]->value, "return", 6)) {
-                        if(!final) {
-                            printf("return ");
-                        }
-                        gwalk(head->children[1], 0);
-                    } else {
-                        // XXX (lojikil) this introduces a bug for certain
-                        // edge cases: `make-struct Foo` hits this path...
-                        printf("%s ", coperators[opidx]);
-                        gwalk(head->children[1], 0);
+                if(!strncmp(head->children[0]->value, "return", 6)) {
+                    if(!final) {
+                        printf("return ");
                     }
+                    gwalk(head->children[1], 0);
                 } else if(!strncmp(head->children[0]->value, "make-struct", 11)) {
                     // NOTE (lojikil) in Go we need to print the name of the struct
                     // when allocating it here...
@@ -6787,6 +6773,9 @@ llgwalk(AST *head, int level, int final) {
                 } else if(!strncmp(head->children[0]->value, "stack-allocate", 14)) {
                 } else if(!strncmp(head->children[0]->value, "heap-allocate", 13)) {
                 } else if(!strncmp(head->children[0]->value, "region-allocate", 15)) {
+                } else if(!strncmp(head->children[0]->value, "not", 3)) {
+                    printf("!");
+                    gwalk(head->children[1], 0);
                 } else {
                     gwalk(head->children[1], 0);
                     if(!strncmp(head->children[0]->value, ".", 2)) {
