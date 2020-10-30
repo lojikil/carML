@@ -130,7 +130,19 @@ def read_list src:string offset:int => SExpression = {
 }
 
 def read_char src:string offset:int => SExpression = {
-
+    # a few thoughts here
+    # 1. eventually need to handle #\newline and such
+    # 1. I hate how imperative this is; would be nicer
+    # as a match & decomposition or some other check
+    if (< (+ offset 2) (len src)) then {
+        val first : char = (get src offset)
+        val snd : char = (get src $ + offset 1)
+        if (eq? fst '\\') then
+            (SExpression.Char snd)
+        else
+            (SExpression.Error "incorrectly formatted character")
+    } else
+        (SExpression.Error "error reading character at end of buffer")
 }
 
 def read_atom src:string offset:int => SExpression = {
@@ -161,7 +173,7 @@ def sexpression_read src:string start:int => SExpression = {
         '(' => (read_list fh)
         #'[' => (read_array fh)
         '"' => (read_string fh)
-        '#' => (read_char src )
+        '#' => (read_char src $ + idx 1)
         # news to fix these, make-struct assumes > 1
         # args in the code gen...
         ')' => (make-struct SExpression.EndList)
