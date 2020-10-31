@@ -6567,7 +6567,33 @@ llgwalk(AST *head, int level, int final) {
                             printf("%s", htmp->children[tidx]->value);
                             break;
                         case TCHAR:
-                            printf("'%s'", htmp->children[tidx]->value);
+                            //printf("'%s'", htmp->children[tidx]->value);
+                            switch(htmp->children[tidx]->value[0]) {
+                                case '\n':
+                                    printf("'\\n'");
+                                    break;
+                                case '\r':
+                                    printf("'\\r'");
+                                    break;
+                                case '\t':
+                                    printf("'\\t'");
+                                    break;
+                                case '\v':
+                                    printf("'\\v'");
+                                    break;
+                                case '\0':
+                                    printf("'\\0'");
+                                    break;
+                                case '\'':
+                                    printf("'\''");
+                                    break;
+                                case '\\':
+                                    printf("'\\\\'");
+                                    break;
+                                default:
+                                    printf("'%c'", htmp->children[tidx]->value[0]);
+                                    break;
+                            }
                             break;
                         case TSTRING:
                             printf("\"%s\"", htmp->children[tidx]->value);
@@ -6861,6 +6887,9 @@ llgwalk(AST *head, int level, int final) {
                     break;
                 case '\'':
                     printf("'\''");
+                    break;
+                case '\\':
+                    printf("'\\\\'");
                     break;
                 default:
                     printf("'%c'", head->value[0]);
