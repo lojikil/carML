@@ -6642,6 +6642,9 @@ llgwalk(AST *head, int level, int final) {
                                 case '\0':
                                     printf("'\\0'");
                                     break;
+                                case '\b':
+                                    printf("'\\b'");
+                                    break;
                                 case '\'':
                                     printf("'\''");
                                     break;
