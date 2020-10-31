@@ -107,10 +107,6 @@ def is_null_or_endp obj:SExpression => bool = {
     end
 }
 
-def sexpression_append_b dst:SExpresssion src:SExpression = {
-
-}
-
 # we really don't need much else beyond this part here
 # we could honestly do this with append=>array as well,
 # which would basically treat this as a stack, maybe by
@@ -138,11 +134,15 @@ def read_char src:string offset:int => SExpression = {
         val first : char = (get src offset)
         val snd : char = (get src $ + offset 1)
         if (eq? fst '\\') then
-            (SExpression.Char snd)
+            # I'm doing this because carML doesn't currently
+            # track constructors & accessors, so many of these
+            # should be rewritten to the down-case of `make-struct`
+            # anyway, but I hate doing this manually...
+            (make-struct SExpression.Char snd)
         else
-            (SExpression.Error "incorrectly formatted character")
+            (make-struct SExpression.Error "incorrectly formatted character")
     } else
-        (SExpression.Error "error reading character at end of buffer")
+        (make-struct SExpression.Error "error reading character at end of buffer")
 }
 
 def read_atom src:string offset:int => SExpression = {
