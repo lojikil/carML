@@ -6825,7 +6825,7 @@ llgwalk(AST *head, int level, int final) {
                 } else if(!strncmp(head->children[0]->value, "make-struct", 11)) {
                     // NOTE (lojikil) in Go we need to print the name of the struct
                     // when allocating it here...
-                    gwalk(head->children[1], 0);
+                    mung_variant_name(nil, head->children[1], NO, YES);
                     printf("{ ");
                     for(int cidx = 2; cidx < head->lenchildren; cidx++) {
                         gwalk(head->children[cidx], 0);
