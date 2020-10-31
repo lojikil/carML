@@ -5166,7 +5166,36 @@ mung_guard(AST *name, AST *guard) {
             printf("%s == 0", name->value);
             break;
         case TCHAR:
-            printf("%s == '%s'", name->value, mcond->value);
+            printf("%s == ", name->value);
+            switch(mcond->value[0]) {
+                case '\n':
+                    printf("'\\n'");
+                    break;
+                case '\r':
+                    printf("'\\r'");
+                    break;
+                case '\v':
+                    printf("'\\v'");
+                    break;
+                case '\t':
+                    printf("'\\t'");
+                    break;
+                case '\b':
+                    printf("'\\b'");
+                    break;
+                case '\0':
+                    printf("'\\0'");
+                    break;
+                case '\'':
+                    printf("'\\''");
+                    break;
+                case '\\':
+                    printf("'\\\\'");
+                    break;
+                default:
+                    printf("'%c'", mcond->value[0]);
+                    break;
+            }
             break;
         case TSTRING:
             printf("!strncmp(%s, \"%s\", %lu)", name->value, mcond->value, strlen(mcond->value));
@@ -5898,7 +5927,36 @@ llcwalk(AST *head, int level, int final) {
                             printf("%s == 0", ctmp->value);
                             break;
                         case TCHAR:
-                            printf("%s == '%s'", ctmp->value, htmp->children[tidx]->value);
+                            printf("%s == ", ctmp->value);
+                            switch(htmp->children[tidx]->value[0]) {
+                                case '\n':
+                                    printf("'\\n'");
+                                    break;
+                                case '\r':
+                                    printf("'\\r'");
+                                    break;
+                                case '\v':
+                                    printf("'\\v'");
+                                    break;
+                                case '\t':
+                                    printf("'\\t'");
+                                    break;
+                                case '\b':
+                                    printf("'\\b'");
+                                    break;
+                                case '\0':
+                                    printf("'\\0'");
+                                    break;
+                                case '\'':
+                                    printf("'\\''");
+                                    break;
+                                case '\\':
+                                    printf("'\\\\'");
+                                    break;
+                                default:
+                                    printf("'%c'", htmp->children[tidx]->value[0]);
+                                    break;
+                            }
                             break;
                         case TSTRING:
                             printf("!strncmp(%s, \"%s\", %lu)", ctmp->value, htmp->children[tidx]->value, strlen(htmp->children[tidx]->value));
@@ -6881,6 +6939,9 @@ llgwalk(AST *head, int level, int final) {
                     break;
                 case '\v':
                     printf("'\\v'");
+                    break;
+                case '\b':
+                    printf("'\\b'");
                     break;
                 case '\0':
                     printf("'\\0'");
