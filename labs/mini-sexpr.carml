@@ -158,6 +158,16 @@ def read_atom_partial src:string offset:int cur:string => SExpression = {
 
 }
 
+# NOTE (lojikil):
+# I was originally going to implement a bunch of things in the
+# core library, but then I realized I probably should actually
+# make a module and have things work there. So, for now, I'm
+# adding this helper here, and will work on making the rest
+# of the module system workable...
+def string_slice src:string start:int endpoint:int => string = {
+    
+}
+
 # it would be nice to enrich types here
 # say that this is an SExpression, but also
 # that the only types it will return are
@@ -184,12 +194,12 @@ def read_number src:string offset:int => SExpression = {
                 set! state 1
                 set! idx $ + idx 1
             }
-            z given (every (is_numeric ch) (eq? ch '.')) => (make-struct SExpression.Error "incorrectly formatted number with two '.'")
+            z given (one-of (is_numeric ch) (eq? ch '.')) => (make-struct SExpression.Error "incorrectly formatted number with two '.'")
             else => {
                 if (eq? state 0) then
-                    (return $ make-struct SExpression.Int $ string-slice src offset idx)
+                    (return $ make-struct SExpression.Int $ string_slice src offset idx)
                 else
-                    (return $ make-struct SExpression.Float $ string-slice src offset idx)
+                    (return $ make-struct SExpression.Float $ string_slice src offset idx)
             }
         end
     }
