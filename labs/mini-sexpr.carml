@@ -165,7 +165,14 @@ def read_atom_partial src:string offset:int cur:string => SExpression = {
 # adding this helper here, and will work on making the rest
 # of the module system workable...
 def string_slice src:string start:int endpoint:int => string = {
-    
+    val len:int = (- endpoint start)
+    var res:array[char] = (make-array char len)
+    var idx:int = 0
+    while (< idx len) do {
+        set! (get res idx) $ get src $ + idx start
+        set! idx $ + idx 1
+    }
+    make-string res
 }
 
 # it would be nice to enrich types here
