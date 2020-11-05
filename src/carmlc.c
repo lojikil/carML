@@ -219,6 +219,20 @@ const char *coperators[] = {
     "heap-allocate", "heap-allocate",
     "region-allocate", "region-allocate",
     "return", "return",
+    // logical connectives
+    "every", "every", // every logical case must pass
+    "one-of", "one-of", // any logical case must pass
+    "none-of", "none-of", // no logical case can pass
+    // these are meant to be used to chain states together,
+    // such as:
+    //
+    //     (every (>= ch '0') (<= ch '9'))
+    //     (one-of (is-numeric? ch) (eq? ch '.'))
+    //
+    // which is just `((ch >= '0') && (ch <= '9'))`
+    // where this becomes useful is large pipelines of
+    // logical tests, which are written into the logical
+    // connective cases of the language below
     0
 };
 
@@ -6232,6 +6246,9 @@ llcwalk(AST *head, int level, int final) {
                 } else if(!strncmp(head->children[0]->value, "not", 3)) {
                     printf("!");
                     cwalk(head->children[1], 0);
+                } else if(!strncmp(head->children[0]->value, "every", 5)) {
+                } else if(!strncmp(head->children[0]->value, "one-of", 6)) {
+                } else if(!strncmp(head->children[0]->value, "none-of", 7)) {
                 } else {
                     cwalk(head->children[1], 0);
                     if(!strncmp(head->children[0]->value, ".", 2)) {
@@ -6852,6 +6869,9 @@ llgwalk(AST *head, int level, int final) {
                 } else if(!strncmp(head->children[0]->value, "not", 3)) {
                     printf("!");
                     gwalk(head->children[1], 0);
+                } else if(!strncmp(head->children[0]->value, "every", 5)) {
+                } else if(!strncmp(head->children[0]->value, "one-of", 6)) {
+                } else if(!strncmp(head->children[0]->value, "none-of", 7)) {
                 } else {
                     gwalk(head->children[1], 0);
                     if(!strncmp(head->children[0]->value, ".", 2)) {
