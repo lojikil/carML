@@ -6247,8 +6247,32 @@ llcwalk(AST *head, int level, int final) {
                     printf("!");
                     cwalk(head->children[1], 0);
                 } else if(!strncmp(head->children[0]->value, "every", 5)) {
+                    for(int ctidx = 1; ctidx < head->lenchildren; ctidx++) {
+                        printf("(");
+                        cwalk(head->children[ctidx], 0);
+                        printf(")");
+                        if(ctidx < (head->lenchildren - 1)) {
+                            printf(" && ");
+                        }
+                    }
                 } else if(!strncmp(head->children[0]->value, "one-of", 6)) {
+                    for(int ctidx = 1; ctidx < head->lenchildren; ctidx++) {
+                        printf("(");
+                        cwalk(head->children[ctidx], 0);
+                        printf(")");
+                        if(ctidx < (head->lenchildren - 1)) {
+                            printf(" || ");
+                        }
+                    }
                 } else if(!strncmp(head->children[0]->value, "none-of", 7)) {
+                    for(int ctidx = 1; ctidx < head->lenchildren; ctidx++) {
+                        printf("!(");
+                        cwalk(head->children[ctidx], 0);
+                        printf(")");
+                        if(ctidx < (head->lenchildren - 1)) {
+                            printf(" && ");
+                        }
+                    }
                 } else {
                     cwalk(head->children[1], 0);
                     if(!strncmp(head->children[0]->value, ".", 2)) {
@@ -6854,7 +6878,9 @@ llgwalk(AST *head, int level, int final) {
                 } else if(!strncmp(head->children[0]->value, "make-deque", 10)) {
 
                 } else if(!strncmp(head->children[0]->value, "make-string", 11)) {
-
+                    printf("string(");
+                    gwalk(head->children[1], 0);
+                    printf(")");
                 } else if(!strncmp(head->children[0]->value, "make-array", 10)) {
                     // TODO: this is a hack, to get carML lifted into itself
                     // eventually, we need to actually detect what is going on,
@@ -6870,8 +6896,32 @@ llgwalk(AST *head, int level, int final) {
                     printf("!");
                     gwalk(head->children[1], 0);
                 } else if(!strncmp(head->children[0]->value, "every", 5)) {
+                    for(int ctidx = 1; ctidx < head->lenchildren; ctidx++) {
+                        printf("(");
+                        gwalk(head->children[ctidx], 0);
+                        printf(")");
+                        if(ctidx < (head->lenchildren - 1)) {
+                            printf(" && ");
+                        }
+                    }
                 } else if(!strncmp(head->children[0]->value, "one-of", 6)) {
+                    for(int ctidx = 1; ctidx < head->lenchildren; ctidx++) {
+                        printf("(");
+                        gwalk(head->children[ctidx], 0);
+                        printf(")");
+                        if(ctidx < (head->lenchildren - 1)) {
+                            printf(" || ");
+                        }
+                    }
                 } else if(!strncmp(head->children[0]->value, "none-of", 7)) {
+                    for(int ctidx = 1; ctidx < head->lenchildren; ctidx++) {
+                        printf("!(");
+                        gwalk(head->children[ctidx], 0);
+                        printf(")");
+                        if(ctidx < (head->lenchildren - 1)) {
+                            printf(" && ");
+                        }
+                    }
                 } else {
                     gwalk(head->children[1], 0);
                     if(!strncmp(head->children[0]->value, ".", 2)) {
