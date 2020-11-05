@@ -201,7 +201,7 @@ def read_number src:string offset:int => SExpression = {
                 set! state 1
                 set! idx $ + idx 1
             }
-            z given (one-of (is_numeric ch) (eq? ch '.')) => (make-struct SExpression.Error "incorrectly formatted number with two '.'")
+            z given (every (is_numeric ch) (eq? ch '.')) => (return $ make-struct SExpression.Error "incorrectly formatted number with two '.'")
             else => {
                 if (eq? state 0) then
                     (return $ make-struct SExpression.Int $ string_slice src offset idx)
@@ -213,7 +213,7 @@ def read_number src:string offset:int => SExpression = {
     # NOTE (lojikil): this is here because we are incorrectly determining that some
     # of the `set!` forms should be returns... there has to be a better analysis to
     # handle that sort of thing. Also, need to make `string-slice` and such...
-    ()
+    make-struct SExpression.Error "malformed number"
 }
 
 def sexpression_read src:string start:int => SExpression = {
@@ -225,17 +225,17 @@ def sexpression_read src:string start:int => SExpression = {
     var idx:int = (take_while_white src start)
     val ch:char = (get src idx)
     match ch with
-        '(' => (read_list fh)
+        '(' => (read_list src $ + idx 1)
         #'[' => (read_array fh)
-        '"' => (read_string fh)
+        '"' => (read_string src $ + idx 1)
         '#' => (read_char src $ + idx 1)
         # news to fix these, make-struct assumes > 1
         # args in the code gen...
         ')' => (make-struct SExpression.EndList)
         ']' => (make-struct SExpression.EndArray)
-        x given (is_whitespace ch) => (sexpression_read fh)
-        z given (is_numeric ch) => (read_number fh)
-        a given (is_symbolic ch) => (read_atom fh)
+        x given (is_whitespace ch) => (sexpression_read src $ + idx 1)
+        z given (is_numeric ch) => (read_number src idx)
+        a given (is_symbolic ch) => (read_atom src idx)
         else => (make-struct SExpression.Error "unknown starting character")
     end
 }
