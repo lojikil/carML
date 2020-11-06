@@ -1014,7 +1014,7 @@ typespec2g(AST *typespec, char *dst, char *name, int len) {
             strncat(dst, "int", 3);
             break;
         case TCHART:
-            strncat(dst, "int32", 5);
+            strncat(dst, "byte", 4);
             break;
         case TTAG:
             if(!strncmp(typespec->value, "U8", 2)) {
@@ -6886,7 +6886,11 @@ llgwalk(AST *head, int level, int final) {
                     // eventually, we need to actually detect what is going on,
                     // and use the correct allocator. What I did here was to
                     // basically assume that the user typed `heap-allocate`
-                    printf("make([]%s, %s)", head->children[1]->value, head->children[2]->value);
+                    printf("make([]");
+                    gwalk(head->children[1], 0);
+                    printf(", ");
+                    gwalk(head->children[2], 0);
+                    printf(")");
                 } else if(!strncmp(head->children[0]->value, "make", 4)) {
 
                 } else if(!strncmp(head->children[0]->value, "stack-allocate", 14)) {
@@ -7063,7 +7067,7 @@ llgwalk(AST *head, int level, int final) {
             printf("bool");
             break;
         case TCHART:
-            printf("int32");
+            printf("byte");
             break;
         case TSTRT:
             /* make a fat version of this?
