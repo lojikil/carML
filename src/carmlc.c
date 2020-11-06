@@ -6546,9 +6546,17 @@ llgwalk(AST *head, int level, int final) {
             }
             break;
         case TVAL:
-            printf("const %s = ", head->value);
+            // unfortunately, Go actually requires constants
+            // to be fully constant in their rvalue, so we
+            // have to detect what's going on here. `val`
+            // forms subsequently need to be checked at the
+            // compiler level, not at the transpiled level
+            if(isprimitivevalue(head->children[0]->tag)) {
+                printf("const %s = ", head->value);
+            } else {
+                printf("%s := ", head->value);
+            }
             gwalk(head->children[0], 0);
-            printf(";");
             break;
         case TVAR:
             if(head->lenchildren == 2) {
