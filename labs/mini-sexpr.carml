@@ -37,6 +37,7 @@ type SExpression {
     # isn't exported, and an external type that
     # is, so as to remove the two constructors
     # below...
+    Null
     EndList
     EndArray
     EndFile
@@ -151,11 +152,15 @@ def read_char src:string offset:int => SExpression = {
 }
 
 def read_atom src:string offset:int => SExpression = {
-
+    make-struct SExpression.Null
 }
 
 def read_atom_partial src:string offset:int cur:string => SExpression = {
+    make-struct SExpression.Null
+}
 
+def read_string src:string offset:int => SExpression = {
+    make-struct SExpression.Null
 }
 
 # NOTE (lojikil):
@@ -187,7 +192,6 @@ def read_number src:string offset:int => SExpression = {
     # TCO'd into a while-loop so that we can ship this,
     # rather than try to use this to lift the program into
     # a state wherein we can do TCO
-    var start:int = offset
     var idx:int = offset
     var state:int = 0
     var ch:char = ' '
