@@ -82,6 +82,16 @@ def take_while_white src:string start:int => int = {
     idx
 }
 
+def next src:string offset:int => Token = {
+    # NOTE I had an idea about how to fix the offset
+    # issue: instead of trying to read the string AND
+    # process lexemes, what we need is to go old-School
+    # Wirth style with our RDP: have a function, next,
+    # which returns a Token struct with the next lexeme,
+    # it's length, and type
+    return 1
+}
+
 def is_numeric ch:char => bool = {
     match ch with
         x given (&& (>= ch '0') (<= ch '9')) => true
