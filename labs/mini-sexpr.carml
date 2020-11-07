@@ -120,15 +120,18 @@ def is_null_or_endp obj:SExpression => bool = {
 def read_list src:string offset:int => SExpression = {
     var ret:array[SExpression] = (make-array SExpression 128 $ SExpression.Nil)
     var ret_length:int = 128
-    var tmp:SExpression = (sexpression_read fh)
+    var tmp:SExpression = (sexpression_read src offset)
     var idx:int = 0
     while (not $ is_null_or_endp tmp) do {
         when (< idx ret_length) do {
             set! (get ret idx) tmp
             set! idx $ + idx 1
         }
+        # this is obviously wrong, we need to
+        # update offset for each read...
+        set! tmp $ sexpression_read src offset
     }
-    ret
+    make-struct SExpression.List ret
 }
 
 def read_char src:string offset:int => SExpression = {
@@ -137,7 +140,7 @@ def read_char src:string offset:int => SExpression = {
     # 1. I hate how imperative this is; would be nicer
     # as a match & decomposition or some other check
     if (< (+ offset 2) (len src)) then {
-        val first : char = (get src offset)
+        val fst : char = (get src offset)
         val snd : char = (get src $ + offset 1)
         if (eq? fst '\\') then
             # I'm doing this because carML doesn't currently

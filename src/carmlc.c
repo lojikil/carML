@@ -5157,8 +5157,8 @@ mung_variant_name(AST *name, AST *variant, int ref, int golang) {
     }
 }
 
-bool
-check_guard(AST *children) {
+int
+check_guard(AST **children, int len_children) {
     // a very simple function: walk the spine of children from a `match` form
     // and return YES if we have found *any* guard clauses, and NO otherwise
     // then, the code generation can make an informed decision.
@@ -5217,6 +5217,11 @@ check_guard(AST *children) {
     // Whilst this works, it means that we have redundant checks for
     // the tag. Something like [Rust's MIR](https://blog.rust-lang.org/2016/04/19/MIR.html)
     // would be really interesting...
+    for(int idx = 0; idx < len_children; idx += 2) {
+        if(children[idx]->tag == TGUARD) {
+            return YES;
+        }
+    }
 
     return NO;
 }
@@ -6554,7 +6559,7 @@ llcwalk(AST *head, int level, int final) {
 
 void
 llgwalk(AST *head, int level, int final) {
-    int idx = 0, opidx = -1;
+    int idx = 0, opidx = -1, guard_check = NO;
     char *tbuf = nil, buf[512] = {0}, rbuf[512] = {0}, *rtbuf = nil;
     AST *ctmp = nil, *htmp = nil;
 
@@ -6721,6 +6726,9 @@ llgwalk(AST *head, int level, int final) {
             htmp = head->children[1];
             if(htmp->children[0]->tag == TCALL) {
                 printf("switch %s := %s.(type) {\n", ctmp->value, ctmp->value);
+            } else if(check_guard(htmp->children, htmp->lenchildren) == YES) {
+                printf("switch {\n");
+                guard_check = YES;
             } else {
                 printf("switch %s {\n", ctmp->value);
             }
@@ -6735,10 +6743,16 @@ llgwalk(AST *head, int level, int final) {
                         case TIDENT:
                         case TTRUE:
                         case TFALSE:
+                            if(guard_check == YES) {
+                                printf("%s == ", ctmp->value);
+                            }
                             printf("%s", htmp->children[tidx]->value);
                             break;
                         case TCHAR:
                             //printf("'%s'", htmp->children[tidx]->value);
+                            if(guard_check == YES) {
+                                printf("%s == ", ctmp->value);
+                            }
                             switch(htmp->children[tidx]->value[0]) {
                                 case '\n':
                                     printf("'\\n'");
@@ -6770,11 +6784,17 @@ llgwalk(AST *head, int level, int final) {
                             }
                             break;
                         case TSTRING:
+                            if(guard_check == YES) {
+                                printf("%s == ", ctmp->value);
+                            }
                             printf("\"%s\"", htmp->children[tidx]->value);
                             break;
                         case THEX:
                         case TOCT:
                         case TBIN:
+                            if(guard_check == YES) {
+                                printf("%s == ", ctmp->value);
+                            }
                             gwalk(htmp->children[tidx], 0);
                             break;
                         case TARRAYLITERAL:
