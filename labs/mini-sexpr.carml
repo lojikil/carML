@@ -98,11 +98,41 @@ def next src:string offset:int => Token = {
     val ch:char = (get src offset)
     var idx:int = offset
     var state:int = 0
+    # yet again, I really need to make TCO a thing, since
+    # this function would be so much more nicely expressed
+    # as a simple tail recursive function...
     match ch with
-        case '(' => (return $ make-struct Token "(" 1 1)
-        case ')' => (return $ make-struct Token ")" 1 2)
-        case '[' => (return $ make-struct Token "[" 1 3)
-        case ']' => (return $ make-struct Token "]" 1 4)
+        '(' => (return $ make-struct Token "(" 1 1)
+        ')' => (return $ make-struct Token ")" 1 2)
+        '[' => (return $ make-struct Token "[" 1 3)
+        ']' => (return $ make-struct Token "]" 1 4)
+        z given (is_numeric ch) => {
+            while (< idx $ len src) do {
+                match state with
+                    # integer
+                    0 => match ch with
+                        '.' => (set! state 1)
+                        _ given (is_alpha ch) => (set! state 2)
+                        _ given (is_break ch) => (set! state 3)
+                        else => (set! state 0)
+                    end
+                    # float
+                    1 => match ch with
+                        '.' => (set! state 2)
+                        _ given (is_alpha ch) => (set! state 2)
+                        _ given (is_break ch) => (set! state 4)
+                        else => (set! state 1)
+                    end
+                    # atom
+                    2 => when (is_break ch) do (return $ make-struct ...)
+                    # matched integer
+                    3 => ...
+                    # matched float
+                    4 => ...
+               end
+               set! idx $ + idx 1
+            }
+        }
         else => (return $ make-struct Token " " 1 99)
     end
 }
