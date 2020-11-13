@@ -5151,7 +5151,11 @@ mung_variant_name(AST *name, AST *variant, int ref, int golang) {
     if(ref) {
         printf("%s->tag == TAG_%s_%s", name->value, varname, constructor);
     } else if (golang) {
-        printf("%s_%s", varname, constructor);
+        if(!flag) {
+            printf("%s", varname);
+        } else {
+            printf("%s_%s", varname, constructor);
+        }
     } else {
         printf("%s.tag == TAG_%s_%s", name->value, varname, constructor);
     }
