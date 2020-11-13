@@ -113,22 +113,18 @@ def next src:string offset:int => Token = {
                     0 => match ch with
                         '.' => (set! state 1)
                         _ given (is_alpha ch) => (set! state 2)
-                        _ given (is_break ch) => (set! state 3)
+                        _ given (not $ is_symbolic ch) => (return $ make-struct Token (string-slice src offset idx) 1 5)
                         else => (set! state 0)
                     end
                     # float
                     1 => match ch with
                         '.' => (set! state 2)
                         _ given (is_alpha ch) => (set! state 2)
-                        _ given (is_break ch) => (set! state 4)
+                        _ given (not $ is_symbolic ch) => (return $ make-struct Token (string-slice src offset idx) 1 6)
                         else => (set! state 1)
                     end
                     # atom
-                    2 => when (is_break ch) do (return $ make-struct ...)
-                    # matched integer
-                    3 => ...
-                    # matched float
-                    4 => ...
+                    2 => when (not $ is_symbolic ch) do (return $ make-struct Token (string-slice src offset idx) 1 7)
                end
                set! idx $ + idx 1
             }
