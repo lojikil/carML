@@ -112,19 +112,19 @@ def next src:string offset:int => Token = {
                     # integer
                     0 => match ch with
                         '.' => (set! state 1)
-                        _ given (is_alpha ch) => (set! state 2)
-                        _ given (not $ is_symbolic ch) => (return $ make-struct Token (string-slice src offset idx) 1 5)
+                        _ given (is_symbolic ch) => (set! state 2)
+                        _ given (not $ is_symbolic ch) => (return $ make-struct Token (string_slice src offset idx) 1 5)
                         else => (set! state 0)
                     end
                     # float
                     1 => match ch with
                         '.' => (set! state 2)
-                        _ given (is_alpha ch) => (set! state 2)
-                        _ given (not $ is_symbolic ch) => (return $ make-struct Token (string-slice src offset idx) 1 6)
+                        _ given (is_symbolic ch) => (set! state 2)
+                        _ given (not $ is_symbolic ch) => (return $ make-struct Token (string_slice src offset idx) 1 6)
                         else => (set! state 1)
                     end
                     # atom
-                    2 => when (not $ is_symbolic ch) do (return $ make-struct Token (string-slice src offset idx) 1 7)
+                    2 => when (not $ is_symbolic ch) do (return $ make-struct Token (string_slice src offset idx) 1 7)
                end
                set! idx $ + idx 1
             }
@@ -270,7 +270,7 @@ def read_number src:string offset:int => SExpression = {
     }
     # NOTE (lojikil): this is here because we are incorrectly determining that some
     # of the `set!` forms should be returns... there has to be a better analysis to
-    # handle that sort of thing. Also, need to make `string-slice` and such...
+    # handle that sort of thing. Also, need to make `string_slice` and such...
     make-struct SExpression.Error "malformed number"
 }
 
