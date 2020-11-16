@@ -1186,6 +1186,10 @@ next(FILE *fdin, char *buf, int buflen) {
                                 buf[idx++] = '\\';
                                 buf[idx++] = 'r';
                                 break;
+                            case 'b':
+                                buf[idx++] = '\\';
+                                buf[idx++] = 'b';
+                                break;
                             case 't':
                                 buf[idx++] = '\\';
                                 buf[idx++] = 't';
@@ -1217,6 +1221,8 @@ next(FILE *fdin, char *buf, int buflen) {
                 if(cur == '\\') {
                     cur = fgetc(fdin);
                     switch(cur) {
+                        case 'b':
+                            buf[idx++] = '\b';
                         case 'n':
                             buf[idx++] = '\n';
                             break;
@@ -6447,7 +6453,7 @@ llcwalk(AST *head, int level, int final) {
                     printf("'\\0'");
                     break;
                 case '\'':
-                    printf("'\''");
+                    printf("'\\''");
                     break;
                 default:
                     printf("'%c'", head->value[0]);
