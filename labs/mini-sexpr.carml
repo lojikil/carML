@@ -131,6 +131,7 @@ def next src:string offset:int => Token = {
         }
         else => (return $ make-struct Token " " 1 99)
     end
+    return $ make-struct Token " " 1 99
 }
 
 def is_numeric ch:char => bool = {
