@@ -129,6 +129,7 @@ def next src:string offset:int => Token = {
                     2 => when (not $ is_symbolic ch) do (return $ make-struct Token (string_slice src offset idx) 1 7)
                end
                set! idx $ + idx 1
+               when (< idx $ len src) do (set! ch $ get src idx)
             }
         }
         else => (return $ make-struct Token " " 1 99)
