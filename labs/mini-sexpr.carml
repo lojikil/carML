@@ -112,6 +112,7 @@ def next src:string offset:int => Token = {
                     # integer
                     0 => match ch with
                         '.' => (set! state 1)
+                        _ given (is_numeric ch) => (set! state 0)
                         _ given (is_symbolic ch) => (set! state 2)
                         _ given (not $ is_symbolic ch) => (return $ make-struct Token (string_slice src offset idx) 1 5)
                         else => (set! state 0)
@@ -119,6 +120,7 @@ def next src:string offset:int => Token = {
                     # float
                     1 => match ch with
                         '.' => (set! state 2)
+                        _ given (is_numeric ch) => (set! state 1)
                         _ given (is_symbolic ch) => (set! state 2)
                         _ given (not $ is_symbolic ch) => (return $ make-struct Token (string_slice src offset idx) 1 6)
                         else => (set! state 1)
@@ -130,6 +132,12 @@ def next src:string offset:int => Token = {
             }
         }
         else => (return $ make-struct Token " " 1 99)
+    end
+    # NOTE: AAAAAAAAAAH... so imperative
+    match state with
+        0 => (return $ make-struct Token (string_slice src offset idx) 1 5)
+        1 => (return $ make-struct Token (string_slice src offset idx) 1 6)
+        2 => (return $ make-struct Token (string_slice src offset idx) 1 7)
     end
     return $ make-struct Token " " 1 99
 }
