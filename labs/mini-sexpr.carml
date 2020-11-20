@@ -88,13 +88,14 @@ def take_while_white src:string start:int => int = {
     idx
 }
 
-def next src:string offset:int => Token = {
+def next src:string start_offset:int => Token = {
     # NOTE I had an idea about how to fix the offset
     # issue: instead of trying to read the string AND
     # process lexemes, what we need is to go old-School
     # Wirth style with our RDP: have a function, next,
     # which returns a Token struct with the next lexeme,
     # it's length, and type
+    val offset:int = (take_while_white src start_offset)
     val ch:char = (get src offset)
     var idx:int = offset
     var state:int = 0
@@ -102,10 +103,10 @@ def next src:string offset:int => Token = {
     # this function would be so much more nicely expressed
     # as a simple tail recursive function...
     match ch with
-        '(' => (return $ make-struct Token "(" 1 1)
-        ')' => (return $ make-struct Token ")" 1 2)
-        '[' => (return $ make-struct Token "[" 1 3)
-        ']' => (return $ make-struct Token "]" 1 4)
+        '(' => (return $ make-struct Token "(" idx 1)
+        ')' => (return $ make-struct Token ")" idx 2)
+        '[' => (return $ make-struct Token "[" idx 3)
+        ']' => (return $ make-struct Token "]" idx 4)
         z given (is_numeric ch) => {
             while (< idx $ len src) do {
                 match state with
@@ -114,7 +115,7 @@ def next src:string offset:int => Token = {
                         '.' => (set! state 1)
                         _ given (is_numeric ch) => (set! state 0)
                         _ given (is_symbolic ch) => (set! state 2)
-                        _ given (not $ is_symbolic ch) => (return $ make-struct Token (string_slice src offset idx) 1 5)
+                        _ given (not $ is_symbolic ch) => (return $ make-struct Token (string_slice src offset idx) idx 5)
                         else => (set! state 0)
                     end
                     # float
@@ -122,23 +123,30 @@ def next src:string offset:int => Token = {
                         '.' => (set! state 2)
                         _ given (is_numeric ch) => (set! state 1)
                         _ given (is_symbolic ch) => (set! state 2)
-                        _ given (not $ is_symbolic ch) => (return $ make-struct Token (string_slice src offset idx) 1 6)
+                        _ given (not $ is_symbolic ch) => (return $ make-struct Token (string_slice src offset idx) idx 6)
                         else => (set! state 1)
                     end
                     # atom
-                    2 => when (not $ is_symbolic ch) do (return $ make-struct Token (string_slice src offset idx) 1 7)
+                    2 => when (not $ is_symbolic ch) do (return $ make-struct Token (string_slice src offset idx) idx 7)
                end
                set! idx $ + idx 1
                when (< idx $ len src) do (set! ch $ get src idx)
             }
         }
+        _ given (is_symbolic ch) => {
+            while (every (< idx $ len src) (is_symbolic ch)) do {
+                set! ch $ get src idx
+                set! idx $ + idx 1
+            }
+            return $ make-struct Token (string_slice src offset idx) idx 7
+        }
         else => (return $ make-struct Token " " 1 99)
     end
     # NOTE: AAAAAAAAAAH... so imperative
     match state with
-        0 => (return $ make-struct Token (string_slice src offset idx) 1 5)
-        1 => (return $ make-struct Token (string_slice src offset idx) 1 6)
-        2 => (return $ make-struct Token (string_slice src offset idx) 1 7)
+        0 => (return $ make-struct Token (string_slice src offset idx) idx 5)
+        1 => (return $ make-struct Token (string_slice src offset idx) idx 6)
+        2 => (return $ make-struct Token (string_slice src offset idx) idx 7)
     end
     return $ make-struct Token " " 1 99
 }
@@ -252,36 +260,7 @@ def string_slice src:string start:int endpoint:int => string = {
 # for default values: offset & start could be set
 # freely...
 def read_number src:string offset:int => SExpression = {
-    # again, manually rewriting something that should be
-    # TCO'd into a while-loop so that we can ship this,
-    # rather than try to use this to lift the program into
-    # a state wherein we can do TCO
-    var idx:int = offset
-    var state:int = 0
-    var ch:char = ' '
-    while (< idx $ len src) do {
-        # NOTE (lojikil) doing this here because
-        # binding values isn't yet working in `match`
-        set! ch $ get src idx
-        match ch with
-            x given (is_numeric ch) => (set! idx $ + idx 1)
-            y given (every (eq? ch '.') (eq? state 0)) => {
-                set! state 1
-                set! idx $ + idx 1
-            }
-            z given (eq? ch '.') => (return $ make-struct SExpression.Error "incorrectly formatted number with two '.'")
-            else => {
-                if (eq? state 0) then
-                    (return $ make-struct SExpression.Int $ string_slice src offset idx)
-                else
-                    (return $ make-struct SExpression.Float $ string_slice src offset idx)
-            }
-        end
-    }
-    # NOTE (lojikil): this is here because we are incorrectly determining that some
-    # of the `set!` forms should be returns... there has to be a better analysis to
-    # handle that sort of thing. Also, need to make `string_slice` and such...
-    make-struct SExpression.Error "malformed number"
+    make-struct SExpression.Null
 }
 
 def sexpression_read src:string start:int => SExpression = {
