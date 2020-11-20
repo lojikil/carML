@@ -1,0 +1,13 @@
+cc = cc
+cflags = -Wall -Wextra -std=c99 -pedantic
+
+rule cc
+  command = $cc $cflags -c -o $out $in
+  deps = gcc
+rule link
+  command = $cc $ldflags -o $out $in
+
+build carmlc.o: cc carmlc.c
+build carmlc: link carmlc.o
+
+default carmlc
