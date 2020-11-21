@@ -7,3 +7,5 @@ carmlc
 staging/*
 .idea/*
 .DS_Store
+.ninja_deps
+.ninja_log
