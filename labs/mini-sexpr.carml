@@ -135,12 +135,29 @@ def next src:string start_offset:int => Token = {
                when (< idx $ len src) do (set! ch $ get src idx)
             }
         }
+        # atoms
         _ given (is_symbolic ch) => {
             while (every (< idx $ len src) (is_symbolic ch)) do {
                 set! ch $ get src idx
                 set! idx $ + idx 1
             }
             return $ make-struct Token (string_slice src offset $ - idx 1) offset 7
+        }
+        # strings
+        '"' => {
+            set! idx $ + idx 1
+            if (>= idx $ len src) then
+                (return $ make-struct Token "malformed string" offset 99)
+            else
+                (set! ch $ get src idx)
+            while (every (!= ch '"') (< idx $ len src)) do {
+                match ch with
+                    '\\' => (set! idx $ + idx 2)
+                    else => (set! idx $ + idx 1)
+                end
+                when (< idx $ len src) do (set! ch $ get src idx)
+            }
+            return $ make-struct Token (string_slice src offset $ + idx 1) offset 8
         }
         else => (return $ make-struct Token " " 1 99)
     end
