@@ -45,7 +45,7 @@ type SExpression {
 
 record Token {
     lexeme:string
-    lexeme_len:int
+    lexeme_offset:int
     lexeme_type:int
 }
 
@@ -64,7 +64,6 @@ def is_whitespace ch:char => bool = {
         '\n' => true
         '\v' => true
         '\r' => true
-        '\l' => true
         '\b' => true
         else => false
     end
@@ -81,12 +80,13 @@ def take_while_white src:string start:int => int = {
     var idx:int = start
     var ch:char = (get src start)
     # I *hate* how low level this is...
-    while (is_whitespace ch) do {
-        set! ch $ get src idx
-        set! idx $ + idx 1
+    when (is_whitespace ch) do {
+        while (is_whitespace ch) do {
+            set! ch $ get src idx
+            set! idx $ + idx 1
+        }
+        return $ - idx 1
     }
-
-    when (> idx 0) do (return $ - idx 1)
     idx
 }
 
@@ -105,10 +105,10 @@ def next src:string start_offset:int => Token = {
     # this function would be so much more nicely expressed
     # as a simple tail recursive function...
     match ch with
-        '(' => (return $ make-struct Token "(" idx 1)
-        ')' => (return $ make-struct Token ")" idx 2)
-        '[' => (return $ make-struct Token "[" idx 3)
-        ']' => (return $ make-struct Token "]" idx 4)
+        '(' => (return $ make-struct Token "(" offset 1)
+        ')' => (return $ make-struct Token ")" offset 2)
+        '[' => (return $ make-struct Token "[" offset 3)
+        ']' => (return $ make-struct Token "]" offset 4)
         z given (is_numeric ch) => {
             while (< idx $ len src) do {
                 match state with
@@ -117,7 +117,7 @@ def next src:string start_offset:int => Token = {
                         '.' => (set! state 1)
                         _ given (is_numeric ch) => (set! state 0)
                         _ given (is_symbolic ch) => (set! state 2)
-                        _ given (not $ is_symbolic ch) => (return $ make-struct Token (string_slice src offset idx) idx 5)
+                        _ given (not $ is_symbolic ch) => (return $ make-struct Token (string_slice src offset idx) offset 5)
                         else => (set! state 0)
                     end
                     # float
@@ -125,11 +125,11 @@ def next src:string start_offset:int => Token = {
                         '.' => (set! state 2)
                         _ given (is_numeric ch) => (set! state 1)
                         _ given (is_symbolic ch) => (set! state 2)
-                        _ given (not $ is_symbolic ch) => (return $ make-struct Token (string_slice src offset idx) idx 6)
+                        _ given (not $ is_symbolic ch) => (return $ make-struct Token (string_slice src offset idx) offset 6)
                         else => (set! state 1)
                     end
                     # atom
-                    2 => when (not $ is_symbolic ch) do (return $ make-struct Token (string_slice src offset idx) idx 7)
+                    2 => when (not $ is_symbolic ch) do (return $ make-struct Token (string_slice src offset idx) offset 7)
                end
                set! idx $ + idx 1
                when (< idx $ len src) do (set! ch $ get src idx)
@@ -140,22 +140,22 @@ def next src:string start_offset:int => Token = {
                 set! ch $ get src idx
                 set! idx $ + idx 1
             }
-            return $ make-struct Token (string_slice src offset $ + idx 1) idx 7
+            return $ make-struct Token (string_slice src offset $ - idx 1) offset 7
         }
         else => (return $ make-struct Token " " 1 99)
     end
     # NOTE: AAAAAAAAAAH... so imperative
     match state with
-        0 => (return $ make-struct Token (string_slice src offset idx) idx 5)
-        1 => (return $ make-struct Token (string_slice src offset idx) idx 6)
-        2 => (return $ make-struct Token (string_slice src offset idx) idx 7)
+        0 => (return $ make-struct Token (string_slice src offset idx) offset 5)
+        1 => (return $ make-struct Token (string_slice src offset idx) offset 6)
+        2 => (return $ make-struct Token (string_slice src offset idx) offset 7)
     end
     return $ make-struct Token " " 1 99
 }
 
 def is_numeric ch:char => bool = {
     match ch with
-        x given (&& (>= ch '0') (<= ch '9')) => true
+        _ given (&& (>= ch '0') (<= ch '9')) => true
         '.' => true
         else => false
     end
@@ -169,7 +169,7 @@ def is_symbolic ch:char => bool = {
         ']' => false
         '"' => false
         '\'' => false
-        y given (is_whitespace ch) => false
+        _ given (is_whitespace ch) => false
         else => true
     end
 }
