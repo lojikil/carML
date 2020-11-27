@@ -1198,12 +1198,21 @@ next(FILE *fdin, char *buf, int buflen) {
                                 buf[idx++] = '\\';
                                 buf[idx++] = 'v';
                                 break;
+                            case 'a':
+                                buf[idx++] = '\\';
+                                buf[idx++] = 'a';
+                                break;
                             case '0':
                                 buf[idx++] = '\\';
                                 buf[idx++] = '0';
                                 break;
                             case '"':
+                                buf[idx++] = '\\';
                                 buf[idx++] = '"';
+                                break;
+                            case '\\':
+                                buf[idx++] = '\\';
+                                buf[idx++] = '\\';
                                 break;
                             default:
                                 buf[idx++] = cur;
