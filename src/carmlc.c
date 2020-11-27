@@ -995,7 +995,7 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
 
 char *
 typespec2g(AST *typespec, char *dst, char *name, int len) {
-    char tmpbuf[32] = {0}, *staticname = nil;
+    char tmpbuf[32] = {0};
     int idx = 0, flag = 0;
 
     if(name != nil) {
@@ -6579,7 +6579,7 @@ llcwalk(AST *head, int level, int final) {
 void
 llgwalk(AST *head, int level, int final) {
     int idx = 0, opidx = -1, guard_check = NO;
-    char *tbuf = nil, buf[512] = {0}, rbuf[512] = {0}, *rtbuf = nil;
+    char *tbuf = nil, buf[512] = {0};
     AST *ctmp = nil, *htmp = nil;
 
     if(head->tag != TBEGIN) {
