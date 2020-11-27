@@ -90,6 +90,20 @@ def take_while_white src:string start:int => int = {
     idx
 }
 
+def take_until_break src:string start:int => int = {
+    var idx:int = start
+    var ch:char = ' '
+    if (> idx $ len src) then idx
+    else {
+        set! ch $ get src idx
+        while (every (< idx $ len src) (is_symbolic ch)) do {
+            set! idx $ + idx 1
+            set! ch $ get src idx
+        }
+        idx
+    }
+}
+
 def next src:string start_offset:int => Token = {
     # NOTE I had an idea about how to fix the offset
     # issue: instead of trying to read the string AND
@@ -97,6 +111,9 @@ def next src:string start_offset:int => Token = {
     # Wirth style with our RDP: have a function, next,
     # which returns a Token struct with the next lexeme,
     # it's length, and type
+
+    when (>= start_offset $ len src) do (return $ make-struct Token "" start_offset 98)
+
     val offset:int = (take_while_white src start_offset)
     val ch:char = (get src offset)
     var idx:int = offset
@@ -104,9 +121,6 @@ def next src:string start_offset:int => Token = {
     # yet again, I really need to make TCO a thing, since
     # this function would be so much more nicely expressed
     # as a simple tail recursive function...
-
-    when (>= idx $ len src) do (return $ make-struct Token "" idx 98)
-
     match ch with
         '(' => (return $ make-struct Token "(" offset 1)
         ')' => (return $ make-struct Token ")" offset 2)
@@ -165,6 +179,7 @@ def next src:string start_offset:int => Token = {
         # characters
         '#' => {
             var tmp:string = ""
+            var tidx:int = 0
             set! idx $ + idx 1
             when (>= (+ idx 1) $ len src) do (return $ make-struct Token "malformed character" offset 99)
             when (!= (get src idx) '\\') do (return $ make-struct Token "character must be followed by \\" offset 99)
@@ -176,6 +191,35 @@ def next src:string start_offset:int => Token = {
             # - #\newline (the literal ASCII newline)
             # we want to support both, but also need to make sure that named characters are actual names we can
             # parse...
+            #
+            # XXX GAH I just realized tho that this means we *cannot* rely on the simple offset
+            # and instead need to do some helper calculations here in the sizing... this could
+            # get hairy...
+            #
+            # You'll notice below that the calculations for offset are odd. This is because
+            # I'm actually calculating; length of character prefix (2) + length of named character,
+            # but we subtract one so that the normal offset + len works. so, some examples:
+            # - `#\n` the letter 'n', should be three, actually two
+            # - `#\newline` the ASCII newline, '\n', should be nine, actually 8
+            set! tidx $ take_until_break src $ + idx 1
+            set! tmp $ string_slice src (+ idx 1) tidx
+            match tmp with
+                # if we only have *one* character, don't bother checking...
+                _ given (eq? 1 $ len tmp) => (return $ make-struct Token tmp (+ offset 2) 9)
+                # it would be *so* much more reasonable here to return a value into
+                # a val and then use that to call `return` once...
+                #
+                # once the new compiler is working, I need to move to a correct
+                # "everything is a value" system...
+                "newline" => (return $ make-struct Token "\n" (+ offset 8) 9)
+                "tab" => (return $ make-struct Token "\t" (+ offset 4) 9)
+                "carriage" => (return $ make-struct Token "\r" (+ offset 9) 9)
+                "bell" => (return $ make-struct Token "\a" (+ offset 5) 9)
+                "vtab" => (return $ make-struct Token "\v" (+ offset 5) 9)
+                "backspace" => (return $ make-struct Token "\b" (+ offset 10) 9)
+                "backslash" => (return $ make-struct Token "\\" (+ offset 10) 9)
+                else => (return $ make-struct Token "incorrect named character" offset 99)
+            end
         }
         else => (return $ make-struct Token " " 1 99)
     end
@@ -204,6 +248,7 @@ def is_symbolic ch:char => bool = {
         ']' => false
         '"' => false
         '\'' => false
+        '#' => false
         _ given (is_whitespace ch) => false
         else => true
     end
