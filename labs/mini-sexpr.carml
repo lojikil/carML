@@ -21,25 +21,25 @@
 
 type SExpression {
     Nil
-    Atom string
-    String string
+    Atom string int
+    String string int
     # making these strings for now to make it easier to
     # create, since I haven't written standard functions
     # to convert string=>int/float yet.
     # eventually, those should be gadgets...
-    Int string
-    Float string
-    Char char
-    Bool bool
-    List array[SExpression]
+    Int string int
+    Float string int
+    Char char int
+    Bool bool int
+    List array[SExpression] int
     Error string
     # Maybe should have an internal type that
     # isn't exported, and an external type that
     # is, so as to remove the two constructors
     # below...
     Null
-    EndList
-    EndArray
+    EndList int
+    EndArray int
     EndFile
 }
 
@@ -269,6 +269,11 @@ def is_null_or_endp obj:SExpression => bool = {
 # which would basically treat this as a stack, maybe by
 # backing with a dequeue?
 def read_list src:string offset:int => SExpression = {
+    # XXX I think this is the trickiest part, because we
+    # have to update the read offset for each one of the
+    # things we receive back, AND we need to keep a cumulative
+    # offset based on the sum toto of all the elements we have
+    # read...
     var ret:array[SExpression] = (make-array SExpression 128 $ SExpression.Nil)
     var ret_length:int = 128
     var tmp:SExpression = (sexpression_read src offset)
@@ -286,30 +291,14 @@ def read_list src:string offset:int => SExpression = {
 }
 
 def read_char src:string offset:int => SExpression = {
-    # a few thoughts here
-    # 1. eventually need to handle #\newline and such
-    # 1. I hate how imperative this is; would be nicer
-    # as a match & decomposition or some other check
-    if (< (+ offset 2) (len src)) then {
-        val fst : char = (get src offset)
-        val snd : char = (get src $ + offset 1)
-        if (eq? fst '\\') then
-            # I'm doing this because carML doesn't currently
-            # track constructors & accessors, so many of these
-            # should be rewritten to the down-case of `make-struct`
-            # anyway, but I hate doing this manually...
-            (make-struct SExpression.Char snd)
-        else
-            (make-struct SExpression.Error "incorrectly formatted character")
-    } else
-        (make-struct SExpression.Error "error reading character at end of buffer")
+    val tok : Token = (next src offset)
+    if (eq? (. tok lexeme_type) 9) then
+        (make-struct SExpression.Char (. token lexeme) (. token lexeme_offset))
+    else
+        (make-Struct SExpression.Error "expected character")
 }
 
 def read_atom src:string offset:int => SExpression = {
-    make-struct SExpression.Null
-}
-
-def read_atom_partial src:string offset:int cur:string => SExpression = {
     make-struct SExpression.Null
 }
 
@@ -342,7 +331,12 @@ def string_slice src:string start:int endpoint:int => string = {
 # for default values: offset & start could be set
 # freely...
 def read_number src:string offset:int => SExpression = {
-    make-struct SExpression.Null
+    val tok:Token = (next src offset)
+    match (. tok lexeme_type) with
+        5 => (make-struct SExpression.Int (. tok lexeme) (. tok lexeme_offset))
+        6 => (make-struct SExpression.Float (. tok lexeme) (. tok lexeme_offset))
+        else => (make-struct SExpression.Error "wanted to read a number, but other type returned" offset)
+    end
 }
 
 def sexpression_read src:string start:int => SExpression = {
@@ -351,20 +345,17 @@ def sexpression_read src:string start:int => SExpression = {
     # 1. unboxing tuple[char int] (for example) in Golang returns
     # 1. destructuring bind (`var ch, idx : tuple[char int] = ...`)
     # 1. making a `make-tuple` and allowing `,` in CALL
-    var idx:int = (take_while_white src start)
-    val ch:char = (get src idx)
-    match ch with
-        '(' => (read_list src $ + idx 1)
+    val tok:Token = (next src start)
+    match (. tok lexeme_type) with
+        1 => (read_list src $ + idx 1)
+        2 => (make-struct SExpression.EndList)
         #'[' => (read_array fh)
-        '"' => (read_string src $ + idx 1)
-        '#' => (read_char src $ + idx 1)
-        # news to fix these, make-struct assumes > 1
-        # args in the code gen...
-        ')' => (make-struct SExpression.EndList)
-        ']' => (make-struct SExpression.EndArray)
-        x given (is_whitespace ch) => (sexpression_read src $ + idx 1)
-        z given (is_numeric ch) => (read_number src idx)
-        a given (is_symbolic ch) => (read_atom src idx)
-        else => (make-struct SExpression.Error "unknown starting character")
+        #']' => (make-struct SExpression.EndArray)
+        5 => (make-struct SExpression.Int (. tok lexeme) (. tok lexeme_offset))
+        6 => (make-struct SExpression.Float (. tok lexeme) (. tok lexeme_offset))
+        7 => (make-struct SExpression.Atom (. tok lexeme) (. tok lexeme_offset))
+        8 => (make-struct SExpression.String (. tok lexeme) (. tok lexeme_offset))
+        9 => (make-struct SExpression.Char (. tok lexeme) (. tok lexeme_offset))
+        else => (makke-struct SExpression.Error (. tok lexeme) (. tok lexeme_offset))
     end
 }
