@@ -293,9 +293,9 @@ def read_list src:string offset:int => SExpression = {
 def read_char src:string offset:int => SExpression = {
     val tok : Token = (next src offset)
     if (eq? (. tok lexeme_type) 9) then
-        (make-struct SExpression.Char (. token lexeme) (. token lexeme_offset))
+        (make-struct SExpression.Char (. tok lexeme) (. tok lexeme_offset))
     else
-        (make-Struct SExpression.Error "expected character")
+        (make-struct SExpression.Error "expected character" offset)
 }
 
 def read_atom src:string offset:int => SExpression = {
@@ -356,6 +356,6 @@ def sexpression_read src:string start:int => SExpression = {
         7 => (make-struct SExpression.Atom (. tok lexeme) (. tok lexeme_offset))
         8 => (make-struct SExpression.String (. tok lexeme) (. tok lexeme_offset))
         9 => (make-struct SExpression.Char (. tok lexeme) (. tok lexeme_offset))
-        else => (makke-struct SExpression.Error (. tok lexeme) (. tok lexeme_offset))
+        else => (make-struct SExpression.Error (. tok lexeme) (. tok lexeme_offset))
     end
 }
