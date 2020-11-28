@@ -6727,13 +6727,17 @@ llgwalk(AST *head, int level, int final) {
             if(head->children[0]->tag == TIDENT) {
                 ctmp = head->children[0];
             } else {
+                // probably don't have to generate this for all
+                // calls, and probably can do some nice things
+                // with this in Go, need to explore that more...
                 ctmp = (AST *)hmalloc(sizeof(AST));
                 ctmp->tag = TIDENT;
                 snprintf(&buf[0], 512, "l%d", rand());
                 ctmp->value = hstrdup(buf);
-                gindent(level);
                 printf("%s := ", ctmp->value);
                 gwalk(head->children[0], 0);
+                printf("\n");
+                gindent(level);
             }
 
             // TODO need to:
