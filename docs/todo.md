@@ -2,12 +2,17 @@
 
 A quick list of the current `TODO`s.
 
+1. Atop SML/OCaml style modules, look into Mythryl's `API` types
+1. Named constructor vars `Foo m:int n:int`
+1. Row polymorphism with `row[member1, member2, member3]`
+1. Tuples, and flattening them when used as a return type in Golang
+1. destructuring bind (and matching the same ^^^)
+1. change `declare` to match how parameters work `@foo: function[int => int]`, `@bar: int`
 1. RawDeque (see `labs/rawdeque.carml`) as a test backing for Deques
 1. use RawDeque in specialized form to store a spaghetti stack of environment frames
 1. use the environment frames to support typing (finally)
 1. Make rebinding for idents in `match` forms (`rewrite_match_bind.carml`)
 1. Make sure that things like `y given (> y 10)` are rewritten properly as well
-1. Fix `match` forms that have a call; memoize the call (but need types, sigh)
 1. Figure out both type specialization and generics to compiled form
 1. Fusion for `map`, `map!`, `foreach`, and so on.
 1. Variable Length Array (VLA) style
@@ -39,10 +44,14 @@ A quick list of the current `TODO`s.
 1. Tests, both for IR and C
 1. JS, Java, C++ backends, but written in carML itself and using the SExpression output.
 1. WebAssembly backend
+1. Interpreter, either ghci style (compiles in another language) or actual interpreter
+1. Symbolic execution engine atop the same (using that paper "From Definitional Interpreters to Symbolic Executors")
 
 And completed items:
 
-1. **DON** fix `make-array` (plus the VLA style mentioned below); uses GC by default for now, will fix in self-hosted version
+1. **DONE** Add Samurai/Ninja as a build system
+1. **DONE** Fix `match` forms that have a call; memoize the call (but need types, sigh)
+1. **DONE** fix `make-array` (plus the VLA style mentioned below); uses GC by default for now, will fix in self-hosted version
 1. **DONE** Fix type parsing code to be much simpler.
 1. **DONE** Fix (finally) the `match` form for variants/poly
 1. **DONE** Add complex types to `val`
