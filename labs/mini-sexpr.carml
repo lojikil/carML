@@ -281,12 +281,27 @@ def read_list src:string start:int => SExpression = {
     var idx:int = 0
     var offset:int = start
     while (not $ is_null_or_endp tmp) do {
-        if (< idx ret_length) do {
-            set! (get ret idx) tmp
-            set! idx $ + idx 1
-        } else (return $ make-struct SExpression.Error "read_list array length overrun")
+
+        when (>= idx ret_length) do {
+            return $ make-struct SExpression.Error "read_list array length overrun"
+        }
+
+        set! (get ret idx) tmp
+        set! idx $ + idx 1
+        set! tmp $ sexpression_read src offset
+        # actually, this is still wrong...
+        # because we're just returning the *offset* in most
+        # of our setups, but in lists we cannot just run a
+        # string length check. I think here we can probably
+        # do a check for most items, but of lists we have to
+        # set the offset to be the offset of the final
+        # #\)
+        match tmp with
+            (SExpression.List _ _) => (set! offset $ . tmp m_2)
+            else => (set! offset $ + (. tmp m_2) $ len $ . tmp m_1)
+        end
     }
-    make-struct SExpression.List ret
+    make-struct SExpression.List ret offset
 }
 
 def read_char src:string offset:int => SExpression = {
