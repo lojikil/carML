@@ -36,7 +36,7 @@ type SExpression {
     Char char int
     Bool bool int
     List array[SExpression] int
-    Error string
+    Error string int
     # Maybe should have an internal type that
     # isn't exported, and an external type that
     # is, so as to remove the two constructors
@@ -283,7 +283,7 @@ def read_list src:string start:int => SExpression = {
     while (not $ is_null_or_endp tmp) do {
 
         when (>= idx ret_length) do {
-            return $ make-struct SExpression.Error "read_list array length overrun"
+            return $ make-struct SExpression.Error "read_list array length overrun" start
         }
 
         set! (get ret idx) tmp
@@ -298,7 +298,19 @@ def read_list src:string start:int => SExpression = {
         # #\)
         match tmp with
             (SExpression.List _ _) => (set! offset $ . tmp m_2)
-            else => (set! offset $ + (. tmp m_2) $ len $ . tmp m_1)
+            # a limit to what we can do here; because we write
+            # these as an interface{} and what not in Golang, we
+            # actually need to check each of the types here. Luckily,
+            # it's probably better because I actually wasn't checking
+            # an error was returned!
+            (SExpression.Atom _ _) => (set! offset $ + (. tmp m_2) $ len $ . tmp m_1)
+            (SExpression.String _ _) => (set! offset $ + (. tmp m_2) $ len $ . tmp m_1)
+            (SExpression.Int _ _) => (set! offset $ + (. tmp m_2) $ len $ . tmp m_1)
+            (SExpression.Float _ _) => (set! offset $ + (. tmp m_2) $ len $ . tmp m_1)
+            # I don't think I can read bools based on this...
+            (SExpression.Bool _ _) => (set! offset $ + (. tmp m_2) $ len $ . tmp m_1)
+            (SExpression.Char _ _) => (set! offset $ + (. tmp m_2) $ len $ . tmp m_1)
+            else => (return tmp)
         end
     }
     make-struct SExpression.List ret offset
@@ -369,7 +381,7 @@ def sexpression_read src:string start:int => SExpression = {
     # 1. making a `make-tuple` and allowing `,` in CALL
     val tok:Token = (next src start)
     match (. tok lexeme_type) with
-        1 => (read_list src $ + idx 1)
+        1 => (read_list src $ + start 1)
         2 => (make-struct SExpression.EndList)
         #'[' => (read_array fh)
         #']' => (make-struct SExpression.EndArray)
