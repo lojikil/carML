@@ -33,7 +33,7 @@ type SExpression {
     # yet...
     Int string int
     Float string int
-    Char char int
+    Char string int
     Bool bool int
     List array[SExpression] int
     Error string int
@@ -288,7 +288,6 @@ def read_list src:string start:int => SExpression = {
 
         set! (get ret idx) tmp
         set! idx $ + idx 1
-        set! tmp $ sexpression_read src offset
         # actually, this is still wrong...
         # because we're just returning the *offset* in most
         # of our setups, but in lists we cannot just run a
@@ -310,10 +309,12 @@ def read_list src:string start:int => SExpression = {
             # I don't think I can read bools based on this...
             (SExpression.Bool _ _) => (set! offset $ + (. tmp m_2) $ len $ . tmp m_1)
             (SExpression.Char _ _) => (set! offset $ + (. tmp m_2) $ len $ . tmp m_1)
+            (SExpression.EndList _) => (set! offset $ + (. tmp m_1) 1)
             else => (return tmp)
         end
+        set! tmp $ sexpression_read src offset
     }
-    make-struct SExpression.List ret offset
+    make-struct SExpression.List ret $ + offset 1
 }
 
 def read_char src:string offset:int => SExpression = {
@@ -382,7 +383,7 @@ def sexpression_read src:string start:int => SExpression = {
     val tok:Token = (next src start)
     match (. tok lexeme_type) with
         1 => (read_list src $ + start 1)
-        2 => (make-struct SExpression.EndList)
+        2 => (make-struct SExpression.EndList $ + (. tok lexeme_offset) 1)
         #'[' => (read_array fh)
         #']' => (make-struct SExpression.EndArray)
         5 => (make-struct SExpression.Int (. tok lexeme) (. tok lexeme_offset))
@@ -390,6 +391,7 @@ def sexpression_read src:string start:int => SExpression = {
         7 => (make-struct SExpression.Atom (. tok lexeme) (. tok lexeme_offset))
         8 => (make-struct SExpression.String (. tok lexeme) (. tok lexeme_offset))
         9 => (make-struct SExpression.Char (. tok lexeme) (. tok lexeme_offset))
+        98 => (make-struct SExpression.EndFile)
         else => (make-struct SExpression.Error (. tok lexeme) (. tok lexeme_offset))
     end
 }
