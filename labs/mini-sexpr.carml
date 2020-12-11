@@ -268,6 +268,20 @@ def is_null_or_endp obj:SExpression => bool = {
     end
 }
 
+# this should ideally be replaced by a zero-cost abstraction
+# gadget that writes things like List.map! or the like to
+# simple Go/C functions, but for now, just like string-slice
+# above, write this in carML itself
+def shrink_array src:array[SExpression] cap:int length:int => array[SExpression] = {
+    var ret : array[SExpression] = (make-array SExpression.Nil length $ SExpression.Nil)
+    var idx : int = 0
+    while (< idx length) do {
+        set! (get ret idx) (get src idx)
+        set! idx $ + idx 1
+    }
+    ret
+}
+
 # we really don't need much else beyond this part here
 # we could honestly do this with append=>array as well,
 # which would basically treat this as a stack, maybe by
@@ -314,7 +328,7 @@ def read_list src:string start:int => SExpression = {
         end
         set! tmp $ sexpression_read src offset
     }
-    make-struct SExpression.List ret $ + offset 1
+    make-struct SExpression.List (shrink_array ret 128 idx) $ + offset 1
 }
 
 def read_char src:string offset:int => SExpression = {
