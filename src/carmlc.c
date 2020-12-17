@@ -243,6 +243,7 @@ char *hstrdup(const char *);
 int next(FILE *, char *, int);
 void mung_variant_name(AST *, AST *, int, int);
 void mung_guard(AST *, AST *);
+AST *mung_complex_type(AST *, AST*);
 AST *mung_declare(const char **, const int **, int, int);
 ASTOffset *mung_single_type(const char **, const int **, int, int, int);
 ASTEither *readexpression(FILE *);
@@ -644,8 +645,8 @@ linearize_complex_type(AST *head) {
 
     dprintf("here? %d\n", __LINE__);
     if(!iscomplextypeast(head->tag)){
-        printf("here? %d\n", __LINE__);
-        walk(head, 0);
+        dprintf("here? %d\n", __LINE__);
+        dwalk(head, 0);
         return head;
     }
     dprintf("here? %d: ", __LINE__);
@@ -3215,8 +3216,8 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
     /* _read_ from `fdin` until a single AST is constructed, or EOF
      * is reached.
      */
-    AST *head = nil, *tmp = nil, *vectmp[128];
-    ASTEither *sometmp = nil;
+    AST *head = nil, *tmp = nil, *vectmp[128], *ctmp = nil;
+    ASTEither *sometmp = nil, *sometmp0 = nil;
     int ltype = 0, ltmp = 0, idx = 0, flag = -1, typestate = 0, fatflag = 0;
     char buffer[512] = {0};
     char name[8] = {0};
@@ -3412,11 +3413,8 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
         case TDECLARE:
             head = (AST *)hmalloc(sizeof(AST));
             head->tag = TDECLARE;
-            head->lenchildren = 3;
-            head->children = (AST **)hmalloc(sizeof(AST *) * 3);
-            int substate = 0, sp = 0, endflag = 0;
-            AST *stack[32] = {nil};
-            AST *ctmp = nil;
+            head->lenchildren = 2;
+            head->children = (AST **)hmalloc(sizeof(AST *) * 2);
 
             // parse our name
             sometmp = readexpression(fdin);
@@ -3429,105 +3427,40 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 head->children[0] = sometmp->right;
             }
 
-            while(1) {
-                // need code in here to handle { refinements }
-                // although I'm on the fence about adding those
-                // refinements directly to the DECLARE form...
-                sometmp = llreadexpression(fdin, YES);
-                tmp = sometmp->right;
-                if(sometmp->right == ASTLEFT) {
-                    return sometmp;
-                } else if(issimpletypeast(sometmp->right->tag)) {
-                    stack[sp] = tmp;
-                    sp++;
-                    substate = 0; 
-                    if(endflag == 1) {
-                        endflag = 2;
-                    }
-                } else if(isbuiltincomplextypeast(sometmp->right->tag)) {
-                    stack[sp] = tmp;
-                    sp++;
-                    substate = 0;
-                    if(endflag == 1) {
-                        endflag = 2;
-                    }
-                } else if(sometmp->right->tag == TTAG) {
-                    stack[sp] = tmp;
-                    substate = 1;
-                    sp++;
-                    if(endflag == 1) {
-                        endflag = 2;
-                    }
-                } else if(sometmp->right->tag == TARRAYLITERAL) {
-                    if(substate != 1) {
-                        return ASTLeft(0, 0, "array literal types *must* be proceeded by a builtin complex or Tag");
-                    }
-                    ctmp = (AST *)hmalloc(sizeof(AST));
-                    ctmp->tag = TCOMPLEXTYPE;
-                    ctmp->lenchildren = 1 + tmp->lenchildren;
-                    ctmp->children = (AST **)hmalloc(sizeof(AST *) * ctmp->lenchildren);
-                    ctmp->children[0] = stack[sp - 1];
-                    for(int cidx = 1, tidx = 0; cidx < ctmp->lenchildren; cidx++, tidx++) {
-                        ctmp->children[cidx] = tmp->children[tidx];
-                    }
-                    ctmp = linearize_complex_type(ctmp);
-                    stack[sp - 1] = ctmp;
-                    substate = 0;
-                    if(endflag == 1) {
-                        endflag = 2;
-                    }
-                } else if(sometmp->right->tag == TFATARROW) {
-                    if(endflag == 1) {
-                        return ASTLeft(0, 0, "cannot have duplicate `=>` in declare");
-                    }
-                    endflag = 1;
-                    substate = 0;
-                } else if(sometmp->right->tag == TNEWL) {
-                    if(endflag == 1) {
-                        return ASTLeft(0, 0, "`=>` must be followed by a type...");
-                    } else if(endflag == 2) {
-                        endflag = 3;
-                    } else {
-                        endflag = 4;
-                    }
-                    substate = 0;
+            // get our colon...
+            sometmp = readexpression(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else if(sometmp->right->tag != TCOLON) {
+                return ASTLeft(0, 0, "declare's ident *must* be followed by a colon");
+            }
+
+            // get our type
+            sometmp = readexpression(fdin);
+
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else if(sometmp->right->tag == TTAG) {
+                // a tag can be stand alone OR it can be
+                // a complex type, so we need to read one
+                // item here, and potentially smoosh them
+                // together into a complex type
+                sometmp0 = llreadexpression(fdin, YES);
+                if(sometmp0->tag == ASTLEFT) {
+                    return sometmp0;
+                } else if(sometmp0->right->tag == TNEWL) {
+                    head->children[1] = sometmp->right;
+                } else if(sometmp0->right->tag == TARRAYLITERAL) {
+                    head->children[1] = mung_complex_type(sometmp->right, sometmp0->right);
                 } else {
-                    return ASTLeft(0, 0, "declare's members *must* be types _or_ `=>`");
+                    return ASTLeft(0, 0, "declare *must* be followed by a type; Tag(ArrayLiteralTypes)");
                 }
-
-                if(endflag >= 3) {
-                    break;
-                }
-            }
-
-            // setup our return type...
-
-            if(endflag == 3) {
-                // pop the top of the stack, that's our return type
-                head->children[2] = stack[sp - 1];
-                sp--;
+            } else if(!istypeast(sometmp->right->tag)) {
+                return ASTLeft(0, 0, "declare *must* be followed by a type");
             } else {
-                // set the return type to TUNIT
-                ctmp = (AST *)hmalloc(sizeof(AST));
-                ctmp->tag = TUNIT;
-                ctmp->lenchildren = 0;
-                ctmp->children = nil;
-                head->children[2] = ctmp;
+                head->children[1] = sometmp->right;
             }
-
-            // capture the rest of the parameter list
-
-            ctmp = (AST *)hmalloc(sizeof(AST));
-            ctmp->tag = TPARAMLIST;
-            ctmp->lenchildren = sp ;
-            ctmp->children = (AST **)hmalloc(sizeof(AST *) * sp);
-            for(int cidx = 0; cidx < sp; cidx++) {
-                ctmp->children[cidx] = stack[cidx];
-            }
-            head->children[1] = ctmp;
-
-            //sometmp = llreadexpression(fdin, YES);
-            //tmp = sometmp->right;
 
             return ASTRight(head);
         case TUSE:
@@ -5329,6 +5262,25 @@ mung_guard(AST *name, AST *guard) {
     printf(")");
 }
 
+AST *
+mung_complex_type(AST *tag, AST *array) {
+    // we have here a type that we want to
+    // create, without having to do the
+    // lifting in situ elsewhere...
+
+    AST *ret = (AST *)hmalloc(sizeof(AST));
+
+    ret->tag = TCOMPLEXTYPE;
+    ret->lenchildren = 1 + array->lenchildren;
+    ret->children = (AST **)hmalloc(sizeof(AST *) * 2);
+    ret->children[0] = tag;
+    for(int idx = 1; idx < ret->lenchildren; idx++) {
+        ret->children[idx] = array->children[idx - 1];
+    }
+    ret = linearize_complex_type(ret);
+    return ret;
+}
+
 void
 llindent(int level, int usetabsp) {
     // should probably look to inline this
@@ -5409,8 +5361,6 @@ walk(AST *head, int level) {
             walk(head->children[0], 0);
             printf(" ");
             walk(head->children[1], 0);
-            printf(" ");
-            walk(head->children[2], 0);
             printf(")");
             break;
         case TLET:
@@ -5911,20 +5861,18 @@ llcwalk(AST *head, int level, int final) {
         case TDECLARE:
             // so, the format of a TDECLARE is:
             // 0. name
-            // 1. parameter list
-            // 2. (potentially nil) return value
+            // 1. type
 
-            if(head->lenchildren == 2 || head->children[2] == nil) {
+            if(head->lenchildren == 1 || head->children[1] == nil) {
                 printf("void %s", head->children[0]->value);
-            } else if(head->children[2]->tag == TCOMPLEXTYPE) {
-                tbuf = typespec2c(head->children[2], buf, head->children[0]->value, 512);
+            } else if(head->children[1]->tag == TCOMPLEXTYPE) {
+                tbuf = typespec2c(head->children[1], buf, head->children[0]->value, 512);
                 printf("%s", tbuf);
             } else {
-                cwalk(head->children[2], 0);
+                cwalk(head->children[1], 0);
                 printf(" %s", head->children[0]->value);
             }
 
-            cwalk(head->children[1], 0);
             printf(";");
             break;
         case TLET:
@@ -6666,6 +6614,14 @@ llgwalk(AST *head, int level, int final) {
         case TEXTERN:
         case TDECLARE:
             // there are no externs or forward declarations in go
+            // *but* we can use this to declare a variable type
+            // without assigning it a value...
+            if(istypeast(head->children[1]->tag) && !islambdatypeast(head->children[1]->tag)) {
+                printf("var ");
+                llgwalk(head->children[0], 0, NO);
+                printf(" ");
+                llgwalk(head->children[1], 0, NO);
+            }
             break;
         case TLET:
         case TLETREC:

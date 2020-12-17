@@ -7,7 +7,6 @@ A quick list of the current `TODO`s.
 1. Row polymorphism with `row[member1, member2, member3]`
 1. Tuples, and flattening them when used as a return type in Golang
 1. destructuring bind (and matching the same ^^^)
-1. change `declare` to match how parameters work `@foo: function[int => int]`, `@bar: int`
 1. RawDeque (see `labs/rawdeque.carml`) as a test backing for Deques
 1. use RawDeque in specialized form to store a spaghetti stack of environment frames
 1. use the environment frames to support typing (finally)
@@ -49,6 +48,7 @@ A quick list of the current `TODO`s.
 
 And completed items:
 
+1. **DONE** change `declare` to match how parameters work `@foo: function[int => int]`, `@bar: int`
 1. **DONE** Add Samurai/Ninja as a build system
 1. **DONE** Fix `match` forms that have a call; memoize the call (but need types, sigh)
 1. **DONE** fix `make-array` (plus the VLA style mentioned below); uses GC by default for now, will fix in self-hosted version
