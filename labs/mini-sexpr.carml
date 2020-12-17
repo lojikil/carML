@@ -409,3 +409,15 @@ def sexpression_read src:string start:int => SExpression = {
         else => (make-struct SExpression.Error (. tok lexeme) (. tok lexeme_offset))
     end
 }
+
+# need to mung names so this could be called the proper sexpression->string
+def sexpression2string src:SExpression => string = {
+    match src with
+        (SExpression.Int _ _) => ""
+        (SExpression.Float _ _) => ""
+        (SExpression.Atom _ _) => ""
+        (SExpression.String _ _) => ""
+        (SExpression.Char _ _) => ""
+        (SExpression.List _ _) => ""
+    end
+}
