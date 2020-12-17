@@ -1,1 +1,28 @@
-# the carML compiler, written in 29
+# the carML compiler, written in carML
+
+use labs/mini-sexpression
+
+# we can start to stub out all the types of expressions
+# that carML has. Probably should just generate this
+# from the carML/C system, but...
+type CarML {
+    Def string array[CarML] CarML
+    Var string CarML CarML
+    Val string CarML CarML
+    Integer string
+    Float string
+    String string
+    Char string
+    Bool string
+    Ident string
+    Call CarML array[CarML]
+    If CarML CarML CarML
+    When CarML CarML
+    Match CarML array[CarML]
+    Else
+    IntT
+    StringT
+    FloatT
+    CharT
+    BoolT
+}
