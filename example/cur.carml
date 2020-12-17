@@ -14,10 +14,10 @@
 # - function parameters? @blah Num (Num -> Num) -> Num
 # - type variables? @blah Num vec of 'a -> 'a
 
-declare foo int => int
+declare foo:function[int int]
 def foo x = (sum x x)
 
-@bar int int int => int
+@bar: function[int int int => int]
 def bar x y z = begin
     println x;
     println y;
@@ -28,7 +28,7 @@ end
 # same as the above, but with
 # implicit call termination via
 # newlines
-@blah int int int => int
+@blah:function[int int int => int]
 def blah x y z = begin
     println x
     println y
@@ -45,15 +45,15 @@ def blaz x:int y:int z:int => int = {
     sum (sum x y) z
 }
 
-@baz int int int => int
+@baz:function[int int int => int]
 def baz x y z = if (>= x y) then z else x
 
 #declare baz bool any -> unit
-@bar bool any => ()
+@bar:procedure[bool any]
 def bar0 x y = when x do y
 
 # constant
-@x () => int
+@x:function[=> int]
 def x = 32
 
 val foo = "simple string for doc note?"
