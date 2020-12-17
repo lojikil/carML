@@ -410,14 +410,27 @@ def sexpression_read src:string start:int => SExpression = {
     end
 }
 
+def sexpression2char src:string => string = {
+    match (get src 0) with
+        '\n' => "#\newline"
+        '\v' => "#\vtab"
+        '\r' => "#\carriage"
+        '\t' => "#\tab"
+        '\b' => "#\backspace"
+        '\a' => "#\bell"
+        '\0' => "#\nul"
+        else => (String.Join "#\" src)
+    end
+}
+
 # need to mung names so this could be called the proper sexpression->string
 def sexpression2string src:SExpression => string = {
     match src with
-        (SExpression.Int _ _) => ""
-        (SExpression.Float _ _) => ""
-        (SExpression.Atom _ _) => ""
-        (SExpression.String _ _) => ""
-        (SExpression.Char _ _) => ""
-        (SExpression.List _ _) => ""
+        (SExpression.Int _ _) => (. src m_1)
+        (SExpression.Float _ _) => (. src m_1)
+        (SExpression.Atom _ _) => (. src m_1)
+        (SExpression.String _ _) => (String.Join "\"" (. src m_1) "\"")
+        (SExpression.Char _ _) => (sexpression2char src)
+        (SExpression.List _ _) => (String.Join "(" (String.Join " " (Array.Map sexpression2string (_1 src))) ")")
     end
 }
