@@ -425,11 +425,35 @@ def sexpression2char src:string => string = {
 
 # need to mung names so this could be called the proper sexpression->string
 def sexpression2string src:SExpression => string = {
+    # NOTE because I defunctionalized the routines below, we end up
+    # with a bunch of variable detritus here; really, concat probably
+    # should be it's own function, and then we just call that in a
+    # loop, but instead I've rewritten all of the HOFs to be simple
+    # loops below
+
+    declare result:array[string]
+    declare flattened:array[char]
+    var idx:int = 0
+    var cidx:int = 0
+    var ridx:int = 0
+    var totallen:int = 0
     match src with
         (SExpression.Int _ _) => (. src m_1)
         (SExpression.Float _ _) => (. src m_1)
         (SExpression.Atom _ _) => (. src m_1)
-        (SExpression.String _ _) => (String.Concat "\"" (. src m_1) "\"")
+        (SExpression.String _ _) => {
+            set! flattened $ make-array char $ + 2 $ len $ . src m_1
+            set! idx 0
+            set! cidx 1
+            while (< cidx $ - (len $ . src m_1) 1) do {
+                set! (get flattened cidx) $ get (. src m_1) idx
+                set! idx $ + idx 1
+                set! cidx $ + cidx 1
+            }
+            set! (get flattened 0) '"'
+            set! (get flattened idx) '"'
+            make-string flattened
+        }
         (SExpression.Char _ _) => (sexpression2char src)
         (SExpression.List _ _) => {
             # break this down a little bit, into something that I know the
@@ -441,12 +465,7 @@ def sexpression2string src:SExpression => string = {
             # array maps and such. This code is *wild* below, and here be
             # dragons five sure
             # var result:array[string] = (Array.Map sexpression2string (. src m_1))
-            var result:array[string] = (make-array string (len $ . src m_1) "")
-            declare flattened:array[char]
-            var idx:int = 0
-            var cidx:int = 0
-            var ridx:int = 0
-            var totallen:int = 0
+            set! result (make-array string (len $ . src m_1) "")
             while (< idx $ len result) do {
                 set! (get result idx) $ sexpression2string (get (. src m_1) idx)
                 # keep track of the total string length
