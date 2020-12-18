@@ -435,9 +435,47 @@ def sexpression2string src:SExpression => string = {
             # break this down a little bit, into something that I know the
             # carML Golang compiler can actually deal with in a semi-efficient
             # way
-            var result:array[string] = (Array.Map sexpression2string (. src m_1))
-            var flattened:string = (String.join " " result)
-            String.Concat "(" flattened ")"
+            # now, we can defunctionalize this manually ourselves...
+            # NOTE this is all very ugly because I haven't added the necessary
+            # functions to the code base to actually support things like
+            # array maps and such. This code is *wild* below, and here be
+            # dragons five sure
+            # var result:array[string] = (Array.Map sexpression2string (. src m_1))
+            var result:array[string] = (make-array string (len $ . src m_1) "")
+            declare flattened:array[char]
+            var idx:int = 0
+            var cidx:int = 0
+            var ridx:int = 0
+            var totallen:int = 0
+            while (< idx $ len result) do {
+                set! (get result idx) $ sexpression2string (get (. src m_1) idx)
+                # keep track of the total string length
+                set! totallen $ + totallen $ len $ get result idx
+                set! idx $ + idx 1
+            }
+            # we now add the number of spaces we need to add...
+            # plus two spaces for "()"
+            set! totallen $ + totallen $ + (len result) 2
+            # var flattened:string = (String.join " " result)
+            set! flattened $ make-array char totallen
+            set! (get flattened 0) '('
+            set! idx 0
+            # XXX it almost would have been simpler to
+            # add really nice TCO elimination in the compiler
+            # than this spaghetti code here, but this is a hack
+            # to get us off the ground.
+            while (< idx $ - (len flattened) 1) do {
+                set! cidx 0
+                while (< cidx $ len $ get result ridx) do {
+                    set! (get flattened idx) $ get (get result ridx) cidx
+                    set! idx $ + idx 1
+                    set! cidx $ + cidx 1
+                }
+                set! (get flattened idx) ' '
+                set! idx $ + idx 1
+            }
+            set! (get flattened idx) ')'
+            make-string flattened
         }
     end
 }
