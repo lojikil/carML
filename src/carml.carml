@@ -6,7 +6,11 @@ use labs/mini-sexpression
 # that carML has. Probably should just generate this
 # from the carML/C system, but...
 type CarML {
+    # I wonder if we can use another type
+    # here for these...
     Def string array[CarML] CarML
+    Fn array[CarML] CarML
+    ParamDef string CarML
     Var string CarML CarML
     Val string CarML CarML
     Integer string
@@ -15,14 +19,42 @@ type CarML {
     Char string
     Bool string
     Ident string
+    Begin array[CarML]
     Call CarML array[CarML]
     If CarML CarML CarML
     When CarML CarML
     Match CarML array[CarML]
+    While CarML CarML
+    Type string array[CarML] array[CarML]
+    Record string array[string] array[CarML]
+    ComplexType string array[CarML]
     Else
     IntT
     StringT
     FloatT
     CharT
     BoolT
+}
+
+record Environment {
+    # should we separate out constructor
+    # names & accessors? might make sense...
+    # in Digamma I made these tries, it might
+    # make sense to have a tree structure for
+    # these, but I think often it's not going
+    # to be many of these at one time...
+    type_names:array[string]
+    type_defns:array[CarML]
+    ctor_names:array[string]
+    ctor_defns:array[CarML]
+    accr_names:array[string]
+    func_names:array[string]
+    func_defns:array[CarML]
+    recr_names:array[string]
+    recr_defns:array[string]
+    val_names:array[string]
+    val_defns:array[string]
+    var_names:array[string]
+    var_defns:array[string]
+    parent:ref[Environment]
 }
