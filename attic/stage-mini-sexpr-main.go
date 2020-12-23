@@ -25,4 +25,8 @@ func main() {
     result := read_list(src, 0)
 
     fmt.Printf("result: %T%v\n", result, result)
+
+    roundtrip := sexpression2string(result)
+
+    fmt.Printf("round trip? %s\n", roundtrip)
 }

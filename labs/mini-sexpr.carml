@@ -273,7 +273,7 @@ def is_null_or_endp obj:SExpression => bool = {
 # simple Go/C functions, but for now, just like string-slice
 # above, write this in carML itself
 def shrink_array src:array[SExpression] cap:int length:int => array[SExpression] = {
-    var ret : array[SExpression] = (make-array SExpression.Nil length $ SExpression.Nil)
+    var ret : array[SExpression] = (make-array SExpression length $ SExpression.Nil)
     var idx : int = 0
     while (< idx length) do {
         set! (get ret idx) (get src idx)

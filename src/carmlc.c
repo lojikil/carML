@@ -6746,7 +6746,7 @@ llgwalk(AST *head, int level, int final) {
                                     printf("'\\v'");
                                     break;
                                 case '\0':
-                                    printf("'\\0'");
+                                    printf("'\\u0000'");
                                     break;
                                 case '\b':
                                     printf("'\\b'");
@@ -7092,7 +7092,7 @@ llgwalk(AST *head, int level, int final) {
                     printf("'\\b'");
                     break;
                 case '\0':
-                    printf("'\\0'");
+                    printf("'\\u0000'");
                     break;
                 case '\'':
                     printf("'\\\''");
