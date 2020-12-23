@@ -291,7 +291,7 @@ def read_list src:string start:int => SExpression = {
     # this would be an *ideal* location for deques...
     var ret:array[SExpression] = (make-array SExpression 128 $ SExpression.Nil)
     var ret_length:int = 128
-    var tmp:SExpression = (sexpression_read src start)
+    var tmp:SExpression = (sexpression_read src $ + start 1)
     var idx:int = 0
     var offset:int = start
     while (not $ is_null_or_endp tmp) do {
@@ -443,7 +443,7 @@ def sexpression2string src:SExpression => string = {
         (SExpression.Atom _ _) => (. src m_1)
         (SExpression.String _ _) => {
             set! flattened $ make-array char $ + 2 $ len $ . src m_1
-            set! idx 0
+            set! idx 1
             set! cidx 1
             while (< cidx $ - (len $ . src m_1) 1) do {
                 set! (get flattened cidx) $ get (. src m_1) idx
@@ -454,7 +454,7 @@ def sexpression2string src:SExpression => string = {
             set! (get flattened idx) '"'
             make-string flattened
         }
-        (SExpression.Char _ _) => (sexpression2char src)
+        (SExpression.Char _ _) => (sexpression2char $ . src m_1)
         (SExpression.List _ _) => {
             # break this down a little bit, into something that I know the
             # carML Golang compiler can actually deal with in a semi-efficient
@@ -478,7 +478,7 @@ def sexpression2string src:SExpression => string = {
             # var flattened:string = (String.join " " result)
             set! flattened $ make-array char totallen
             set! (get flattened 0) '('
-            set! idx 0
+            set! idx 1
             # XXX it almost would have been simpler to
             # add really nice TCO elimination in the compiler
             # than this spaghetti code here, but this is a hack
@@ -492,6 +492,7 @@ def sexpression2string src:SExpression => string = {
                 }
                 set! (get flattened idx) ' '
                 set! idx $ + idx 1
+                set! ridx $ + ridx 1
             }
             set! (get flattened idx) ')'
             make-string flattened
