@@ -11,20 +11,33 @@ type CarML {
     Def string array[CarML] CarML
     Fn array[CarML] CarML
     ParamDef string CarML
+    Declare string CarML
+    # thinking these should be an array[string]
+    # and an array[CarML] that way we can support
+    # destructuring binds...
     Var string CarML CarML
     Val string CarML CarML
+    Let string CarML CarML
+    LetRec string CarML CarML
     Integer string
+    Octal string
+    Hex string
+    Bin string
     Float string
     String string
     Char string
     Bool string
+    ArrayLiteral CarML array[CarML]
     Ident string
+    Tag string
     Begin array[CarML]
     Call CarML array[CarML]
     If CarML CarML CarML
     When CarML CarML
     Match CarML array[CarML]
+    Guard CarML CarML
     While CarML CarML
+    For CarML CarML
     Type string array[CarML] array[CarML]
     Record string array[string] array[CarML]
     ComplexType string array[CarML]
@@ -34,6 +47,11 @@ type CarML {
     FloatT
     CharT
     BoolT
+    AnyT
+    Unit
+    Nil
+    # NOTE: explicitly not handling things like $, =>, &c
+    # may have to do that eventually too tho...
 }
 
 record Environment {
