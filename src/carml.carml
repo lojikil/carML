@@ -16,9 +16,13 @@ type CarML {
     # and an array[CarML] that way we can support
     # destructuring binds...
     Var string CarML CarML
+    DestructuringVar array[string] array[CarML] CarML
     Val string CarML CarML
+    DestructuringVal array[string] array[CarML] CarML
     Let string CarML CarML
+    DestructuringLet array[string] array[CarML] CarML
     LetRec string CarML CarML
+    DestructuringLetRec array[string] array[CarML] CarML
     Integer string
     Octal string
     Hex string
@@ -52,6 +56,15 @@ type CarML {
     Nil
     # NOTE: explicitly not handling things like $, =>, &c
     # may have to do that eventually too tho...
+    # NOTE: actually... on second thought... it would be neat
+    # if I could use this closer to something like Concrete
+    # Syntax Trees...
+    Comment string
+    FatArrow
+    PipeArrow
+    Colon
+    ColonEqual
+    DollarSign
 }
 
 record Environment {
