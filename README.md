@@ -51,8 +51,8 @@ considering that both languages are _not_ derived from existing ML dialects. [Ye
 
 # Output
 
-- Enyalios-style Human Readable C
-- Let the C compiler deal with many of the real optimizations
+- Enyalios-style Human Readable C/Golang
+- Let the C/Golang compiler deal with many of the real optimizations
 - But we can do some simple ones like inlining, self-TCO, & rewriting HOFs
 
 # Examples
@@ -109,6 +109,17 @@ this REPL does not evaluate the supplied expressions for _values_, but rather fo
 
 The purpose is more to see what the IR/code will look like, rather than what the code does. It 
 is meant more as a test bed than an actual REPL.
+
+# File naming conventions
+
+There are a few different "types" of files in the system
+
+- `*.c.carml` is a file that is written in carML, but targets C directly
+- `*.go.carml` is a file written in carML, but targets Golang directly
+- `*.carml` just a plain carML file, which makes no assumptions as to the underlying system
+
+Eventually I'd like to be able to include files via an SRFI-0-style mechanism, by which we can
+simply import which files we'd like to use at compile time based on flags and such
 
 # License
 
