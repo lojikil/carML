@@ -89,3 +89,42 @@ record Environment {
     var_defns:array[string]
     parent:ref[Environment]
 }
+
+# NOTE: so the general gist here is that we want to be able to
+# round trip code from SExpressions back to CarML. For example,
+# we may have several optimization passes that end up eliminating
+# things, doing tree shaking, &c, and having a Compiler that can
+# handle these round trips is key. However, I'm not currently
+# focused on having the carML/carML compiler be able to parse
+# carML itself, we can continue to use the carML/C compiler as
+# a front end. This *does* mean that the carML/C compiler must
+# be kept up to date with at least the language, even if the 
+# simple code generation in the carML/C system cannot handle
+# all the cases that it can parse
+
+def sexpression->ast src:SExpression => CarML = {
+    make-struct CarML.Nil
+}
+
+def ast->carml src:CarML => string = {
+    ""
+}
+
+def ast->golang src:CarML => string = {
+    ""
+}
+
+def ast->c src:CarML => string = {
+    ""
+}
+
+# NOTE: section: optimizations
+# we need to be able to optimize certain situations
+# in carML and rewrite them to nicer alternatives. For
+# example, whilst `let` is a useful abstraction, it's not
+# incredibly useful when getting into actual code; we can
+# use something like an alpha rewrite, to transform a `let`
+# or a `letrec` into a freshsym `val` or `var`
+def let->val src:CarML => CarML = {
+    make-struct CarML.Nil
+}
