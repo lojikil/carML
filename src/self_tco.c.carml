@@ -8,26 +8,38 @@
 # @(#) this is meant to only interact with the carML/C compiler
 
 def self-tco? name:string src:ref[AST] => bool = {
+    var res:bool = false
+    var idx:int = 0
+
     match (-> src tag) with 
         TDEF => (self-tco? name (-> src $ -> $ get children 1))
         TFN => (self-tco? name (-> src $ -> $ get children 1))
-        TCALL => ...
-        TBEGIN => ...
+        TCALL => (not (strncmp name (-> src $ -> (get children 0) value)))
+        TBEGIN => {
+            while (< idx (-> src lenchildren)) do {
+                set! res $ self-tco? name (-> src $ -> get children idx)
+                when res do {
+                    return res
+                }
+                set! idx $ + idx 1
+            }
+            false
+        }
         TWHEN => (self-tco? name (-> src $ -> $ get children 1))
         TIF => (any-of 
                 (self-tco? name (-> src $ -> $ get children 1))
                 (self-tco? name (-> src $ -> $ get children 2)))
-        TMATCH => ...
+        TMATCH => false
         else => false
     end
 }
 
-def shadow-params src:ref => ref[AST] = {
-
+def shadow-params src:ref[AST] => ref[AST] = {
+    nil
 }
 
-def define-shadow-params src:ref => ref[AST] = {
-
+def define-shadow-params src:ref[AST] => ref[AST] = {
+    nil
 }
 
 def rewrite-tco src:ref[AST] => ref[AST] = {
