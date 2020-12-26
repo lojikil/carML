@@ -1,0 +1,35 @@
+# @(#) an attempt at writing a self-tail call detection
+# @(#) and optimization system for carML/C in carML
+# @(#) itself. This provides two functions:
+# @(#)
+# @(#) 1. `self-tco?`, which determines if the function is a tail call
+# @(#) 1. `rewrite-tco`, which returns a `while` and shadowed variant
+# @(#)
+# @(#) this is meant to only interact with the carML/C compiler
+
+def self-tco? name:string src:ref[AST] => bool = {
+    match (-> src tag) with 
+        TDEF => (self-tco? name (-> src $ -> $ get children 1))
+        TFN => (self-tco? name (-> src $ -> $ get children 1))
+        TCALL => ...
+        TBEGIN => ...
+        TWHEN => (self-tco? name (-> src $ -> $ get children 1))
+        TIF => (any-of 
+                (self-tco? name (-> src $ -> $ get children 1))
+                (self-tco? name (-> src $ -> $ get children 2)))
+        TMATCH => ...
+        else => false
+    end
+}
+
+def shadow-params src:ref => ref[AST] = {
+
+}
+
+def define-shadow-params src:ref => ref[AST] = {
+
+}
+
+def rewrite-tco src:ref[AST] => ref[AST] = {
+    nil
+}
