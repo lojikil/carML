@@ -12,12 +12,12 @@ def self-tco? name:string src:ref[AST] => bool = {
     var idx:int = 0
 
     match (-> src tag) with 
-        TDEF => (self-tco? name (-> src $ -> $ get children 1))
-        TFN => (self-tco? name (-> src $ -> $ get children 1))
+        TDEF => (self-tco? name (-> src $ get children 1))
+        TFN => (self-tco? name (-> src $ get children 1))
         TCALL => (not (strncmp name (-> src $ -> (get children 0) value)))
         TBEGIN => {
             while (< idx (-> src lenchildren)) do {
-                set! res $ self-tco? name (-> src $ -> get children idx)
+                set! res $ self-tco? name (-> src $ get children idx)
                 when res do {
                     return res
                 }
@@ -25,10 +25,10 @@ def self-tco? name:string src:ref[AST] => bool = {
             }
             false
         }
-        TWHEN => (self-tco? name (-> src $ -> $ get children 1))
+        TWHEN => (self-tco? name (-> src $ get children 1))
         TIF => (any-of 
-                (self-tco? name (-> src $ -> $ get children 1))
-                (self-tco? name (-> src $ -> $ get children 2)))
+                (self-tco? name (-> src $ get children 1))
+                (self-tco? name (-> src $ get children 2)))
         TMATCH => false
         else => false
     end
