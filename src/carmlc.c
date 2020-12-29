@@ -273,6 +273,7 @@ int issyntacticform(int);
 int isprimitivevalue(int);
 int isvalueform(int);
 int iscoperator(const char *);
+int self_tco_p(const char *, AST *);
 char *typespec2c(AST *, char *, char *, int);
 char *typespec2g(AST *, char *, char *, int);
 char *findtype(AST *);
@@ -366,6 +367,10 @@ main(int ac, char **al) {
                         gwalk(tmp, 0);
                     } else {
                         walk(tmp, 0);
+                    }
+
+                    if(tc_flagp && tmp->tag == TDEF) {
+                        printf("\n[!] this function is a tail call? %d", self_tco_p(tmp->value, tmp));
                     }
                 }
                 printf("\n");
@@ -617,6 +622,40 @@ issyntacticform(int tag) {
             return 1;
         default:
             return 0;
+    }
+}
+
+// NOTE: this code is generated from
+// src/self_tco.c.carml, so if we really need to change this,
+// we probably should fix that file first...
+int
+self_tco_p(const char *name, AST *src){
+    int idx = 0;
+    const int tag = src->tag;
+    if(tag == TDEF) {
+        return self_tco_p(name, src->children[1]);
+    } else if(tag == TFN) {
+        return self_tco_p(name, src->children[1]);
+    } else if(tag == TCALL) {
+        return !strcmp(name, src->children[0]->value);
+    } else if(tag == TBEGIN) {
+        idx = src->lenchildren - 1;
+        return self_tco_p(name, src->children[idx]);
+    } else if(tag == TWHEN) {
+        return self_tco_p(name, src->children[1]);
+    } else if(tag == TIF) {
+        return (self_tco_p(name, src->children[1])) || (self_tco_p(name, src->children[2]));
+    } else if(tag == TMATCH) {
+        idx = 1;
+        while(idx < src->lenchildren){
+            if(self_tco_p(name, src->children[idx])) {
+                return YES;
+            } else {
+                idx = idx + 2;
+            }
+        }
+    } else {
+        return NO;
     }
 }
 
