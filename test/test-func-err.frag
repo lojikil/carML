@@ -16,3 +16,7 @@
 
 # which then calls `llcwalk` or `llgwalk` on `head->children[1]`, which
 # would be nil
+
+# another test case:
+(foo bar
+# will cause a sigsegv
