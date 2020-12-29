@@ -979,8 +979,7 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
 
         dprintf("result? %s\n", findtype(typespec));
 
-        dprintf("typespec[%d] == null? %s\n", typeidx, typespec->children[typeidx] == nil ? "yes" : "no");
-        dprintf("here on %d, typeidx: %d, len: %d\n", __LINE__, typeidx, typespec->lenchildren);
+        dprintf("here on %d, len: %d\n", __LINE__, typespec->lenchildren);
 
         typeval = findtype(typespec);
 
