@@ -282,7 +282,7 @@ main(int ac, char **al) {
     ASTEither *ret = nil;
     AST *tmp = nil;
     FILE *fdin = nil;
-    int walkflag = 0;
+    int walkflag = 0, tc_flagp = 0;
     GC_INIT();
 
     if(ac > 1) {
@@ -326,7 +326,7 @@ main(int ac, char **al) {
         printf("\t\tcarML/C 2020.3\n");
         printf("(c) 2016-2020 lojikil, released under the ISC License.\n\n");
         printf("%%c - turns on C code generation\n%%g - turns on Golang generation\n%%quit/%%q - quits\n");
-        printf("%%dir - dumps the current execution environment\n\n");
+        printf("%%dir - dumps the current execution environment\n%%t/%%tco - turns on/off tail call detection\n");
         do {
             printf(">>> ");
             ret = readexpression(stdin);
@@ -355,7 +355,10 @@ main(int ac, char **al) {
                     printf("[!] Golang generation is: %s", (walkflag ? "on" : "off"));
                 } else if (tmp->tag == TIDENT && !strncmp(tmp->value, "%dir", 4)) {
                     // dump the environment currently known...
-                    printf("dumping the environment:\n");
+                    printf("[!] dumping the environment:\n");
+                } else if (tmp->tag == TIDENT && (!strncmp(tmp->value, "%t", 2) || !strncmp(tmp->value, "%tco", 4))) {
+                    tc_flagp = !tc_flagp;
+                    printf("[!] turning TCO detection: %s", (tc_flagp ? "on" : "off"));
                 } else if(tmp->tag != TNEWL) {
                     if(walkflag == 1) {
                         cwalk(tmp, 0);
