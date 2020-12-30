@@ -6095,35 +6095,20 @@ llcwalk(AST *head, int level, int final) {
             // final block here, and thus we end up
             // in a situation wherein a while cannot
             // have a return properly...
-            if(head->children[1]->tag == TBEGIN) {
-                ctmp = head->children[1];
-                for(int widx = 0; widx < ctmp->lenchildren; widx++) {
-                    if(final && widx == (ctmp->lenchildren - 1)) {
-                        llcwalk(ctmp->children[widx], level + 1, YES);
-                    } else {
-                        cwalk(ctmp->children[widx], level + 1);
-                    }
+            // XXX: I actually think the FIXME above is
+            // wrong hahah. a `while` loop shouldn't care
+            // if it is in the final position, it's almost
+            // always wrong to reach into one and attempt
+            // to determine if it's the final block...
 
-                    if(isvalueform(ctmp->children[widx]->tag)) {
-                        printf(";\n");
-                    }
-                }
-                indent(level);
-                printf("}\n");
-            } else {
-                if(final) {
-                    llcwalk(head->children[1], level + 1, YES);
-                } else {
-                    cwalk(head->children[1], level + 1);
-                }
+            llcwalk(head->children[1], level + 1, NO);
 
-                if(isvalueform(head->children[1]->tag)) {
-                    printf(";\n");
-                }
-
-                indent(level);
-                printf("}\n");
+            if(isvalueform(head->children[1]->tag)) {
+                printf(";\n");
             }
+
+            indent(level);
+            printf("}\n");
             break;
         case TFOR:
             // so:
@@ -6848,11 +6833,7 @@ llgwalk(AST *head, int level, int final) {
             gwalk(head->children[0], 0);
             printf(" {\n");
 
-            if(final) {
-                llgwalk(head->children[1], level + 1, YES);
-            } else {
-                gwalk(head->children[1], level + 1);
-            }
+            gwalk(head->children[1], level + 1);
 
             if(isvalueform(head->children[1]->tag)) {
                 printf(";\n");
