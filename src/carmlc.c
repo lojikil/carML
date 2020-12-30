@@ -654,6 +654,7 @@ self_tco_p(const char *name, AST *src){
                 idx = idx + 2;
             }
         }
+        return NO;
     } else {
         return NO;
     }

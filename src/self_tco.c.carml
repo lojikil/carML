@@ -53,6 +53,8 @@ def self-tco? name:string src:ref[AST] => bool = {
                 else
                     (set! idx $ + idx 2)
             }
+
+            false
         }
         else => false
     end
