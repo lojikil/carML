@@ -67,5 +67,30 @@ def define-shadow-params src:ref[AST] => ref[AST] = {
 }
 
 def rewrite-tco src:ref[AST] => ref[AST] = {
-    nil
+    val params : ref[AST] = (define-shadow-params $ -> src $ get children 1)
+    var ret : ref[AST] = (hmalloc $ sizeof ref[ast])
+    # what we need to do is effectively copy the spine of the original AST
+    # form, and replace certain portions with some shadowing components
+    # thrown into the spine. so for example:
+    #
+    # ```
+    # def foo x:int y:int => int = if (> x 10) then y else (foo (+ x 1) (+ x y))
+    # # this should become...
+    # def foo x:int y:int => int = {
+    #     var x_shadow:int = x
+    #     var y_shadow:int = y
+    #     while true do {
+    #         if (> x 10) then
+    #           (return y)
+    #         else {
+    #           set! x_shadow (+ x 1)
+    #           set! y_shadow (+ x y)
+    #           set! x x_shadow
+    #           set! y y_shadow
+    #         }
+    #   }
+    #```
+    #
+    # this way we can make the tail call into the semantically similar loop
+    # and not have to rely on the C/Golang compiler doing it for us...
 }
