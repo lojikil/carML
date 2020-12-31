@@ -95,4 +95,20 @@ def rewrite-tco src:ref[AST] => ref[AST] = {
     #
     # this way we can make the tail call into the semantically similar loop
     # and not have to rely on the C/Golang compiler doing it for us...
+    #
+    # additionally, we need a mechanism by which we know we're rewriting a
+    # tail call, rather than just rewriting all calls. So basically we need
+    # to follow the following general idea:
+    #
+    # 1. shadow parameters in definitions
+    # 1. walk the spine
+    #     1. if not tail, copy the form
+    #     1. if tail, rewrite as needed
+    #
+    # rewriting should do the following:
+    #
+    # 1. not hop into `while` and `for` bodies
+    # 1. rewrite either-side of an `if`, one side of a `when`, &c
+    # 1. this rewrite should be: if it is not a tail-call, prefix it with `return`
+    # 1. if it *is* a tail call, shadow call
 }
