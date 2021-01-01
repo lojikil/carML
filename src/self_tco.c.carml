@@ -60,17 +60,18 @@ def self-tco? name:string src:ref[AST] => bool = {
     end
 }
 
-def shadow-params src:ref[AST] => ref[AST] = {
+def shadow-params src:ref[AST] impl:ref[AST] => ref[AST] = {
     nil
 }
 
 def define-shadow-params src:ref[AST] => ref[AST] = {
-    nil
+    var ret : ref[AST] = (hmalloc $ sizeof ref[AST])
+    ret 
 }
 
 def rewrite-tco src:ref[AST] => ref[AST] = {
     val params : ref[AST] = (define-shadow-params $ -> src $ get children 1)
-    var ret : ref[AST] = (hmalloc $ sizeof ref[ast])
+    var ret : ref[AST] = (hmalloc $ sizeof ref[AST])
     # what we need to do is effectively copy the spine of the original AST
     # form, and replace certain portions with some shadowing components
     # thrown into the spine. so for example:
