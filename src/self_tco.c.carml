@@ -65,7 +65,30 @@ def shadow-params src:ref[AST] impl:ref[AST] => ref[AST] = {
 }
 
 def define-shadow-params src:ref[AST] => ref[AST] = {
+    # the more I code these, the more I really want to
+    # make the simple compiler...
+    # esp to track accessors.
+    # oh... wait that's a good idea. I can write a simple
+    # compiler in carML right now, much like these...
     var ret : ref[AST] = (hmalloc $ sizeof ref[AST])
+    var idx : int = 0
+    set! (-> ret tag) TBEGIN
+    set! (-> ret lenchildren) (-> src lenchildren)
+    set! (-> ret children) (hmalloc $ * (-> src lenchildren) (sizeof ref[ref[AST]]))
+    # this would be an ideal location for `Array.map`: we need to
+    # iterate over each member of the `src` member, and transform
+    # it from a `parameter-definition` into a `var` and tweak the
+    # name a little...
+    while (< idx $ -> src lenchildren) do {
+        set! (-> ret $ get children idx) $ hmalloc $ sizeof ref[AST]
+        set! (-> ret $ -> (get children idx) tag) TVAR
+        # so a TVAR is:
+        # _value : string = name
+        # _2: ref[AST] = value
+        # _3: ref[AST] = type
+        #
+        # would also be a great place for `String.Join`
+    }
     ret 
 }
 
