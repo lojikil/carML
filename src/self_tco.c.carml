@@ -91,6 +91,10 @@ def get-parameter-ident src:ref[AST] idx:int => ref[AST] = {
     nil
 }
 
+def get-parameter-type src:ref[AST] idx:int => ref[AST] = {
+
+}
+
 def define-shadow-params src:ref[AST] => ref[AST] = {
     # the more I code these, the more I really want to
     # make the simple compiler...
@@ -117,8 +121,12 @@ def define-shadow-params src:ref[AST] => ref[AST] = {
         #
         # would also be a great place for `String.Join`
         set! (-> tmp lenchildren) 2
-        set! (-> tmp value) $ shadow-name $ -> src $ -> (get children idx) value
+        set! (-> tmp value) $ shadow-name $ get-paramter-name src idx
         set! (-> tmp children) $ hmalloc $ * 2 $ sizeof ref[AST]
+        set! (-> tmp $ get children 0) $ get-parameter-ident src idx
+        set! (-> tmp $ get children 1) $ get-parameter-type src idx
+        set! (-> ret $ get children idx) tmp
+        set! idx $ + idx 1
     }
     ret 
 }
