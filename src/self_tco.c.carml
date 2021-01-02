@@ -64,6 +64,18 @@ def shadow-params src:ref[AST] impl:ref[AST] => ref[AST] = {
     nil
 }
 
+
+# NOTE: the below three functions are just utilities to make writing
+# things slightly more nice, but it really feels like they could
+# easily be inlined a bunch opportunistically... I need to read more
+# about what OCaml is doing in flambda for their heuristics. There's
+# some literal number (like 30) where if the function has less than
+# this numer of operations, it is just inlined.
+#
+# - https://caml.inria.fr/pub/docs/manual-ocaml/flambda.html
+# - https://github.com/OCamlPro/flambda-task-force/issues/103
+# - https://ocaml.janestreet.com/ocaml-core/flambda_manual/
+#
 def shadow-name name:string => string = {
     var ret : array[char] = (hmalloc $ + 3 $ * (sizeof char) (strlen name))
     stpcpy ret name
