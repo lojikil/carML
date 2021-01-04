@@ -95,7 +95,7 @@ def get-parameter-name src:ref[AST] idx:int => string = {
         # one structure definition...) that means we do
         # a lot of children indexing...
         set! ret $ -> src $ get children idx
-        set! ret $ -> ret $ get children 1
+        set! ret $ -> ret $ get children 0
         return $ -> ret value
     }
     ""
@@ -105,7 +105,7 @@ def get-parameter-ident src:ref[AST] idx:int => ref[AST] = {
     val ret:ref[AST] = nil
     when (< idx $ -> src lenchildren) do {
         set! ret $ -> src $ get children idx
-        return $ -> ret $ get children 1
+        return $ -> ret $ get children 0
     }
     nil
 }
@@ -114,7 +114,7 @@ def get-parameter-type src:ref[AST] idx:int => ref[AST] = {
     val ret:ref[AST] = nil
     when (< idx $ -> src lenchildren) do {
         set! ret $ -> src $ get children idx
-        return $ -> ret $ get children 2
+        return $ -> ret $ get children 1
     }
     nil
 }
@@ -145,7 +145,7 @@ def define-shadow-params src:ref[AST] => ref[AST] = {
         #
         # would also be a great place for `String.Join`
         set! (-> tmp lenchildren) 2
-        set! (-> tmp value) $ shadow-name $ get-paramter-name src idx
+        set! (-> tmp value) $ shadow-name $ get-parameter-name src idx
         set! (-> tmp children) $ hmalloc $ * 2 $ sizeof ref[AST]
         set! (-> tmp $ get children 0) $ get-parameter-ident src idx
         set! (-> tmp $ get children 1) $ get-parameter-type src idx
@@ -156,7 +156,7 @@ def define-shadow-params src:ref[AST] => ref[AST] = {
 }
 
 def rewrite-tco src:ref[AST] => ref[AST] = {
-    val params : ref[AST] = (define-shadow-params $ -> src $ get children 1)
+    val params : ref[AST] = (define-shadow-params $ -> src $ get children 0)
     var ret : ref[AST] = (hmalloc $ sizeof ref[AST])
     # what we need to do is effectively copy the spine of the original AST
     # form, and replace certain portions with some shadowing components
@@ -200,6 +200,7 @@ def rewrite-tco src:ref[AST] => ref[AST] = {
     # 1. if it *is* a tail call, shadow call
     set! (-> ret tag) TDEF
     set! (-> ret lenchildren) 3 # parameter list, return type, body
+    set! (-> ret children) $ hmalloc $ * 3 $ sizeof ref[ref[AST]]
 
     # XXX should we mung the name here to indicate it has been
     # rewritten? probably not for production/release builds, but

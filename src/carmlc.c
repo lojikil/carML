@@ -275,6 +275,12 @@ int isprimitivevalue(int);
 int isvalueform(int);
 int iscoperator(const char *);
 int self_tco_p(const char *, AST *);
+char *shadow_name(char *);
+char *get_parameter_name(AST *, int);
+AST *get_parameter_ident(AST *, int);
+AST *get_parameter_type(AST *, int);
+AST *define_shadow_params(AST *);
+AST *rewrite_tco(AST *);
 char *typespec2c(AST *, char *, char *, int);
 char *typespec2g(AST *, char *, char *, int);
 char *findtype(AST *);
@@ -372,6 +378,8 @@ main(int ac, char **al) {
 
                     if(tc_flagp && tmp->tag == TDEF) {
                         printf("\n[!] this function is a tail call? %d", self_tco_p(tmp->value, tmp));
+                        printf("\n[!] self-TCO would look like:\n");
+                        walk(rewrite_tco(tmp), 0);
                     }
                 }
                 printf("\n");
@@ -659,6 +667,85 @@ self_tco_p(const char *name, AST *src){
     } else {
         return NO;
     }
+}
+
+char *
+shadow_name(char * name){
+    char * ret = hmalloc(3 + sizeof(char) * strlen(name));
+    stpcpy(ret, name);
+    strcat(ret, "_sh");
+    return ret;
+}
+
+char *
+get_parameter_name(AST * src, int idx){
+    const AST * ret = nil;
+    if(idx < src->lenchildren){
+        ret = src->children[idx];
+        ret = ret->children[0];
+        return ret->value;
+    }
+
+    return "";
+}
+
+AST *
+get_parameter_ident(AST * src, int idx){
+    const AST * ret = nil;
+    if(idx < src->lenchildren){
+        ret = src->children[idx];
+        return ret->children[0];
+    }
+
+    return nil;
+}
+
+AST *
+get_parameter_type(AST * src, int idx){
+    const AST * ret = nil;
+    if(idx < src->lenchildren){
+        ret = src->children[idx];
+        return ret->children[1];
+    }
+
+    return nil;
+}
+
+AST *
+define_shadow_params(AST * src){
+    AST * ret = hmalloc(sizeof(AST * ));
+    AST * tmp = nil;
+    int idx = 0;
+    ret->tag = TBEGIN;
+    ret->lenchildren = src->lenchildren;
+    ret->children = hmalloc(src->lenchildren * sizeof(AST * * ));
+    while(idx < src->lenchildren){
+        tmp = hmalloc(sizeof(AST * ));
+        tmp->tag = TVAR;
+        tmp->lenchildren = 2;
+        tmp->value = shadow_name(get_parameter_name(src, idx));
+        tmp->children = hmalloc(2 * sizeof(AST * ));
+        tmp->children[0] = get_parameter_ident(src, idx);
+        tmp->children[1] = get_parameter_type(src, idx);
+        ret->children[idx] = tmp;
+        idx = idx + 1;
+    }
+
+    return ret;
+}
+
+AST *
+rewrite_tco(AST * src){
+    const AST * params = define_shadow_params(src->children[0]);
+    AST * ret = hmalloc(sizeof(AST * ));
+    ret->tag = TDEF;
+    ret->lenchildren = 3;
+    ret->value = src->value;
+    ret->children = hmalloc(3 * sizeof(AST **));
+    ret->children[0] = src->children[0];
+    ret->children[2] = src->children[2];
+    ret->children[1] = params;
+    return ret;
 }
 
 // So currently the type parser will give us:
