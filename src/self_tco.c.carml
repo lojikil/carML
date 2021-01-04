@@ -84,15 +84,39 @@ def shadow-name name:string => string = {
 }
 
 def get-parameter-name src:ref[AST] idx:int => string = {
+    val ret:ref[AST] = nil
+    when (< idx $ -> src lenchildren) do {
+        # XXX *wow* talk about something that would be
+        # much nicer with lenses... or really a monadic
+        # interface with not-null and some other stuff...
+        # part of the other problem here is that we don't
+        # have a nicely defined AST interface, I went with
+        # a fairly generic interface (so as to only have
+        # one structure definition...) that means we do
+        # a lot of children indexing...
+        set! ret $ -> src $ get children idx
+        set! ret $ -> ret $ get children 1
+        return $ -> ret value
+    }
     ""
 }
 
 def get-parameter-ident src:ref[AST] idx:int => ref[AST] = {
+    val ret:ref[AST] = nil
+    when (< idx $ -> src lenchildren) do {
+        set! ret $ -> src $ get children idx
+        return $ -> ret $ get children 1
+    }
     nil
 }
 
 def get-parameter-type src:ref[AST] idx:int => ref[AST] = {
-
+    val ret:ref[AST] = nil
+    when (< idx $ -> src lenchildren) do {
+        set! ret $ -> src $ get children idx
+        return $ -> ret $ get children 2
+    }
+    nil
 }
 
 def define-shadow-params src:ref[AST] => ref[AST] = {
