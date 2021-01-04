@@ -211,6 +211,7 @@ const char *coperators[] = {
     "->", "->",
     "get", "get",
     "make-struct", "make-struct",
+    "make-record", "make-record",
     "make-deque", "make-deque",
     "make-string", "make-string",
     "make-array", "make-array",
@@ -6276,7 +6277,8 @@ llcwalk(AST *head, int level, int final) {
                         printf("return ");
                     }
                     cwalk(head->children[1], 0);
-                } else if(!strncmp(head->children[0]->value, "make-struct", 11)) {
+                } else if(!strncmp(head->children[0]->value, "make-struct", 11) ||
+                          !strncmp(head->children[0]->value, "make-record", 11)) {
                     printf("{ ");
                     // NOTE (lojikil) make-struct now accepts the name of the
                     // struct, just like make-array does, but we don't need
@@ -6957,7 +6959,8 @@ llgwalk(AST *head, int level, int final) {
                         printf("return ");
                     }
                     gwalk(head->children[1], 0);
-                } else if(!strncmp(head->children[0]->value, "make-struct", 11)) {
+                } else if(!strncmp(head->children[0]->value, "make-struct", 11) ||
+                          !strncmp(head->children[0]->value, "make-record", 11)) {
                     // NOTE (lojikil) in Go we need to print the name of the struct
                     // when allocating it here...
                     mung_variant_name(nil, head->children[1], NO, YES);

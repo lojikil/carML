@@ -198,4 +198,18 @@ def rewrite-tco src:ref[AST] => ref[AST] = {
     # 1. rewrite either-side of an `if`, one side of a `when`, &c
     # 1. this rewrite should be: if it is not a tail-call, prefix it with `return`
     # 1. if it *is* a tail call, shadow call
+    set! (-> ret tag) TDEF
+    set! (-> ret lenchildren) 3 # parameter list, return type, body
+
+    # XXX should we mung the name here to indicate it has been
+    # rewritten? probably not for production/release builds, but
+    # maybe for debug?
+    set! (-> ret value) (-> src value)
+
+    set! (-> ret $ get children 0) (-> src $ get children 0)
+    # I know why I did that; I originally was going to make
+    # return types completely optional (for inference)
+    set! (-> ret $ get children 2) (-> src $ get children 2)
+    set! (-> ret $ get children 1) params
+    ret
 }
