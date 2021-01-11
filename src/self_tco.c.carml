@@ -61,7 +61,32 @@ def self-tco? name:string src:ref[AST] => bool = {
 }
 
 def shadow-params src:ref[AST] impl:ref[AST] => ref[AST] = {
-    nil
+    var ret : ref[AST] = (hmalloc $ sizeof ref[AST])
+    val clen: int = (* (-> src lenchildren) 2)
+    var idx : int = 0
+    set! (-> ret tag) TBEGIN
+    set! (-> ret lenchildren) clen
+    set! (-> ret children) $ hmalloc $ * clen $ sizeof ref[AST]
+    # NOTE again! this would be a great place for a nice map/foreach/whatever
+    # fusion system. What we need to do is basically:
+    # `zip src $ map (compose shadow-name get-param-name) impl`
+    # so that we end up with an array of tuples for `(shadowed-name value)`
+    # and then do the same for shadow-names and param-names. a nice foreach
+    # would be useful to iterate over both...
+    #
+    # also, it would be interesting to have a compose function that did nothing
+    # but compose things in a useful way, like `.$.` or the like...
+    #
+    # the more I think about `.$.` syntax or the like the more I like it...
+    # think about it...
+    #
+    # Inline: `(List.Map foo .$. bar arr)` => `(List.Map (fn (x) (foo (bar x))) arr)`
+    # Explicit: `(List.Map (.$. foo bar baz bla) arr)` =>
+    # `(List.Map (fn (x) (foo $ bar $ baz $ bla x)) arr)`
+    #
+    # the `.$.` doesn't have to create an implicit closure, but for purposes it treats
+    # the two functions as methods that need to be composed...
+    # $> maybe?
 }
 
 
