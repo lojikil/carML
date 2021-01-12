@@ -60,11 +60,43 @@ def self-tco? name:string src:ref[AST] => bool = {
     end
 }
 
+# create a shadowed TIDENT, so that we can use this in
+# AST generation code itself...
+def shadow-ident src:ref[AST] => ref[AST] = {
+    var ret : ref[AST] = (hmalloc $ sizeof ref[AST])
+    set! (-> ret tag) TIDENT
+    set! (-> ret lenchildren 0)
+    set! (-> ret value) $ shadow-name $ -> src value
+    ret
+}
+
+def make-set-bang ident:ref[AST] value:ref[AST] => ref[AST] = {
+    var ret : ref[AST] = (hmalloc $ sizeof ref[AST])
+    var setident : ref[AST] = (hmalloc $ sizeof ref[AST])
+    set! (-> setident tag) TIDENT
+    set! (-> setident value) = (hmalloc $ * 5 $ sizeof char)
+    stpncpy (-> setident value) "set!" 5
+    set! (-> ret tag) TCALL
+    set! (-> ret lenchildren 3)
+    set! (-> ret children) $ hmalloc $ * 3 $ sizeof ref[AST]
+    set! (get (-> ret children) 0) setident
+    set! (get (-> ret children) 1) ident
+    set! (get (-> ret children) 2) value
+    ret
+}
+
+# create the actual shadowed callsite; this should actually
+# return a TBEGIN, which can either be grafted into the current
+# TBEGIN, or used as a replacement for the TCALL that was in the
+# original AST
 def shadow-params src:ref[AST] impl:ref[AST] => ref[AST] = {
     var ret : ref[AST] = (hmalloc $ sizeof ref[AST])
     val clen: int = (* (-> src lenchildren) 2)
     var idx : int = 0
     var sidx : int = 0
+    var shadow : ref[AST] = nil
+    var param : ref[AST] = nil
+    var result: ref[AST] = nil
     set! (-> ret tag) TBEGIN
     set! (-> ret lenchildren) clen
     set! (-> ret children) $ hmalloc $ * clen $ sizeof ref[AST]
@@ -94,11 +126,15 @@ def shadow-params src:ref[AST] impl:ref[AST] => ref[AST] = {
         # 1. grab the parameter's value
         # 1. create the shadow set `(set! shadowed-name parameter value)`
         # 1. create the join set `(set! original-name shadowed-name)`
-        set! (get (-> ret children) idx) $ make-set-bang (shadow-name $ get-param-name impl sidx) (get (-> src children) sidx)
-        set! (get (-> ret children) $ + idx 1) $ make-set-bang (get-param-name impl sidx)
+        set! param $ get-parameter-ident impl sidx
+        set! shadow $ shadow-ident param
+        set! result $ get (-> src children sidx)
+        set! (get (-> ret children) idx) $ make-set-bang shadow result
+        set! (get (-> ret children) $ + idx 1) $ make-set-bang param shadow
+        set! idx $ + idx 2
+        set! sidx $ + sidx 1
     }
 }
-
 
 # NOTE: the below three functions are just utilities to make writing
 # things slightly more nice, but it really feels like they could
