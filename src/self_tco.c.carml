@@ -134,6 +134,7 @@ def shadow-params src:ref[AST] impl:ref[AST] => ref[AST] = {
         set! idx $ + idx 2
         set! sidx $ + sidx 1
     }
+    ret
 }
 
 # NOTE: the below three functions are just utilities to make writing

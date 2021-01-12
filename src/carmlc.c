@@ -275,6 +275,9 @@ int isprimitivevalue(int);
 int isvalueform(int);
 int iscoperator(const char *);
 int self_tco_p(const char *, AST *);
+AST *shadow_ident(AST *);
+AST *make_set_bang(AST *, AST *);
+AST *shadow_params(AST *, AST *);
 char *shadow_name(char *);
 char *get_parameter_name(AST *, int);
 AST *get_parameter_ident(AST *, int);
@@ -674,6 +677,55 @@ shadow_name(char * name){
     char * ret = hmalloc(3 + sizeof(char) * strlen(name));
     stpcpy(ret, name);
     strcat(ret, "_sh");
+    return ret;
+}
+
+AST *
+shadow_ident(AST * src){
+    AST * ret = hmalloc(sizeof(AST * ));
+    ret->tag = TIDENT;
+    ret->lenchildren = 0;
+    ret->value = shadow_name(src->value);
+    return ret;
+}
+
+AST *
+make_set_bang(AST * ident, AST * value){
+    AST * ret = hmalloc(sizeof(AST * ));
+    AST * setident = hmalloc(sizeof(AST * ));
+    setident->tag = TIDENT;
+    setident->value = hmalloc(5 * sizeof(char));
+    stpncpy(setident->value, "set!", 5);
+    ret->tag = TCALL;
+    ret->lenchildren = 3;
+    ret->children = hmalloc(3 * sizeof(AST * ));
+    ret->children[0] = setident;
+    ret->children[1] = ident;
+    ret->children[2] = value;
+    return ret;
+}
+
+AST *
+shadow_params(AST * src, AST * impl){
+    AST * ret = hmalloc(sizeof(AST * ));
+    const int clen = src->lenchildren * 2;
+    int idx = 0;
+    int sidx = 0;
+    AST * shadow = nil;
+    AST * param = nil;
+    AST * result = nil;
+    ret->tag = TBEGIN;
+    ret->lenchildren = clen;
+    ret->children = hmalloc(clen * sizeof(AST * ));
+    while(idx < clen){
+        param = get_parameter_ident(impl, sidx);
+        shadow = shadow_ident(param);
+        result = src->children[sidx];
+        ret->children[idx] = make_set_bang(shadow, result);
+        ret->children[idx + 1] = make_set_bang(param, shadow);
+        idx = idx + 2;
+        sidx = sidx + 1;
+    }
     return ret;
 }
 
