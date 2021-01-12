@@ -64,6 +64,7 @@ def shadow-params src:ref[AST] impl:ref[AST] => ref[AST] = {
     var ret : ref[AST] = (hmalloc $ sizeof ref[AST])
     val clen: int = (* (-> src lenchildren) 2)
     var idx : int = 0
+    var sidx : int = 0
     set! (-> ret tag) TBEGIN
     set! (-> ret lenchildren) clen
     set! (-> ret children) $ hmalloc $ * clen $ sizeof ref[AST]
@@ -87,6 +88,15 @@ def shadow-params src:ref[AST] impl:ref[AST] => ref[AST] = {
     # the `.$.` doesn't have to create an implicit closure, but for purposes it treats
     # the two functions as methods that need to be composed...
     # $> maybe?
+    while (< idx clen) do {
+        # woof, really need to decompose this. Let's break it down:
+        # 1. create the shadowed ident
+        # 1. grab the parameter's value
+        # 1. create the shadow set `(set! shadowed-name parameter value)`
+        # 1. create the join set `(set! original-name shadowed-name)`
+        set! (get (-> ret children) idx) $ make-set-bang (shadow-name $ get-param-name impl sidx) (get (-> src children) sidx)
+        set! (get (-> ret children) $ + idx 1) $ make-set-bang (get-param-name impl sidx)
+    }
 }
 
 
