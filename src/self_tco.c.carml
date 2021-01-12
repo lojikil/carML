@@ -65,7 +65,7 @@ def self-tco? name:string src:ref[AST] => bool = {
 def shadow-ident src:ref[AST] => ref[AST] = {
     var ret : ref[AST] = (hmalloc $ sizeof ref[AST])
     set! (-> ret tag) TIDENT
-    set! (-> ret lenchildren 0)
+    set! (-> ret lenchildren) 0
     set! (-> ret value) $ shadow-name $ -> src value
     ret
 }
@@ -74,10 +74,10 @@ def make-set-bang ident:ref[AST] value:ref[AST] => ref[AST] = {
     var ret : ref[AST] = (hmalloc $ sizeof ref[AST])
     var setident : ref[AST] = (hmalloc $ sizeof ref[AST])
     set! (-> setident tag) TIDENT
-    set! (-> setident value) = (hmalloc $ * 5 $ sizeof char)
+    set! (-> setident value) (hmalloc $ * 5 $ sizeof char)
     stpncpy (-> setident value) "set!" 5
     set! (-> ret tag) TCALL
-    set! (-> ret lenchildren 3)
+    set! (-> ret lenchildren) 3
     set! (-> ret children) $ hmalloc $ * 3 $ sizeof ref[AST]
     set! (get (-> ret children) 0) setident
     set! (get (-> ret children) 1) ident
@@ -128,7 +128,7 @@ def shadow-params src:ref[AST] impl:ref[AST] => ref[AST] = {
         # 1. create the join set `(set! original-name shadowed-name)`
         set! param $ get-parameter-ident impl sidx
         set! shadow $ shadow-ident param
-        set! result $ get (-> src children sidx)
+        set! result $ get (-> src children) sidx
         set! (get (-> ret children) idx) $ make-set-bang shadow result
         set! (get (-> ret children) $ + idx 1) $ make-set-bang param shadow
         set! idx $ + idx 2
