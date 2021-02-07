@@ -380,7 +380,7 @@ main(int ac, char **al) {
                     }
 
                     if(tc_flagp && tmp->tag == TDEF) {
-                        printf("\n[!] this function is a tail call? %d", self_tco_p(tmp->value, tmp));
+                        printf("\n[!] this function is a tail call? %s", (self_tco_p(tmp->value, tmp)) ? "yes" : "no");
                         printf("\n[!] self-TCO would look like:\n");
                         walk(rewrite_tco(tmp), 0);
                     }
