@@ -227,6 +227,22 @@ def define-shadow-params src:ref[AST] => ref[AST] = {
     ret 
 }
 
+# merge the source's `val` or `var` declarations into the
+# destination's body
+def merge-while-variable src:ref[AST] dst:ref[AST] = {
+     
+}
+
+# copy the body whilst simultaneously rewriting any
+# tail calls into a shadow...
+def copy-body src:ref[AST] dst:ref[AST] = {
+    # so here, we need to:
+    # 1. walk the spine
+    # 1. if we are at the final member:
+    #    1. if not a tail call and is a value form, change to a `return`
+    #    1. if a tail call, change into a shadow
+}
+
 def rewrite-tco src:ref[AST] => ref[AST] = {
     val params : ref[AST] = (define-shadow-params $ -> src $ get children 0)
     var ret : ref[AST] = (hmalloc $ sizeof ref[AST])
@@ -284,5 +300,8 @@ def rewrite-tco src:ref[AST] => ref[AST] = {
     # return types completely optional (for inference)
     set! (-> ret $ get children 2) (-> src $ get children 2)
     set! (-> ret $ get children 1) params
+
+    merge-while-variable (-> src $ get children 2) params
+
     ret
 }
