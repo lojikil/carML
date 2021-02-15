@@ -230,7 +230,23 @@ def define-shadow-params src:ref[AST] => ref[AST] = {
 # merge the source's `val` or `var` declarations into the
 # destination's body
 def merge-while-variable src:ref[AST] dst:ref[AST] = {
-     
+    var idx:int = 0
+    # NOTE this too would be a great place for:
+    # 1. fusion: map fx (filter fy $ _children src)
+    # 1. better data structures, namely a deque
+    #
+    # basically, this TCO section that we're working on
+    # should form the basis of making carML waaaaay more
+    # functional. I think that SRFI-17 and SRFI-9/57-style
+    # lenses with StandardML style accessors will be super
+    # useful... esp since we will treat all product types
+    # equally (records are ADTs are tuples for accessors)
+    #
+    # THANKS I HATE THIS LINE:
+    while (every (< idx $ -> src lenchildren) (oneof (eq? (-> tmp tag) TVAR) (eq? (-> tmp tag TVAL)))) do {
+
+        set! idx $ + idx 1
+    }
 }
 
 # copy the body whilst simultaneously rewriting any
