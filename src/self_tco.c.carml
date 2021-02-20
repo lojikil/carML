@@ -230,7 +230,11 @@ def define-shadow-params src:ref[AST] => ref[AST] = {
 # merge the source's `val` or `var` declarations into the
 # destination's body
 def merge-while-variable src:ref[AST] dst:ref[AST] = {
+    # again, another issue: src needs to be the *begin*
+    # member of the function, otherwise this won't work
+    # and we'll need to test further...
     var idx:int = 0
+    var ret:array[ref[AST]] = (make-array ref[AST] 128 nil)
     # NOTE this too would be a great place for:
     # 1. fusion: map fx (filter fy $ _children src)
     # 1. better data structures, namely a deque
@@ -243,8 +247,12 @@ def merge-while-variable src:ref[AST] dst:ref[AST] = {
     # equally (records are ADTs are tuples for accessors)
     #
     # THANKS I HATE THIS LINE:
-    while (every (< idx $ -> src lenchildren) (oneof (eq? (-> tmp tag) TVAR) (eq? (-> tmp tag TVAL)))) do {
-
+    while (every (< idx $ -> src lenchildren) (one-of (eq? (-> tmp tag) TVAR) (eq? (-> tmp tag TVAL)))) do {
+        # NOTE this also made me realize: we will clober shadowed variables
+        # here. We *probably* need to detect that situation, and adjust for
+        # it, so as to not introduce any semantic differences when something
+        # is compiled as with TCO
+        set! (get ret idx) $ get (-> src children) idx
         set! idx $ + idx 1
     }
 }
