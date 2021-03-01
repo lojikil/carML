@@ -1,3 +1,7 @@
+/*
+ * @(#) the main header file, meant to keep definitions clean
+ * @(#) and help make integration of generated code smoother
+*/
 #ifndef __CARMLC_H
 #define __CARMLC_H
 

@@ -1,3 +1,8 @@
+/*
+ * @(#) the main carml/C compiler source code
+ * @(#) defines the REPL, some compiler stuff, and
+ * @(#) coördinates the general flow of the system
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>

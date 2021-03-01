@@ -1,3 +1,8 @@
+/*
+ * @(#) self-Tail Call Optimization (TCO) code, generated from
+ * @(#) _src/self_tco.c.carml_
+*/
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <strings.h>
