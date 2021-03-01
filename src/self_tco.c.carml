@@ -202,7 +202,11 @@ def define-shadow-params src:ref[AST] body:ref[AST] => ref[AST] = {
     # compiler in carML right now, much like these...
     var ret : ref[AST] = (hmalloc $ sizeof ref[AST])
     var tmp : ref[AST] = nil
+    var vbuf : array[ref[AST]] = (make-array ref[AST] 64 nil)
     var idx : int = 0
+    var cidx : int = 0
+    var capacity : int = 64
+    var length : int = 0
     set! (-> ret tag) TBEGIN
     set! (-> ret lenchildren) (-> src lenchildren)
     set! (-> ret children) (hmalloc $ * (-> src lenchildren) (sizeof ref[ref[AST]]))
