@@ -1,3 +1,9 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <strings.h>
+#include <gc.h>
+#include <carmlc.h>
+
 // NOTE: this code is generated from
 // src/self_tco.c.carml, so if we really need to change this,
 // we probably should fix that file first...

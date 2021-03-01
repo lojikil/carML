@@ -58,7 +58,7 @@ then
 fi
 
 echo "building carML/c carmlc.c"
-cc $EXTRAFLAGS -o carmlc ./src/carmlc.c -L $LIBLOC -I $INCLOC -lgc && echo "[build success]" || echo "[build failed]"
+cc $EXTRAFLAGS -o carmlc ./src/carmlc.c ./src/self_tco.c -L $LIBLOC -I $INCLOC -I ./src -lgc && echo "[build success]" || echo "[build failed]"
 
 
 if [ -d "$BINLOC" ]
