@@ -39,6 +39,10 @@ then
         debug)
             echo "[debugging enabled]"
             EXTRAFLAGS="-std=c99 -g -DDEBUG" ;;
+        lax)
+            echo "[lax strict mode]"
+            EXTRAFLAGS="-std=c99 -Wall"
+            ;;
         strict)
             echo "[strict mode]"
             EXTRAFLAGS="-std=c99 -Wall -Werror"
