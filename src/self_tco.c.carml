@@ -228,13 +228,35 @@ def define-shadow-params src:ref[AST] body:ref[AST] => ref[AST] = {
         set! (-> tmp children) $ hmalloc $ * 2 $ sizeof ref[AST]
         set! (-> tmp $ get children 0) $ get-parameter-ident src idx
         set! (-> tmp $ get children 1) $ get-parameter-type src idx
-        set! (-> ret $ get children idx) tmp
+        #set! (-> ret $ get children idx) tmp
+        set! (get vbuf idx) tmp
         set! idx $ + idx 1
     }
+    set! length idx
+    set! idx 0
     # NOTE: an idea: instead of doing this *and then* merging the
     # vars/vals in the function body, why don't we handle those in
     # here, basically setup the prelude for the entire restructured
     # function
+    while (< idx $ -> body lenchildren) do {
+        # NOTE: we are iterating all the way through the body, we could
+        # end up picking up other variables we didn't mean to...
+        set! tmp (-> body $ get children idx)
+        when (one-of (eq? (-> tmp tag) TVAR) (eq? (-> tmp tag) TVAL)) do {
+            set! (get vbuf length) tmp
+            set! length $ + length 1
+        }
+        set! idx $ + idx 1
+    }
+
+    # last step: shrink the array into a hmalloc'd version
+    set! idx 0
+    set! (-> ret lenchildren) length
+    set! (-> ret children) (hmalloc $ * length $ sizeof ref[ref[AST]])
+    while (< idx length) do {
+        set! (-> ret $ get children idx) (get vbuf idx)
+        set! idx $ + idx 1
+    }
     ret 
 }
 
