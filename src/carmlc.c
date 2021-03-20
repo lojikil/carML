@@ -6114,7 +6114,11 @@ llcwalk(AST *head, int level, int final) {
                     // eventually, we need to actually detect what is going on,
                     // and use the correct allocator. What I did here was to
                     // basically assume that the user typed `heap-allocate`
-                    printf("(%s *)hmalloc(sizeof(%s) * %s)", head->children[1]->value, head->children[1]->value, head->children[2]->value);
+                    printf("(");
+                    cwalk(head->children[1], 0);
+                    printf("*)hmalloc(sizeof(");
+                    cwalk(head->children[1], 0);
+                    printf(") * %s)", head->children[2]->value);
                 } else if(!strncmp(head->children[0]->value, "make", 4)) {
 
                 } else if(!strncmp(head->children[0]->value, "stack-allocate", 14)) {
