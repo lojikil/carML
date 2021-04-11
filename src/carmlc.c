@@ -174,7 +174,7 @@ main(int ac, char **al) {
 | (_| (_| | |  | |  | || |____\n\
  \\___\\__,_|_|  \\_|  |_/\\_____/\n");
         printf("\t\tcarML/C 2020.3\n");
-        printf("(c) 2016-2020 lojikil, released under the ISC License.\n\n");
+        printf("(c) 2016-2021 lojikil, released under the ISC License.\n\n");
         printf("%%c - turns on C code generation\n%%g - turns on Golang generation\n%%quit/%%q - quits\n");
         printf("%%dir - dumps the current execution environment\n%%t/%%tco - turns on/off tail call detection\n");
         do {
