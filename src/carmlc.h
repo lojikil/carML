@@ -171,7 +171,7 @@ extern char *shadow_name(char *);
 extern char *get_parameter_name(AST *, int);
 extern AST *get_parameter_ident(AST *, int);
 extern AST *get_parameter_type(AST *, int);
-extern AST *define_shadow_params(AST *);
+extern AST *define_shadow_params(AST *, AST *);
 extern AST *rewrite_tco(AST *);
 
 #endif

@@ -136,10 +136,14 @@ get_parameter_type(AST * src, int idx){
 }
 
 AST *
-define_shadow_params(AST * src){
-    AST * ret = hmalloc(sizeof(AST * ));
-    AST * tmp = nil;
+define_shadow_params(AST *src, AST *body){
+    AST *ret = hmalloc(sizeof(AST *));
+    AST *tmp = nil;
+    AST ** vbuf = (AST **)hmalloc(sizeof(AST *) * 64);
     int idx = 0;
+    int cidx = 0;
+    int capacity = 64;
+    int length = 0;
     ret->tag = TBEGIN;
     ret->lenchildren = src->lenchildren;
     ret->children = hmalloc(src->lenchildren * sizeof(AST * * ));
@@ -151,7 +155,30 @@ define_shadow_params(AST * src){
         tmp->children = hmalloc(2 * sizeof(AST * ));
         tmp->children[0] = get_parameter_ident(src, idx);
         tmp->children[1] = get_parameter_type(src, idx);
-        ret->children[idx] = tmp;
+        vbuf[idx] = tmp;
+        idx = idx + 1;
+    }
+
+    length = idx;
+    idx = 0;
+    printf("here? %d\n", __LINE__);
+    printf("lenchildren(body): %d\n", body->lenchildren);
+    while(idx < body->lenchildren){
+        printf("here? %d\n", __LINE__);
+        tmp = body->children[idx];
+        if((tmp->tag == TVAR) || (tmp->tag == TVAL)){
+            vbuf[length] = tmp;
+            length = length + 1;
+        }
+
+        idx = idx + 1;
+    }
+
+    idx = 0;
+    ret->lenchildren = length;
+    ret->children = hmalloc(length * sizeof(AST * * ));
+    while(idx < length){
+        ret->children[idx] = vbuf[idx];
         idx = idx + 1;
     }
 
@@ -160,7 +187,7 @@ define_shadow_params(AST * src){
 
 AST *
 rewrite_tco(AST * src){
-    const AST * params = define_shadow_params(src->children[0]);
+    const AST * params = define_shadow_params(src->children[0], src->children[1]);
     AST * ret = hmalloc(sizeof(AST * ));
     ret->tag = TDEF;
     ret->lenchildren = 3;
