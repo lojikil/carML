@@ -292,12 +292,32 @@ def define-shadow-params src:ref[AST] body:ref[AST] => ref[AST] = {
 
 # copy the body whilst simultaneously rewriting any
 # tail calls into a shadow...
-def copy-body src:ref[AST] dst:ref[AST] = {
+def copy-body src:ref[AST] finalp:bool => ref[AST] = {
     # so here, we need to:
     # 1. walk the spine
     # 1. if we are at the final member:
     #    1. if not a tail call and is a value form, change to a `return`
     #    1. if a tail call, change into a shadow
+    var ret : ref[AST] = (hmalloc $ sizeof AST)
+    var buf : array[ref[AST]] = (make-array ref[AST] 128 nil)
+
+    # our source & buffer indices
+    var sidx : int = 0
+    var bidx : int = 0
+
+    # NOTE man I would really love accessors & setters here; consider:
+    #
+    #     set-value! ret $ strdup $ _value src
+    # OR
+    #
+    #     (_value ret) := strdup $ _value src
+    #
+    when (!= (-> src value) nil) do {
+        set! (-> ret value) $ strdup $ -> src value
+    }
+
+    set! (-> ret tag) (-> src tag)
+
 }
 
 def rewrite-tco src:ref[AST] => ref[AST] = {
