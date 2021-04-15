@@ -2,36 +2,40 @@
 
 A quick list of the current `TODO`s.
 
-1. Atop SML/OCaml style modules, look into Mythryl's `API` types
+## Syntax
+
 1. Named constructor vars `Foo m:int n:int`
+1. destructuring bind (and matching the same ^^^)
+1. Make rebinding for idents in `match` forms (`rewrite_match_bind.carml`)
+1. Make sure that things like `y given (> y 10)` are rewritten properly as well
+
+## Semantics
+
 1. Row polymorphism with `row[member1, member2, member3]`
 1. Tuples, and flattening them when used as a return type in Golang
-1. destructuring bind (and matching the same ^^^)
 1. RawDeque (see `labs/rawdeque.carml`) as a test backing for Deques
 1. use RawDeque in specialized form to store a spaghetti stack of environment frames
 1. use the environment frames to support typing (finally)
-1. Make rebinding for idents in `match` forms (`rewrite_match_bind.carml`)
-1. Make sure that things like `y given (> y 10)` are rewritten properly as well
-1. Figure out both type specialization and generics to compiled form
-1. Fusion for `map`, `map!`, `foreach`, and so on.
-1. Variable Length Array (VLA) style
-1. _TEST_: add more complex type tests  
-1. add test runner: parse SExpression output...
 1. Figure out a decent backing for Rust-style deques (possibly implemented from records + arrays)
 1. make `|>` work it would in OCaml/F#
 1. add `.` ala Haskell for "compose"? `f . g` becomes `(f (g x))`
 1. If we are adding those, may as well do full shunting yard and parse things nicely
 1. integrate `$` and `|>` with `$()`
-1. C version: convert `(foo [1 2 3 4])` to `let x:array[int] = [1 2 3 4] in (foo x)`
-1. Runtime, which should be pretty minimal. Look at Zig here, it has a smaller runtime than C!
-1. write an actual inclusion algorithm for the compiler to consume `use`d libraries
-1. OCaml/SML-style Modules, and their application to higher-kinded types
 1. `deque` and memory model
 1. investigate untagged unions (`int | float` as a type) _note_: I like this style: `union[int float]`
-1. Friendlier REPL, with keyboard support, and a simple Logo-style `edit` command
+
+## Modules
+
+1. Atop SML/OCaml style modules, look into Mythryl's `API` types
+1. OCaml/SML-style Modules, and their application to higher-kinded types
+
+## Compile passes
+
+1. Figure out both type specialization and generics to compiled form
+1. Fusion for `map`, `map!`, `foreach`, and so on.
+1. Variable Length Array (VLA) style
 1. in the base C compiler & carML self-hosting one, include a defined list of compiler errors with friendly data
 1. add line numbers to errors
-1. Add sized ints/uints/floats (e.g. `uint8`) as types (what about `U8` or `U64`? that works...)
 1. add nano-pass: a-normal form (ANF)
 1. add nano-pass: lambda lifting
 1. add nano-pass: ANF => SSA
@@ -43,11 +47,21 @@ A quick list of the current `TODO`s.
 1. Tests, both for IR and C
 1. JS, Java, C++ backends, but written in carML itself and using the SExpression output.
 1. WebAssembly backend
+
+## Environment
+
+1. _TEST_: add more complex type tests
+1. add test runner: parse SExpression output...
+1. C version: convert `(foo [1 2 3 4])` to `let x:array[int] = [1 2 3 4] in (foo x)`
+1. Runtime, which should be pretty minimal. Look at Zig here, it has a smaller runtime than C!
+1. write an actual inclusion algorithm for the compiler to consume `use`d libraries
+1. Friendlier REPL, with keyboard support, and a simple Logo-style `edit` command
 1. Interpreter, either ghci style (compiles in another language) or actual interpreter
 1. Symbolic execution engine atop the same (using that paper "From Definitional Interpreters to Symbolic Executors")
 
-And completed items:
+## completed items:
 
+1. **DONE** Add sized ints/uints/floats (e.g. `uint8`) as types (what about `U8` or `U64`? that works...)
 1. **DONE** change `declare` to match how parameters work `@foo: function[int => int]`, `@bar: int`
 1. **DONE** Add Samurai/Ninja as a build system
 1. **DONE** Fix `match` forms that have a call; memoize the call (but need types, sigh)
