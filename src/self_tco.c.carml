@@ -304,20 +304,53 @@ def copy-body src:ref[AST] finalp:bool => ref[AST] = {
     # our source & buffer indices
     var sidx : int = 0
     var bidx : int = 0
+    val srccap : int = (-> src lenchildren)
 
     # NOTE man I would really love accessors & setters here; consider:
     #
-    #     set-value! ret $ strdup $ _value src
+    #     set-value! ret $ hstrdup $ _value src
     # OR
     #
-    #     (_value ret) := strdup $ _value src
+    #     (_value ret) := hstrdup $ _value src
     #
-    when (!= (-> src value) nil) do {
-        set! (-> ret value) $ strdup $ -> src value
-    }
+    # NOTE I just remembered that I handled the `nil` edgecase
+    # in `hstrdup` better than default `strdup`, and besides we
+    # should generally use ones managed by the GC
+    set! (-> ret value) $ hstrdup $ -> src value
 
     set! (-> ret tag) (-> src tag)
 
+    # NOTE what do we actually want to do here?
+    # we need to iterate over the spine of whatever
+    # AST object we have here, and copy it to `buf`,
+    # expanding it out under certain conditions.
+    # there are also certain things we do *not* need
+    # to rewrite. like FOR and WHILE; those we just
+    # need to iterate and copy
+    match (-> src tag) with
+        TCALL => {
+            # NOTE here we need to call `shadow-params`
+            # and then merge the results into the body
+            # of the return; we also need to switch the
+            # return type to be a `TBEGIN` really
+        }
+        TMATCH => 1
+        TIF => 1
+        TWHEN => 1
+        TBEGIN => 1
+        else => 0
+    end
+
+    # NOTE here we just need to copy & flatten the buffer
+    # results into what we're actually returning...
+
+    set! sidx 0
+
+    while (< sidx bidx) do {
+
+    }
+
+    ret
 }
 
 def rewrite-tco src:ref[AST] => ref[AST] = {
