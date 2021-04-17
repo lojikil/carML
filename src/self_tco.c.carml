@@ -292,7 +292,10 @@ def define-shadow-params src:ref[AST] body:ref[AST] => ref[AST] = {
 
 # copy the body whilst simultaneously rewriting any
 # tail calls into a shadow...
-def copy-body src:ref[AST] finalp:bool => ref[AST] = {
+# src: the AST to rewrite
+# self: the function we're rewriting
+# finalp: a boolean signaling if we're in the final position
+def copy-body src:ref[AST] self:ref[AST] finalp:bool => ref[AST] = {
     # so here, we need to:
     # 1. walk the spine
     # 1. if we are at the final member:
@@ -333,11 +336,44 @@ def copy-body src:ref[AST] finalp:bool => ref[AST] = {
             # and then merge the results into the body
             # of the return; we also need to switch the
             # return type to be a `TBEGIN` really
+            # we honestly could just return right here
+            # and exit early...
+            if finalp then {
+                return $ shadow-params src self
+            } else {
+                while (< bidx srccap) do {
+                    set! (get buf bidx) (copy-body (get (-> src children) sidx) self)
+                    set! bidx $ + bidx 1
+                    set! sidx $ + sidx 1
+                }
+            }
         }
         TMATCH => 1
-        TIF => 1
-        TWHEN => 1
-        TBEGIN => 1
+        TIF => {
+            # an `if` form is composed of three members, and the first one,
+            # `<cond>`, can never be TCO'd (obviously)
+            set! (get buf 0) (copy-body (get (-> src children) 0) self false)
+            set! (get buf 1) (copy-body (get (-> src children) 1) self finalp)
+            set! (get buf 2) (copy-body (get (-> src children) 2) self finalp)
+        }
+        TWHEN => {
+            # `when` is obviously the same as `if`, just with one less arm
+            set! (get buf 0) (copy-body (get (-> src children) 0) self false)
+            set! (get buf 1) (copy-body (get (-> src children) 1) self finalp)
+        }
+        TBEGIN => {
+            # we need to iterate over all members of the `begin` form, and if
+            # we are in the final position of the top level *and* the final
+            # member of the `begin`, then we can copy as a TCO
+            while (< bidx srccap) do {
+                if (every finalp (eq? bidx (- srccap 1))) then {
+                    # copy as a final
+                } else {
+                    # copy normally
+                }
+                set! bidx $ + bidx 1
+            }
+        }
         else => 0
     end
 
