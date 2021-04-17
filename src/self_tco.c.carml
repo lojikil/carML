@@ -367,23 +367,33 @@ def copy-body src:ref[AST] self:ref[AST] finalp:bool => ref[AST] = {
             # member of the `begin`, then we can copy as a TCO
             while (< bidx srccap) do {
                 if (every finalp (eq? bidx (- srccap 1))) then {
-                    # copy as a final
+                    set! (get buf bidx) (copy-body (get (-> src children) sidx) self finalp)
                 } else {
-                    # copy normally
+                    set! (get buf bidx) (copy-body (get (-> src children) sidx) self false)
                 }
                 set! bidx $ + bidx 1
+                set! sidx $ + sidx 1
             }
         }
-        else => 0
+        else => {
+            while (< bidx srccap) do {
+                set! (get buf bidx) (copy-body (get (-> src children) sidx) self false)
+                set! bidx $ + bidx 1
+                set! sidx $ + sidx 1
+            }
+        }
     end
 
     # NOTE here we just need to copy & flatten the buffer
     # results into what we're actually returning...
 
     set! sidx 0
+    set! (-> ret lenchildern) bidx
+    set! (-> ret children) (hmalloc $ * bidx $ sizeof ref[AST])
 
     while (< sidx bidx) do {
-
+        set! (get (-> ret children) sidx) (get buf sidx)
+        set! sidx $ + sidx 1
     }
 
     ret
@@ -446,6 +456,10 @@ def rewrite-tco src:ref[AST] => ref[AST] = {
     # return types completely optional (for inference)
     set! (-> ret $ get children 2) (-> src $ get children 2)
     set! (-> ret $ get children 1) params
+
+    # we need to call `copy-body` here, with the param list
+    # as well as the body, but we need to inject a `while`
+    # form into the params...
 
     ret
 }
