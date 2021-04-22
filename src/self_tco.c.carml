@@ -249,14 +249,45 @@ def define-shadow-params src:ref[AST] body:ref[AST] => ref[AST] = {
         set! idx $ + idx 1
     }
 
-    # last step: shrink the array into a hmalloc'd version
+    # penultimate step: shrink the array into a hmalloc'd version
     set! idx 0
     set! (-> ret lenchildren) length
-    set! (-> ret children) (hmalloc $ * length $ sizeof ref[ref[AST]])
+    set! (-> ret children) (hmalloc $ * (+ length 1) $ sizeof ref[ref[AST]])
     while (< idx length) do {
         set! (-> ret $ get children idx) (get vbuf idx)
         set! idx $ + idx 1
     }
+
+    # last step: add the `while` loop
+    # NOTE: this will have to change if we make the leap to loop invariant
+    # motion; for example, we currently generate a `while(1) ...` loop, but
+    # we could have some decent motion there if we do some simple analysis:
+    #
+    #    while true do {
+    #        if (< x 0) then
+    #            (return y)
+    #        else
+    #            (shadow-params ...)
+    #    }
+    #
+    # could instead become...
+    #
+    #    while (>= x 0) do {
+    #        (shadow-params ...)
+    #    }
+    #    return y
+    #
+    # we just need to check which branch we're actually using for the
+    # loop invariant motion really, and negate if it's the `else` arm...
+    # this also can only _really_ work when `if` is the last form, or
+    # if something like a `when` is used to shortcut the loop...
+
+    set! tmp (hmalloc $ sizeof AST)
+    set! (-> tmp tag) TWHILE
+    set! (-> tmp lenchildren) 2
+    set! (-> tmp children) (hmalloc $ * 2 $ sizeof ref[AST])
+    set! (get (-> ret children) length) tmp
+
     ret 
 }
 
