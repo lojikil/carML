@@ -5764,7 +5764,7 @@ llcwalk(AST *head, int level, int final) {
         case TWHEN:
             printf("if(");
             cwalk(head->children[0], 0);
-            printf("){\n");
+            printf(") {\n");
             // there are some ugly extra calls to
             // indent in here, because there's some
             // strange interactions between WHEN and
