@@ -321,6 +321,14 @@ def define-shadow-params src:ref[AST] body:ref[AST] => ref[AST] = {
 #    }
 #}
 
+def make-ident src:string => ref[AST] = {
+    var ret : ref[AST] = (hmalloc $ sizeof AST)
+    set! (-> ret lenchildren) 0
+    set! (-> ret tag) TIDENT
+    set! (-> ret value) $ hstrdup src
+    ret
+}
+
 # copy the body whilst simultaneously rewriting any
 # tail calls into a shadow...
 # src: the AST to rewrite
@@ -339,6 +347,7 @@ def copy-body src:ref[AST] self:ref[AST] finalp:bool => ref[AST] = {
     var sidx : int = 0
     var bidx : int = 0
     val srccap : int = (-> src lenchildren)
+    val srctag : int = (-> src tag)
 
     # NOTE man I would really love accessors & setters here; consider:
     #
@@ -361,7 +370,10 @@ def copy-body src:ref[AST] self:ref[AST] finalp:bool => ref[AST] = {
     # there are also certain things we do *not* need
     # to rewrite. like FOR and WHILE; those we just
     # need to iterate and copy
-    match (-> src tag) with
+    # XXX fix this bug finally... originally was
+    # `(-> src tag)` but had to replace because C
+    # output doesn't work
+    match srctag with
         TCALL => {
             # NOTE here we need to call `shadow-params`
             # and then merge the results into the body
@@ -379,6 +391,21 @@ def copy-body src:ref[AST] self:ref[AST] finalp:bool => ref[AST] = {
                 }
             }
         }
+        TIDENT => {
+            # for an ident, we either want to just copy it wholesale
+            # or turn it into a `(return <source ident>)` for final
+            # cases. Since we already copy the other attributes earlier
+            # in this procedure, we don't really need to do anything
+            # further here in non-final cases
+            when finalp do {
+                set! (-> ret tag) TCALL
+                set! (-> ret lenchildren) 2
+                set! (-> ret children) $ hmalloc $ * 2 $ sizeof ref[AST]
+                set! (get buf 0) $ make-ident "return"
+                set! (get buf 1) $ make-ident $ -> src value
+                set! bidx 2
+            }
+        }
         TMATCH => 1
         TIF => {
             # an `if` form is composed of three members, and the first one,
@@ -386,11 +413,13 @@ def copy-body src:ref[AST] self:ref[AST] finalp:bool => ref[AST] = {
             set! (get buf 0) (copy-body (get (-> src children) 0) self false)
             set! (get buf 1) (copy-body (get (-> src children) 1) self finalp)
             set! (get buf 2) (copy-body (get (-> src children) 2) self finalp)
+            set! bidx 3
         }
         TWHEN => {
             # `when` is obviously the same as `if`, just with one less arm
             set! (get buf 0) (copy-body (get (-> src children) 0) self false)
             set! (get buf 1) (copy-body (get (-> src children) 1) self finalp)
+            set! bidx 2
         }
         TBEGIN => {
             # we need to iterate over all members of the `begin` form, and if
