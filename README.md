@@ -71,16 +71,19 @@ considering that both languages are _not_ derived from existing ML dialects. [Ye
     # note, there is no _real_ reason to use begin
     # form here, but it makes it a bit more pretty.
     def arrayIota1 arr : array[int] fun : function[int => int] = {
-        foreachIndex fn x = (set-array-index! arr (fun x) x) arr
+        foreach-index! fn x = (set-array-index! arr (fun x) x) arr
     }
 
     # same as the above, but without the `{}` block
-    def arrayIota2 arr:array[int] fun : function[int => int] = (foreachIndex fn x = (set-array-index! arr (fun x) x) arr)
+    def arrayIota2 arr:array[int] fun : function[int => int] = (foreach-index! fn x = (set-array-index! arr (fun x) x) arr)
+
+    # but really, all we're doing is mapping some function in place...
+    def arrayIota3 arr:array[int] fun:function[int => int] = (map! fun arr)
 
     def foo x : int => int = (add x 1)
 
     # constant:
-    val f : array[int] = (array 10)
+    val f : array[int] = (make-array 10)
     # variable
     var g : array[int] = [0 1 2 3 4 5 6 7 8 9]
     
