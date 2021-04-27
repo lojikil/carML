@@ -18,7 +18,7 @@ def self-tco? name:string src:ref[AST] => bool = {
     match tag with 
         TDEF => (self-tco? name (-> src $ get children 1))
         TFN => (self-tco? name (-> src $ get children 1))
-        TCALL => (not (strncmp name (-> src $ -> (get children 0) value)))
+        TCALL => (not (strcmp name (-> src $ -> (get children 0) value)))
         TBEGIN => {
             # actually, thinking about it...
             # we don't really need to loop over all forms, just
@@ -49,7 +49,7 @@ def self-tco? name:string src:ref[AST] => bool = {
 
             while (< idx $ -> src lenchildren) do {
                 if (self-tco? name $ -> src $ get children idx) then
-                    true
+                    (return true)
                 else
                     (set! idx $ + idx 2)
             }
@@ -329,6 +329,17 @@ def make-ident src:string => ref[AST] = {
     ret
 }
 
+def make-boolean original-value:int => ref[AST] = {
+    var ret : ref[AST] = (hmalloc $ sizeof AST)
+    set! (-> ret lenchildren) 0
+    set! (-> ret children) nil
+    if (eq? original-value 0) then
+        (set! (-> ret tag) TFALSE)
+    else
+        (set! (-> ret tag) TTRUE)
+    ret
+}
+
 # copy the body whilst simultaneously rewriting any
 # tail calls into a shadow...
 # src: the AST to rewrite
@@ -385,7 +396,7 @@ def copy-body src:ref[AST] self:ref[AST] finalp:bool => ref[AST] = {
                 return $ shadow-params src self
             } else {
                 while (< bidx srccap) do {
-                    set! (get buf bidx) (copy-body (get (-> src children) sidx) self)
+                    set! (get buf bidx) (copy-body (get (-> src children) sidx) self false)
                     set! bidx $ + bidx 1
                     set! sidx $ + sidx 1
                 }
@@ -448,7 +459,7 @@ def copy-body src:ref[AST] self:ref[AST] finalp:bool => ref[AST] = {
     # results into what we're actually returning...
 
     set! sidx 0
-    set! (-> ret lenchildern) bidx
+    set! (-> ret lenchildren) bidx
     set! (-> ret children) (hmalloc $ * bidx $ sizeof ref[AST])
 
     while (< sidx bidx) do {
@@ -460,8 +471,10 @@ def copy-body src:ref[AST] self:ref[AST] finalp:bool => ref[AST] = {
 }
 
 def rewrite-tco src:ref[AST] => ref[AST] = {
-    val params : ref[AST] = (define-shadow-params (-> src $ get children 0) (-> src $ get children 1))
+    val params : ref[AST] = (define-shadow-params (get (-> src children) 0) (get (-> src children) 1))
     var ret : ref[AST] = (hmalloc $ sizeof ref[AST])
+    var body: ref[AST] = (get (-> params children) $ - (-> params lenchildren) 1)
+
     # what we need to do is effectively copy the spine of the original AST
     # form, and replace certain portions with some shadowing components
     # thrown into the spine. so for example:
@@ -511,15 +524,17 @@ def rewrite-tco src:ref[AST] => ref[AST] = {
     # maybe for debug?
     set! (-> ret value) (-> src value)
 
-    set! (-> ret $ get children 0) (-> src $ get children 0)
+    set! (get (-> ret children) 0) (get (-> src children) 0)
     # I know why I did that; I originally was going to make
     # return types completely optional (for inference)
-    set! (-> ret $ get children 2) (-> src $ get children 2)
-    set! (-> ret $ get children 1) params
+    set! (get (-> ret children) 2) (get (-> src children) 2)
+    set! (get (-> ret children) 1) params
 
     # we need to call `copy-body` here, with the param list
-    # as well as the body, but we need to inject a `while`
-    # form into the params...
+    # as well as the body
+
+    set! (get (-> body children) 0) $ make-boolean 1
+    set! (get (-> body children) 1) $ copy-body (get (-> src children) 1) (get (-> src children) 0) false
 
     ret
 }

@@ -31,6 +31,7 @@ A quick list of the current `TODO`s.
 
 ## Compile passes
 
+1. Need to replace manual `sed -e 's/\([a-z]\)\-\([a-z]\)/\1_\2/g'` and `sed -e 's/\?/_p/g'` with `cmung`
 1. Figure out both type specialization and generics to compiled form
 1. Fusion for `map`, `map!`, `foreach`, and so on.
 1. Variable Length Array (VLA) style
