@@ -92,6 +92,7 @@ def make-set-bang ident:ref[AST] value:ref[AST] => ref[AST] = {
 def shadow-params src:ref[AST] impl:ref[AST] => ref[AST] = {
     var ret : ref[AST] = (hmalloc $ sizeof ref[AST])
     val clen: int = (* (-> src lenchildren) 2)
+    val ilen: int = (-> src lenchildren)
     var idx : int = 0
     var sidx : int = 0
     var shadow : ref[AST] = nil
@@ -120,7 +121,7 @@ def shadow-params src:ref[AST] impl:ref[AST] => ref[AST] = {
     # the `.$.` doesn't have to create an implicit closure, but for purposes it treats
     # the two functions as methods that need to be composed...
     # $> maybe?
-    while (< idx clen) do {
+    while (< idx ilen) do {
         # woof, really need to decompose this. Let's break it down:
         # 1. create the shadowed ident
         # 1. grab the parameter's value

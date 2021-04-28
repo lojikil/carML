@@ -75,6 +75,7 @@ AST *
 shadow_params(AST * src, AST * impl){
     AST * ret = hmalloc(sizeof(AST * ));
     const int clen = src->lenchildren * 2;
+    const int ilen = src->lenchildren;
     int idx = 0;
     int sidx = 0;
     AST * shadow = nil;
@@ -83,7 +84,13 @@ shadow_params(AST * src, AST * impl){
     ret->tag = TBEGIN;
     ret->lenchildren = clen;
     ret->children = hmalloc(clen * sizeof(AST * ));
-    while(idx < clen){
+    printf("%%DEBUG-I-SHADOW_PARAMS start\n");
+    printf("src: ");
+    walk(src, 0);
+    printf("\nimpl: ");
+    walk(impl, 0);
+    printf("\n%%DEBUG-I-SHADOW_PARAMS end\n");
+    while(idx < ilen){
         param = get_parameter_ident(impl, sidx);
         shadow = shadow_ident(param);
         result = src->children[sidx];
