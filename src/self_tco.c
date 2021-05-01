@@ -177,7 +177,7 @@ define_shadow_params(AST * src, AST * body){
     }
 
     idx = 0;
-    ret->lenchildren = length;
+    ret->lenchildren = length + 1;
     ret->children = hmalloc((length + 1) * sizeof(AST * * ));
     while(idx < length){
         ret->children[idx] = vbuf[idx];
@@ -189,6 +189,11 @@ define_shadow_params(AST * src, AST * body){
     tmp->lenchildren = 2;
     tmp->children = hmalloc(2 * sizeof(AST * ));
     ret->children[length] = tmp;
+    printf("%%I-DEBUG-DEFSHADOW: start\n");
+    printf("length: %d\n", length);
+    walk(tmp, 0);
+    printf("%%I-DEBUG-DEFSHADOW: end\n");
+
     return ret;
 }
 AST *
@@ -288,6 +293,9 @@ rewrite_tco(AST * src){
     const AST * params = define_shadow_params(src->children[0], src->children[1]);
     AST * ret = hmalloc(sizeof(AST * ));
     AST * body = params->children[params->lenchildren - 1];
+    printf("%%I-REWRITE-TCO: start dump body\n");
+    walk(body, 0);
+    printf("\n%%I-REWRITE-TCO: end\n");
     ret->tag = TDEF;
     ret->lenchildren = 3;
     ret->children = hmalloc(3 * sizeof(AST * * ));

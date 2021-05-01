@@ -252,7 +252,7 @@ def define-shadow-params src:ref[AST] body:ref[AST] => ref[AST] = {
 
     # penultimate step: shrink the array into a hmalloc'd version
     set! idx 0
-    set! (-> ret lenchildren) length
+    set! (-> ret lenchildren) $ + length 1
     set! (-> ret children) (hmalloc $ * (+ length 1) $ sizeof ref[ref[AST]])
     while (< idx length) do {
         set! (-> ret $ get children idx) (get vbuf idx)

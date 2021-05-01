@@ -1,0 +1,4 @@
+#@(#) a simple tail recursive function that can be rewritten to a 
+#@(#) while loop. Meant to test the self-TCO setup
+
+def foo x:int y:int => int = if (<= x 0) then y else (foo (- x 1) (+ x y))
