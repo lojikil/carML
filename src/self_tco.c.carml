@@ -91,10 +91,11 @@ def make-set-bang ident:ref[AST] value:ref[AST] => ref[AST] = {
 # original AST
 def shadow-params src:ref[AST] impl:ref[AST] => ref[AST] = {
     var ret : ref[AST] = (hmalloc $ sizeof ref[AST])
-    val clen: int = (* (-> src lenchildren) 2)
+    val clen: int = (* (- (-> src lenchildren) 1) 2)
     val ilen: int = (-> src lenchildren)
     var idx : int = 0
-    var sidx : int = 0
+    var sidx : int = 1
+    var base : int = 0
     var shadow : ref[AST] = nil
     var param : ref[AST] = nil
     var result: ref[AST] = nil
@@ -126,14 +127,22 @@ def shadow-params src:ref[AST] impl:ref[AST] => ref[AST] = {
         # 1. create the shadowed ident
         # 1. grab the parameter's value
         # 1. create the shadow set `(set! shadowed-name parameter value)`
-        # 1. create the join set `(set! original-name shadowed-name)`
-        set! param $ get-parameter-ident impl sidx
+        set! param $ get-parameter-ident impl idx
         set! shadow $ shadow-ident param
         set! result $ get (-> src children) sidx
-        set! (get (-> ret children) idx) $ make-set-bang shadow result
-        set! (get (-> ret children) $ + idx 1) $ make-set-bang param shadow
-        set! idx $ + idx 2
+        set! idx $ + idx 1
         set! sidx $ + sidx 1
+    }
+
+    set! base idx
+    set! idx 0
+
+    # 1. create the join set `(set! original-name shadowed-name)`
+    while (< idx ilen) do {
+        set! param $ get-parameter-ident impl idx
+        set! shadow $ shadow-ident param
+        set! (get (-> ret children) $ + idx base) $ make-set-bang param shadow
+        set! idx $ + idx 1
     }
     ret
 }
