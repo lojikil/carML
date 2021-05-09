@@ -75,8 +75,8 @@ make_set_bang(AST * ident, AST * value){
 AST * 
 shadow_params(AST * src, AST * impl){
     AST * ret = hmalloc(sizeof(AST * ));
-    const int clen = src->lenchildren - 1 * 2;
-    const int ilen = src->lenchildren;
+    const int clen = (src->lenchildren - 1) * 2;
+    const int ilen = impl->lenchildren;
     int idx = 0;
     int sidx = 1;
     int base = 0;
@@ -86,13 +86,17 @@ shadow_params(AST * src, AST * impl){
     ret->tag = TBEGIN;
     ret->lenchildren = clen;
     ret->children = hmalloc(clen * sizeof(AST * ));
+    printf("dying here? %d\n", __LINE__);
     while(idx < ilen){
+        printf("idx: %d\n", idx);
         param = get_parameter_ident(impl, idx);
         shadow = shadow_ident(param);
         result = src->children[sidx];
+        ret->children[idx] = make_set_bang(shadow, result);
         idx = idx + 1;
         sidx = sidx + 1;
     }
+    printf("dying here? %d\n", __LINE__);
 
     base = idx;
     idx = 0;
@@ -102,14 +106,20 @@ shadow_params(AST * src, AST * impl){
         ret->children[idx + base] = make_set_bang(param, shadow);
         idx = idx + 1;
     }
+    printf("dying here? %d\n", __LINE__);
+    walk(ret, 0);
+    printf("\n");
 
     return ret;
 }
 char *
 shadow_name(char * name){
-    char * ret = hmalloc(3 + sizeof(char) * strlen(name));
+    int len = 4 + strlen(name);
+    char * ret = hmalloc(4 + sizeof(char) * strlen(name));
     stpcpy(ret, name);
     strcat(ret, "_sh");
+    ret[len] = '\0';
+    printf("shadow-name: %s\n", ret);
     return ret;
 }
 char *
@@ -163,6 +173,9 @@ define_shadow_params(AST * src, AST * body){
         tmp->children = hmalloc(2 * sizeof(AST * ));
         tmp->children[0] = get_parameter_ident(src, idx);
         tmp->children[1] = get_parameter_type(src, idx);
+        printf("dump tmp:\n");
+        walk(tmp, 0);
+        printf("\n");
         vbuf[idx] = tmp;
         idx = idx + 1;
     }
@@ -183,6 +196,9 @@ define_shadow_params(AST * src, AST * body){
     ret->lenchildren = length + 1;
     ret->children = hmalloc(length + 1 * sizeof(AST * * ));
     while(idx < length){
+        printf("adding vbuf\n");
+        walk(vbuf[idx], 0);
+        printf("\n");
         ret->children[idx] = vbuf[idx];
         idx = idx + 1;
     }
@@ -192,6 +208,10 @@ define_shadow_params(AST * src, AST * body){
     tmp->lenchildren = 2;
     tmp->children = hmalloc(2 * sizeof(AST * ));
     ret->children[length] = tmp;
+
+    printf("dumping ret:\n");
+    walk(ret, 0);
+    printf("\n");
     return ret;
 }
 AST * 
@@ -290,6 +310,18 @@ rewrite_tco(AST * src){
     const AST * params = define_shadow_params(src->children[0], src->children[1]);
     AST * ret = hmalloc(sizeof(AST * ));
     AST * body = params->children[params->lenchildren - 1];
+    AST *tmp = nil;
+    printf("%%DEBUG: walk params\n");
+    printf("params->tag: %d, params->lenchildren = %d\n", params->tag, params->lenchildren);
+    for(int cidx = 0; cidx < params->lenchildren; cidx++) {
+        tmp = params->children[cidx]; 
+        printf("params[%d]: tag: %d, lenchildren: %d\n", cidx, tmp->tag, tmp->lenchildren);
+        printf("walking:\n");
+        walk(tmp, 0);
+        printf("\n");
+    }
+    walk(params);
+    printf("\n");
     ret->tag = TDEF;
     ret->lenchildren = 3;
     ret->children = hmalloc(3 * sizeof(AST * * ));
@@ -297,7 +329,13 @@ rewrite_tco(AST * src){
     ret->children[0] = src->children[0];
     ret->children[2] = src->children[2];
     ret->children[1] = params;
+    printf("%%DEBUG: walk params\n");
+    printf("params->tag: %d, params->lenchildren = %d\n", params->tag, params->lenchildren);
+    walk(params);
+    printf("\n%%DEBUG: walk body\n");
     body->children[0] = make_boolean(1);
     body->children[1] = copy_body(src->children[1], src->children[0], 1);
+    walk(body);
+    printf("\n");
     return ret;
 }

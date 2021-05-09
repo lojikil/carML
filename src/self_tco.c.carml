@@ -92,7 +92,7 @@ def make-set-bang ident:ref[AST] value:ref[AST] => ref[AST] = {
 def shadow-params src:ref[AST] impl:ref[AST] => ref[AST] = {
     var ret : ref[AST] = (hmalloc $ sizeof ref[AST])
     val clen: int = (* (- (-> src lenchildren) 1) 2)
-    val ilen: int = (-> src lenchildren)
+    val ilen: int = (-> impl lenchildren)
     var idx : int = 0
     var sidx : int = 1
     var base : int = 0
@@ -130,6 +130,7 @@ def shadow-params src:ref[AST] impl:ref[AST] => ref[AST] = {
         set! param $ get-parameter-ident impl idx
         set! shadow $ shadow-ident param
         set! result $ get (-> src children) sidx
+        set! (get (-> ret children) idx) $ make-set-bang shadow result
         set! idx $ + idx 1
         set! sidx $ + sidx 1
     }
@@ -412,6 +413,7 @@ def copy-body src:ref[AST] self:ref[AST] finalp:bool => ref[AST] = {
                 }
             }
         }
+        # TODO we have to do the same here for all basic types as well...
         TIDENT => {
             # for an ident, we either want to just copy it wholesale
             # or turn it into a `(return <source ident>)` for final
@@ -543,7 +545,7 @@ def rewrite-tco src:ref[AST] => ref[AST] = {
     # we need to call `copy-body` here, with the param list
     # as well as the body
 
-    set! (get (-> body children) 0) $ make-boolean 1
+    #set! (get (-> body children) 0) $ make-boolean 1
     set! (get (-> body children) 1) $ copy-body (get (-> src children) 1) (get (-> src children) 0) false
 
     ret
