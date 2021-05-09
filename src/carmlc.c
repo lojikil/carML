@@ -210,6 +210,14 @@ main(int ac, char **al) {
                     tc_flagp = !tc_flagp;
                     printf("[!] turning TCO detection: %s", (tc_flagp ? "on" : "off"));
                 } else if(tmp->tag != TNEWL) {
+                    if(tc_flagp && tmp->tag == TDEF) {
+                        printf("\n[!] this function is a tail call? %s", (self_tco_p(tmp->value, tmp)) ? "yes" : "no");
+                        if(self_tco_p(tmp->value, tmp)) {
+                            printf("... rewriting\n");
+                            tmp = rewrite_tco(tmp);
+                        }
+                    }
+
                     if(walkflag == 1) {
                         cwalk(tmp, 0);
                     } else if(walkflag == 2) {
@@ -218,11 +226,6 @@ main(int ac, char **al) {
                         walk(tmp, 0);
                     }
 
-                    if(tc_flagp && tmp->tag == TDEF) {
-                        printf("\n[!] this function is a tail call? %s", (self_tco_p(tmp->value, tmp)) ? "yes" : "no");
-                        printf("\n[!] self-TCO would look like:\n");
-                        walk(rewrite_tco(tmp), 0);
-                    }
                 }
                 printf("\n");
             }
