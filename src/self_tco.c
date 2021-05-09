@@ -182,8 +182,12 @@ define_shadow_params(AST * src, AST * body){
 
     length = idx;
     idx = 0;
+    printf("length: %d\n", length);
     while(idx < body->lenchildren){
         tmp = body->children[idx];
+        printf("tmp (%d):", idx);
+        walk(tmp, 0);
+        printf("\n");
         if((tmp->tag == TVAR) || (tmp->tag == TVAL)) {
             vbuf[length] = tmp;
             length = length + 1;
@@ -192,9 +196,11 @@ define_shadow_params(AST * src, AST * body){
         idx = idx + 1;
     }
 
+    printf("length: %d\n", length);
+
     idx = 0;
     ret->lenchildren = length + 1;
-    ret->children = hmalloc(length + 1 * sizeof(AST * * ));
+    ret->children = hmalloc((length + 1) * sizeof(AST **));
     while(idx < length){
         printf("adding vbuf\n");
         walk(vbuf[idx], 0);
