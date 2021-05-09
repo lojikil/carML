@@ -10,3 +10,4 @@ staging/*
 .DS_Store
 .ninja_deps
 .ninja_log
+dump
