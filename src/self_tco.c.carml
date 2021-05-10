@@ -545,7 +545,7 @@ def rewrite-tco src:ref[AST] => ref[AST] = {
     # we need to call `copy-body` here, with the param list
     # as well as the body
 
-    #set! (get (-> body children) 0) $ make-boolean 1
+    set! (get (-> body children) 0) $ make-boolean 1
     set! (get (-> body children) 1) $ copy-body (get (-> src children) 1) (get (-> src children) 0) false
 
     ret
