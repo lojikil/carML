@@ -215,6 +215,8 @@ main(int ac, char **al) {
                         if(self_tco_p(tmp->value, tmp)) {
                             printf("... rewriting\n");
                             tmp = rewrite_tco(tmp);
+                        } else {
+                            printf("... skipping\n");
                         }
                     }
 
