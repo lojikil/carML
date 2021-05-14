@@ -123,6 +123,7 @@ int issyntacticform(int);
 int isprimitivevalue(int);
 int isvalueform(int);
 int iscoperator(const char *);
+int isprimitiveaccessor(const char *);
 char *typespec2c(AST *, char *, char *, int);
 char *typespec2g(AST *, char *, char *, int);
 char *findtype(AST *);
@@ -460,6 +461,19 @@ iscoperator(const char *potential) {
     }
 
     return -1;
+}
+
+int
+isprimitiveaccessor(const char *potential) {
+    if(!strncmp(potential, "get", 3)) {
+        return YES;
+    } else if(!strncmp(potential, ".", 1)) {
+        return YES;
+    } else if(!strncmp(potential, "->", 2)) {
+        return YES;
+    } else {
+        return NO;
+    }
 }
 
 int
@@ -5636,7 +5650,7 @@ generate_golang_type(AST *head, const char *parent) {
 
 void
 llcwalk(AST *head, int level, int final) {
-    int idx = 0, opidx = -1;
+    int idx = 0, opidx = -1, llflag = 0;
     char *tbuf = nil, buf[512] = {0}, rbuf[512] = {0}, *rtbuf = nil;
     AST *ctmp = nil, *htmp = nil;
 
@@ -6163,20 +6177,45 @@ llcwalk(AST *head, int level, int final) {
                         }
                     }
                 } else {
-                    cwalk(head->children[1], 0);
                     if(!strncmp(head->children[0]->value, ".", 2)) {
+                        cwalk(head->children[1], 0);
                         printf("%s", coperators[opidx]);
                         cwalk(head->children[2], 0);
                     } else if(!strncmp(head->children[0]->value, "->", 2)) {
+                        cwalk(head->children[1], 0);
                         printf("%s", coperators[opidx]);
                         cwalk(head->children[2], 0);
                     } else if(!strncmp(head->children[0]->value, "get", 3)) {
+                        cwalk(head->children[1], 0);
                         printf("[");
                         cwalk(head->children[2], 0);
                         printf("]");
                     } else {
+                        // NOTE the simplest way to handle this is just to wrap all
+                        // expressions in `()`, but we can also make it a little more
+                        // natural by detecting what sort of expression we have on each
+                        // side of the call, and going from there; it makes the code
+                        // here a little more dense, but makes the code that the enduser
+                        // sees a little nicer
+                        llflag = (head->children[1]->tag == TCALL && !isprimitiveaccessor(head->children[1]->children[0]->value));
+                        if(llflag){
+                            printf("(");
+                        }
+                        cwalk(head->children[1], 0);
+                        if(llflag){
+                            printf(")");
+                        }
                         printf(" %s ", coperators[opidx]);
+                        llflag = (head->children[2]->tag == TCALL
+                                  && !isprimitiveaccessor(head->children[2]->children[0]->value)
+                                  && !iscoperator(head->children[2]->children[0]->value));
+                        if(llflag){
+                            printf("(");
+                        }
                         cwalk(head->children[2], 0);
+                        if(llflag){
+                            printf(")");
+                        }
                     }
                 }
             } else if(head->lenchildren == 1) {
