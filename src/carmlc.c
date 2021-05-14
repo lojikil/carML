@@ -6208,7 +6208,7 @@ llcwalk(AST *head, int level, int final) {
                         printf(" %s ", coperators[opidx]);
                         llflag = (head->children[2]->tag == TCALL
                                   && !isprimitiveaccessor(head->children[2]->children[0]->value)
-                                  && !iscoperator(head->children[2]->children[0]->value));
+                                  && (iscoperator(head->children[2]->children[0]->value) > 0));
                         if(llflag){
                             printf("(");
                         }
