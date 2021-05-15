@@ -6418,7 +6418,7 @@ llcwalk(AST *head, int level, int final) {
 
 void
 llgwalk(AST *head, int level, int final) {
-    int idx = 0, opidx = -1, guard_check = NO;
+    int idx = 0, opidx = -1, guard_check = NO, llflag = 0;
     char *tbuf = nil, buf[512] = {0};
     AST *ctmp = nil, *htmp = nil;
 
@@ -6887,20 +6887,40 @@ llgwalk(AST *head, int level, int final) {
                         }
                     }
                 } else {
-                    gwalk(head->children[1], 0);
                     if(!strncmp(head->children[0]->value, ".", 2)) {
+                        gwalk(head->children[1], 0);
                         printf("%s", coperators[opidx]);
                         gwalk(head->children[2], 0);
                     } else if(!strncmp(head->children[0]->value, "->", 2)) {
+                        gwalk(head->children[1], 0);
                         printf("%s", coperators[opidx]);
                         gwalk(head->children[2], 0);
                     } else if(!strncmp(head->children[0]->value, "get", 3)) {
+                        gwalk(head->children[1], 0);
                         printf("[");
                         gwalk(head->children[2], 0);
                         printf("]");
                     } else {
+                        llflag = (head->children[1]->tag == TCALL
+                                  && !isprimitiveaccessor(head->children[1]->children[0]->value));
+                        if(llflag){
+                            printf("(");
+                        }
+                        gwalk(head->children[1], 0);
+                        if(llflag){
+                            printf(")");
+                        }
                         printf(" %s ", coperators[opidx]);
+                        llflag = (head->children[2]->tag == TCALL
+                                  && !isprimitiveaccessor(head->children[2]->children[0]->value)
+                                  && (iscoperator(head->children[2]->children[0]->value) > 0));
+                        if(llflag){
+                            printf("(");
+                        }
                         gwalk(head->children[2], 0);
+                        if(llflag){
+                            printf(")");
+                        }
                     }
                 }
             } else if(head->lenchildren == 1) {
