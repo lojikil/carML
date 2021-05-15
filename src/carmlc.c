@@ -1040,7 +1040,17 @@ next(FILE *fdin, char *buf, int buflen) {
             case ';':
                 return TSEMI;
             case ':':
-                return TCOLON;
+                cur = fgetc(fdin);
+
+                if(cur == '=') {
+                    return TWALRUS;
+                } else if (cur == ':') {
+                    return TMODNS;
+                } else {
+                    ungetc(cur, fdin);
+                    return TCOLON;
+                }
+                break;
             case '@':
                 return TDECLARE;
             case '#':
@@ -4904,6 +4914,8 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
         case TFLOATT:
         case TBOOLT:
         case TCOLON:
+        case TWALRUS:
+        case TMODNS:
         case TSEMI:
         case TFATARROW:
         case TPIPEARROW:
