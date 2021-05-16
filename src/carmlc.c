@@ -4054,6 +4054,24 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                                 idx = flag;
                                 dprintf("idx == %d, flag == %d\n", idx, flag);
                                 vectmp[tidx] = res;
+                            } else if(vectmp[tidx]->tag == TMODNS) {
+                                // NOTE we need to collapse a `::` name into a qualified named
+                                // that we can look up from a module. This means we need to
+                                // turn anything connected by `::` into a qualified name...
+                                // I can think of three ideas here:
+                                //
+                                // 1. just smoosh them into a string, and parse again later
+                                // 1. nest them arbitrarily, and pull them from the nested set
+                                // 1. treat them like we do types, and add the name to the back
+                                //
+                                // I think the last one is the best idea, because we can just treat
+                                // them like a list of names we need to resolve, in the even that
+                                // people end up nesting modules, but we don't need to parse them
+                                // again like the first answer would
+                                //
+                                // so, in that case, `Foo::Bar::some-call` would become:
+                                // `(qualified-ident Foo Bar some-call)`
+                                dprintf("module namespace collapse into qualified ident\n");
                             }
                         }
                         tcall->tag = TCALL;
