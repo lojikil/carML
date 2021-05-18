@@ -357,7 +357,7 @@ isbuiltincomplextypeast(int tag) {
     switch(tag) {
         case TARRAY:
         case TDEQUET:
-		case TTUPLET:
+        case TTUPLET:
         case TFUNCTIONT:
         case TPROCEDURET:
         // NOTE:
@@ -385,7 +385,7 @@ iscomplextypeast(int tag) {
     switch(tag) {
         case TARRAY:
         case TDEQUET:
-		case TTUPLET:
+        case TTUPLET:
         case TFUNCTIONT:
         case TPROCEDURET:
         case TCOMPLEXTYPE:
@@ -1299,7 +1299,7 @@ next(FILE *fdin, char *buf, int buflen) {
                                     substate = LL0;
                                     break;
                                 case 'm':
-                                    substate = LMATCH0;
+                                    substate = LM0;
                                     break;
                                 case 'o':
                                     substate = LOF0;
@@ -2652,7 +2652,7 @@ next(FILE *fdin, char *buf, int buflen) {
                                 substate = LIDENT0;
                             }
                             break;
-            			case LPROCEDURET1:
+                        case LPROCEDURET1:
                             if(cur == 'c') {
                                 substate = LPROCEDURET2;
                             } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
@@ -2663,7 +2663,7 @@ next(FILE *fdin, char *buf, int buflen) {
                                 substate = LIDENT0;
                             }
                             break;
-            			case LPROCEDURET2:
+                        case LPROCEDURET2:
                             if(cur == 'e') {
                                 substate = LPROCEDURET3;
                             } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
@@ -2674,7 +2674,7 @@ next(FILE *fdin, char *buf, int buflen) {
                                 substate = LIDENT0;
                             }
                             break;
-            			case LPROCEDURET3:
+                        case LPROCEDURET3:
                             if(cur == 'd') {
                                 substate = LPROCEDURET4;
                             } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
@@ -2685,7 +2685,7 @@ next(FILE *fdin, char *buf, int buflen) {
                                 substate = LIDENT0;
                             }
                             break;
-            			case LPROCEDURET4:
+                        case LPROCEDURET4:
                             if(cur == 'u') {
                                 substate = LPROCEDURET5;
                             } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
@@ -2696,7 +2696,7 @@ next(FILE *fdin, char *buf, int buflen) {
                                 substate = LIDENT0;
                             }
                             break;
-            			case LPROCEDURET5:
+                        case LPROCEDURET5:
                             if(cur == 'r') {
                                 substate = LPROCEDURET6;
                             } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
@@ -2707,7 +2707,7 @@ next(FILE *fdin, char *buf, int buflen) {
                                 substate = LIDENT0;
                             }
                             break;
-            			case LPROCEDURET6:
+                        case LPROCEDURET6:
                             if(cur == 'e') {
                                 substate = LPROCEDURET7;
                             } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
@@ -2718,7 +2718,7 @@ next(FILE *fdin, char *buf, int buflen) {
                                 substate = LIDENT0;
                             }
                             break;
-            			case LPROCEDURET7:
+                        case LPROCEDURET7:
                             if(isident(cur)) {
                                 substate = LIDENT0;
                             }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
@@ -2729,8 +2729,8 @@ next(FILE *fdin, char *buf, int buflen) {
                                 return TERROR;
                             }
                             break;
-						case LP0:
-						    if(cur == 'o') {
+                        case LP0:
+                            if(cur == 'o') {
                                 substate = LPOLY1;
                             } else if(cur == 'r') {
                                 substate = LPROCEDURET0;
@@ -2993,9 +2993,11 @@ next(FILE *fdin, char *buf, int buflen) {
                                 return TERROR;
                             }
                             break;
-                        case LMATCH0: 
+                        case LM0:
                             if(cur == 'a') {
                                 substate = LMATCH1;
+                            } else if (cur == 'o') {
+                                substate = LMODULE1;
                             } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
                                 ungetc(cur, fdin);
                                 buf[idx - 1] = '\0';
@@ -3043,6 +3045,72 @@ next(FILE *fdin, char *buf, int buflen) {
                             }else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
                                 ungetc(cur, fdin);
                                 return TMATCH;
+                            } else {
+                                strncpy(buf, "malformed identifier", 512);
+                                return TERROR;
+                            }
+                            break;
+                        case LMODULE0:
+                            if(cur == 'o') {
+                                substate = LMODULE1;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LMODULE1:
+                            if(cur == 'd') {
+                                substate = LMODULE2;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LMODULE2:
+                            if(cur == 'u') {
+                                substate = LMODULE3;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LMODULE3:
+                            if(cur == 'l') {
+                                substate = LMODULE4;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LMODULE4:
+                            if(cur == 'e') {
+                                substate = LMODULE5;
+                            } else if(iswhite(cur) || isbrace(cur) || cur == '\n') {
+                                ungetc(cur, fdin);
+                                buf[idx - 1] = '\0';
+                                return TIDENT;
+                            } else {
+                                substate = LIDENT0;
+                            }
+                            break;
+                        case LMODULE5:
+                            if(isident(cur)) {
+                                substate = LIDENT0;
+                            } else if(iswhite(cur) || cur == '\n' || isbrace(cur)) {
+                                ungetc(cur, fdin);
+                                return TMODULE;
                             } else {
                                 strncpy(buf, "malformed identifier", 512);
                                 return TERROR;
