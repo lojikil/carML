@@ -14,6 +14,10 @@ for t in tar:
     idx += 1
     print """    if(cur == '{0}') {{
         state = {1}{2};
+    }} else if(iswhite(cur) || cur == '\\n' || isbrace(cur)) {{
+        ungetc(cur, fdin);
+        buf[idx - 1] = '\\0';
+        return TIDENT;
     }} else {{
         state = LIDENT0;
     }}
