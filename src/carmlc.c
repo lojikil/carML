@@ -4064,6 +4064,26 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
             head->children[2] = sometmp->right;
 
             return ASTRight(head);
+        case TMODULE:
+            head = (AST *)hmalloc(sizeof(AST));
+            head->tag = TMODULE;
+            head->lenchildren = 2;
+            head->children = (AST **)hmalloc(sizeof(AST *));
+            sometmp = readexpression(fdin);
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else if(sometmp->right->tag != TTAG) {
+                return ASTLeft(0, 0, "module declarations *must* be followed by a tag");
+            }
+            head->children[0] = sometmp->right;
+            sometmp = readexpression(fdin);
+            if(sometmp->tag == ASTLEFT) {
+                return sometmp;
+            } else if(sometmp->right->tag != TBEGIN) {
+                return ASTLeft(0, 0, "module name *must* be followed by a BEGIN form");
+            }
+            head->children[1] = sometmp->right;
+            return ASTRight(head);
         case TBEGIN:
             while(1) {
                 //debugln;
@@ -5626,6 +5646,11 @@ walk(AST *head, int level) {
                 printf(" ");
                 walk(head->children[1], 0);
             }
+            printf(")");
+            break;
+        case TMODULE:
+            printf("(module %s\n", head->children[0]->value);
+            walk(head->children[1], level + 1);
             printf(")");
             break;
         case TBEGIN:

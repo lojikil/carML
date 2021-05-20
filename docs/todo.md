@@ -28,6 +28,25 @@ A quick list of the current `TODO`s.
 
 1. Atop SML/OCaml style modules, look into Mythryl's `API` types
 1. OCaml/SML-style Modules, and their application to higher-kinded types
+1. Figure out why this is breaking parameter lists:
+
+```
+>>> module Foo {
+    def bar x:int y:int => int = (+ x (+ y 10))
+    def baz x:int => int = (+ x 10)
+}
+(module Foo
+    (begin
+        (define bar         (parameter-list )
+    (returns (type integer))
+            (call (identifier +) (identifier x) (call (identifier +) (identifier y) (integer 10))))
+        (define baz         (parameter-list )
+    (returns (type integer))
+            (call (identifier +) (identifier x) (integer 10)))))
+```
+    - it seems like any `def` form in a `begin` is breaking parameter lists?
+    - ah, turning on C output, it looks like it's just broken for SExpression output...
+    - same in Golang, it looks fine
 
 ## Compile passes
 
