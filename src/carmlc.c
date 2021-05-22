@@ -5406,7 +5406,7 @@ walk(AST *head, int level) {
             break;
         case TPARAMLIST:
             printf("(parameter-list ");
-            for(;idx < head->lenchildren; idx++) {
+            for(idx = 0;idx < head->lenchildren; idx++) {
                 walk(head->children[idx], 0); 
                 if(idx < (head->lenchildren - 1)){
                     printf(" ");
