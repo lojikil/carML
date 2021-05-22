@@ -933,22 +933,36 @@ typespec2g(AST *typespec, char *dst, char *name, int len) {
                 flag = 1;
                 strncat(dst, "struct {", 8);
                 idx = 1;
+            } else if(typespec->children[0]->tag == TFUNCTIONT || typespec->children[0]->tag == TPROCEDURET) {
+                strncat(dst, "func (", 6);
+                flag = 2;
+                idx = 1;
+            } else {
+                idx = 0;
             }
 
             for(; idx < typespec->lenchildren; idx ++) {
                 typespec2g(typespec->children[idx], tmpbuf, nil, 32);
                 strncat(dst, tmpbuf, 32);
-                if(flag) {
+                if(flag == 1) {
                     strncat(dst, "; ", 2);
+                } else if(flag == 2) {
+                    if(typespec->children[0]->tag == TFUNCTIONT && idx == (typespec->lenchildren - 2)) {
+                        strncat(dst, ") ", 2);
+                    } else if (idx < (typespec->lenchildren - 1)) {
+                        strncat(dst, ", ", 2);
+                    }
                 } else if(typespec->children[idx]->tag != TARRAY && typespec->children[idx]->tag != TREF){
                     strncat(dst, " ", 1);
                 }
                 tmpbuf[0] = nul;
             }
 
-            if(flag) {
+            if(flag == 1) {
                 flag = 0;
                 strncat(dst, "}", 1);
+            } else if(flag == 2 && typespec->children[0]->tag == TPROCEDURET) {
+                strncat(dst, ")", 1);
             }
             break;
         default:
