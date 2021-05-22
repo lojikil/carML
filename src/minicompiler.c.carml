@@ -1,0 +1,53 @@
+#@(#) a miniature compiler for carML, written in carML
+#@(#) meant to get us over the hump and actually be able
+#@(#) to do simple things like check if a function was
+#@(#) defined when producing code, and a nicer REPL
+#@(#) this also should allow us to do other nicer
+#@(#) things in the compiler, like dump bindings for
+#@(#) all defined functions
+
+# build a spaghetti stack of environment frames
+# this would be nicer if we had two things:
+#
+# . vecdeques
+# . tries
+#
+# if we had the first, we wouldn't need to track
+# anything more about the object other than the
+# vector, and if we had the second we could do
+# faster lookups; currently we will have to iterate
+# over the entire memberlist to find a match
+
+record EnvFrame {
+    curfunc : int
+    lenfuncs : int
+    funcs : array[ref[AST]]
+    curval : int
+    lenvals : int
+    vals : array[ref[AST]]
+    curvar : int
+    lenvars : int
+    vars : array[ref[AST]]
+    currec : int
+    lenrecs : int
+    recs : array[ref[AST]]
+    curtype : int
+    lentypes: int
+    types: array[ref[AST]]
+    parent: ref[EnvFrame]
+}
+
+# a miniature compiler; basically just collects things together
+# and stores them, but makes sure we have resolved all references
+#
+# for example, if we reference a variable `bar` in function `foo`,
+# minicompile will warn if `bar` hasn't been defined in the environment
+def minicompile src:ref[AST] env:ref[EnvFrame] => int = {
+
+}
+
+# given an environment, dump the entirety of our output
+# to stdout, in whatever destination language we request
+def minicompileworld env:ref[EnvFrame] => int = {
+
+}

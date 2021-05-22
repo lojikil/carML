@@ -4,6 +4,7 @@
  * @(#) coördinates the general flow of the system
 */
 #include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -133,19 +134,59 @@ main(int ac, char **al) {
     ASTEither *ret = nil;
     AST *tmp = nil;
     FILE *fdin = nil;
-    int walkflag = 0, tc_flagp = 0;
+    int walkflag = 0, tc_flagp = 0, c_flagp = 0, ch = 0;
     GC_INIT();
 
     if(ac > 1) {
-        if((fdin = fopen(al[1], "r")) == nil) {
-            printf("cannot open file \"%s\"\n", al[1]);
-            return 1;
+        while((ch = getopt(ac, al, "scgmtiVvf:h")) != -1) {
+            switch(ch) {
+                case 's':
+                    walkflag = 0;
+                    break;
+                case 'c':
+                    walkflag = 1;
+                    break;
+                case 'g':
+                    walkflag = 2;
+                    break;
+                case 'm':
+                    c_flagp = 1;
+                    break;
+                case 't':
+                    tc_flagp = 1;
+                    break;
+                case 'i':
+                    // eventually this should be for dumping interfaces from
+                    // the file definition only...
+                    break;
+                case 'V':
+                    printf("carML/C 2021.2\n");
+                    printf("(c) 2016-2021 lojikil, released under the ISC License.\n");
+                    return 0;
+                case 'f':
+                    if((fdin = fopen(optarg, "r")) == nil) {
+                        printf("cannot open file \"%s\"\n", optarg);
+                        return 1;
+                    }
+                    break;
+                case '?':
+                case 'h':
+                default:
+                    printf("carml/C: the carML compiler\n");
+                    printf("usage:\n-h prints this help\n-s SExpression output (default)\n");
+                    printf("-c turns on C output\n-g turns on Golang output\n");
+                    printf("-m turns on the minicompiler\n-t turns on self-TCO\n");
+                    printf("-V display version and exit\n-f the file to be compiled\n");
+                    return 0;
+                    break;
+            }
         }
-        if(ac > 2 && !strncmp(al[2], "+c", 2)) {
-            walkflag = 1;
-        } else if(ac > 2 && !strncmp(al[2], "+g", 2)) {
-            walkflag = 2;
+
+        if(fdin == nil) {
+            printf("no file specified; must use `-f` to specify a target file\n");
+            return 2;
         }
+
         do {
             ret = readexpression(fdin);
             if(ret->tag == ASTLEFT) {
@@ -174,10 +215,11 @@ main(int ac, char **al) {
  / __/ _` | '__| |\\/| || |    \n\
 | (_| (_| | |  | |  | || |____\n\
  \\___\\__,_|_|  \\_|  |_/\\_____/\n");
-        printf("\t\tcarML/C 2020.3\n");
+        printf("\t\tcarML/C 2021.2\n");
         printf("(c) 2016-2021 lojikil, released under the ISC License.\n\n");
         printf("%%c - turns on C code generation\n%%g - turns on Golang generation\n%%quit/%%q - quits\n");
         printf("%%dir - dumps the current execution environment\n%%t/%%tco - turns on/off tail call detection\n");
+        printf("%%m - turns on the minicompiler\n%%M - compiles the entire known world with the minicompiler\n");
         do {
             printf(">>> ");
             ret = readexpression(stdin);
@@ -197,6 +239,9 @@ main(int ac, char **al) {
                 } else if(tmp->tag == TIDENT && !strncmp(tmp->value, "%c", 2)) {
                     walkflag = !walkflag;
                     printf("[!] C generation is: %s", (walkflag ? "on" : "off"));
+                } else if(tmp->tag == TIDENT && !strncmp(tmp->value, "%m", 2)) {
+                    c_flagp = !c_flagp;
+                    printf("[!] minicompiler is: %s", (c_flagp ? "on" : "off"));
                 } else if(tmp->tag == TIDENT && !strncmp(tmp->value, "%g", 2)) {
                     if(walkflag != 2) {
                         walkflag = 2;
