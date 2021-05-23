@@ -34,7 +34,53 @@ record EnvFrame {
     curtype : int
     lentypes: int
     types: array[ref[AST]]
+    curdec : int
+    lendecs: int
+    decls: array[ref[AST]]
+    curmod : int
+    lenmods: int
+    mods: array[ref[AST]]
     parent: ref[EnvFrame]
+}
+
+# add an environment frame to the spaghetti stack
+def new-env-frame src:ref[EnvFrame] => ref[EnvFrame] = {
+
+}
+
+# add an AST to the correct place
+def add-member! src:ref[AST] dst:ref[EnvFrame] => bool = {
+    # I *reallllllllly* want accessors...
+    val tag : int = (-> src tag)
+    # also, I reaaaaaaally need to fix that `match` function
+    # call bug
+    match tag with
+        TMODULE => 1
+        TDEF => 1
+        TVAL => 1
+        TVAR => 1
+        TTYPE => 1
+        TPOLY => 1
+        TDECLARE => 1
+        else => 0
+    end
+}
+
+# check if a function is defined either as our curent functions
+# or as our current declarations
+def function-defined? src:ref[AST] env:ref[EnvFrame] => bool = {
+
+}
+
+# should start with a simple type checker, to make sure we're
+# roughly not violating type guarantees
+def type-check src:ref[AST] env:ref[EnvFrame] => bool = {
+
+}
+
+# make sure that a set (`set!` or `:=`) isn't breaking const guarantees
+def const-check src:ref[AST] env:ref[EnvFrame] => bool = {
+
 }
 
 # a miniature compiler; basically just collects things together
