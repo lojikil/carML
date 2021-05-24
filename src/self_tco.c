@@ -24,7 +24,14 @@ int
 self_tco_p(const char * name, AST * src){
     int res = 0;
     int idx = 0;
-    const int tag = src->tag;
+    int tag = 0;
+
+    if(src == NULL) {
+        return 0;
+    } else {
+        tag = src->tag;
+    }
+
     if(tag == TDEF) {
         return self_tco_p(name, src->children[1]);
     } else if(tag == TFN) {

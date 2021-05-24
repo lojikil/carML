@@ -196,6 +196,9 @@ main(int ac, char **al) {
 
             tmp = ret->right;
             if(tmp->tag != TNEWL && tmp->tag != TEOF) {
+                if(tc_flagp && self_tco_p(tmp->value, tmp)) {
+                    tmp = rewrite_tco(tmp);
+                }
                 if(walkflag == 1) {
                     cwalk(tmp, 0);
                 } else if(walkflag == 2) {
