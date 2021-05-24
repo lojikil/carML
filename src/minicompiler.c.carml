@@ -34,9 +34,12 @@ record EnvFrame {
     curtype : int
     lentypes: int
     types: array[ref[AST]]
+    curpoly :int
+    lenpolys:int
+    polys: array[ref[AST]]
     curdec : int
     lendecs: int
-    decls: array[ref[AST]]
+    decs: array[ref[AST]]
     curmod : int
     lenmods: int
     mods: array[ref[AST]]
@@ -54,21 +57,69 @@ def add-member! src:ref[AST] dst:ref[EnvFrame] => bool = {
     val tag : int = (-> src tag)
     # also, I reaaaaaaally need to fix that `match` function
     # call bug
+    # additionally, it will be really nice to get rid of some
+    # of this imperative code here... a nice monadic interface
+    # for these would work too...
+    # lastly, a nice vector dequeue implementation would elide
+    # a lot of the detail that I'm manually doing in here...
     match tag with
-        TMODULE => 1
-        TDEF => 1
-        TVAL => 1
-        TVAR => 1
-        TTYPE => 1
-        TPOLY => 1
-        TDECLARE => 1
-        else => 0
+        TMODULE => {
+            # we also need to handle the case when the length is
+            # at capacity, and need to update that...
+            when (eq? (-> dst curmod) (-> dst lenmods)) do {
+                return false
+            }
+            set! (get (-> dst mods) (-> dst curmod)) src
+            set! (-> dst curmod) $ + 1 $ -> dst curmod
+        }
+        TDEF => {
+            set! (get (-> dst funcs) (-> dst curfunc)) src
+            set! (-> dst curfunc) $ + 1 $ -> dst curfunc
+        }
+        TVAL => {
+            set! (get (-> dst vals) (-> dst curval)) src
+            set! (-> dst curval) $ + 1 $ -> dst curval
+        }
+        TVAR => {
+            set! (get (-> dst vars) (-> dst curvar)) src
+            set! (-> dst curvar) $ + 1 $ -> dst curvar
+        }
+        TTYPE => {
+            set! (get (-> dst types) (-> dst curtype)) src
+            set! (-> dst curtype) $ + 1 $ -> dst curtype
+        }
+        TPOLY => {
+            set! (get (-> dst polys) (-> dst curpoly)) src
+            set! (-> dst curpoly) $ + 1 $ -> dst curpoly
+        }
+        TDECLARE => {
+            set! (get (-> dst decs) (-> dst curdec)) src
+            set! (-> dst curdec) $ + 1 $ -> dst curdec
+        }
+        else => (return false)
     end
+    true
+}
+
+def has-member? member:ref[AST] src:array[ref[AST]] idx:int => bool = {
+    when (>= idx (len src)) do {
+        return false
+    }
+
+    if (eq? (-> member value) (-> (get src idx) value)) then
+        true
+    else
+        (has-member? member src (+ idx 1))
 }
 
 # check if a function is defined either as our curent functions
 # or as our current declarations
 def function-defined? src:ref[AST] env:ref[EnvFrame] => bool = {
+
+}
+
+# do we have a val/var/declaration for this?
+def ident-defined? src:ref[AST] env:ref[EnvFrame] => bool = {
 
 }
 
