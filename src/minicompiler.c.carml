@@ -4,7 +4,14 @@
 #@(#) defined when producing code, and a nicer REPL
 #@(#) this also should allow us to do other nicer
 #@(#) things in the compiler, like dump bindings for
-#@(#) all defined functions
+#@(#) all defined functions; note, this is called
+#@(#) a mini-compiler to differentiate it from the
+#@(#) full compiler. The delineation there is that
+#@(#) this one still relies on what I originally wrote
+#@(#) in C itself, whereas the full compiler will not
+#@(#) be reliant upon that. As well, the fully compiler
+#@(#) will have a properly typed AST, rather than the
+#@(#) current array[ref[AST]]-typed one
 
 # build a spaghetti stack of environment frames
 # this would be nicer if we had two things:
