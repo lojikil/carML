@@ -55,7 +55,9 @@ record EnvFrame {
 
 # add an environment frame to the spaghetti stack
 def new-env-frame src:ref[EnvFrame] => ref[EnvFrame] = {
-
+    var ret:ref[EnvFrame] = (hmalloc $ sizeof EnvFrame)
+    set! (-> ret parent) src
+    ret
 }
 
 # add an AST to the correct place
@@ -80,26 +82,44 @@ def add-member! src:ref[AST] dst:ref[EnvFrame] => bool = {
             set! (-> dst curmod) $ + 1 $ -> dst curmod
         }
         TDEF => {
+            when (eq? (-> dst curfunc) (-> dst lenfuncs)) do {
+                return false
+            }
             set! (get (-> dst funcs) (-> dst curfunc)) src
             set! (-> dst curfunc) $ + 1 $ -> dst curfunc
         }
         TVAL => {
+            when (eq? (-> dst curval) (-> dst lenvals)) do {
+                return false
+            }
             set! (get (-> dst vals) (-> dst curval)) src
             set! (-> dst curval) $ + 1 $ -> dst curval
         }
         TVAR => {
+            when (eq? (-> dst curvar) (-> dst lenvars)) do {
+                return false
+            }
             set! (get (-> dst vars) (-> dst curvar)) src
             set! (-> dst curvar) $ + 1 $ -> dst curvar
         }
         TTYPE => {
+            when (eq? (-> dst curtype) (-> dst lentypes)) do {
+                return false
+            }
             set! (get (-> dst types) (-> dst curtype)) src
             set! (-> dst curtype) $ + 1 $ -> dst curtype
         }
         TPOLY => {
+            when (eq? (-> dst curpoly) (-> dst lenpolys)) do {
+                return false
+            }
             set! (get (-> dst polys) (-> dst curpoly)) src
             set! (-> dst curpoly) $ + 1 $ -> dst curpoly
         }
         TDECLARE => {
+            when (eq? (-> dst curdec) (-> dst lendecs)) do {
+                return false
+            }
             set! (get (-> dst decs) (-> dst curdec)) src
             set! (-> dst curdec) $ + 1 $ -> dst curdec
         }
@@ -122,12 +142,27 @@ def has-member? member:ref[AST] src:array[ref[AST]] idx:int => bool = {
 # check if a function is defined either as our curent functions
 # or as our current declarations
 def function-defined? src:ref[AST] env:ref[EnvFrame] => bool = {
-
+    match env with
+        NULL => false
+        else =>
+                (one-of
+                    (has-member? src (-> env funcs))
+                    (has-member? src (-> env decs))
+                    (function-defined src (-> env parent)))
+    end
 }
 
 # do we have a val/var/declaration for this?
 def ident-defined? src:ref[AST] env:ref[EnvFrame] => bool = {
-
+    match env with
+        NULL => false
+        else =>
+                (one-of
+                    (has-member? src (-> env vals))
+                    (has-member? src (-> env vars))
+                    (has-member? src (-> env decs))
+                    (ident-defined? src (-> env parent)))
+    end
 }
 
 # should start with a simple type checker, to make sure we're
@@ -138,7 +173,13 @@ def type-check src:ref[AST] env:ref[EnvFrame] => bool = {
 
 # make sure that a set (`set!` or `:=`) isn't breaking const guarantees
 def const-check src:ref[AST] env:ref[EnvFrame] => bool = {
-
+    match env with
+        NULL => false
+        else =>
+                (one-of
+                    (has-member? src (-> env vals))
+                    (const-check src (-> env parent)))
+    end
 }
 
 # a miniature compiler; basically just collects things together
