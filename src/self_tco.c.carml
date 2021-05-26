@@ -359,6 +359,23 @@ def make-boolean original-value:int => ref[AST] = {
     ret
 }
 
+# is this a simple type we can just
+# return nicely?
+def simple-type? src:int => bool = {
+    # NOTE should TTAG be here?
+    (one-of
+        (eq? src TIDENT)
+        (eq? src TSTR)
+        (eq? src TINT)
+        (eq? src TREAL)
+        (eq? src TARRAYLITERAL)
+        (eq? src TCHAR)
+        (eq? src TBOOL)
+        (eq? src THEX)
+        (eq? src TOCT)
+        (eq? src TBIN))
+}
+
 # copy the body whilst simultaneously rewriting any
 # tail calls into a shadow...
 # src: the AST to rewrite
@@ -421,20 +438,23 @@ def copy-body src:ref[AST] self:ref[AST] finalp:bool => ref[AST] = {
                 }
             }
         }
-        # TODO we have to do the same here for all basic types as well...
-        TIDENT => {
+        _ given (simple-type? srctag) => {
             # for an ident, we either want to just copy it wholesale
             # or turn it into a `(return <source ident>)` for final
             # cases. Since we already copy the other attributes earlier
             # in this procedure, we don't really need to do anything
             # further here in non-final cases
-            when finalp do {
+            if finalp then {
                 set! (-> ret tag) TCALL
                 set! (-> ret lenchildren) 2
                 set! (-> ret children) $ hmalloc $ * 2 $ sizeof ref[AST]
                 set! (get buf 0) $ make-ident "return"
                 set! (get buf 1) $ make-ident $ -> src value
                 set! bidx 2
+            } else {
+                set! (get buf bidx) (get (-> src children) sidx)
+                set! bidx $ + bidx 1
+                set! sidx $ + sidx 1
             }
         }
         TMATCH => 1
