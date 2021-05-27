@@ -5,6 +5,8 @@
 #ifndef __CARMLC_H
 #define __CARMLC_H
 
+#include <stdbool.h>
+
 #ifdef DEBUG
 #define debugln printf("dying here on line %d?\n", __LINE__);
 #define dprintf(...) printf(__VA_ARGS__)
@@ -165,7 +167,7 @@ typedef struct _ASTOFFSET {
 } ASTOffset;
 
 // external defs, written in carML
-extern int self_tco_p(const char *, AST *);
+extern bool self_tco_p(const char *, AST *);
 extern AST *shadow_ident(AST *);
 extern AST *make_set_bang(AST *, AST *);
 extern AST *shadow_params(AST *, AST *);
