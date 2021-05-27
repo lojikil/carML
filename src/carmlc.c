@@ -9,7 +9,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <gc.h>
-#include <stdbool.h>
 #include <carmlc.h>
 
 /* probably should track unary vs binary

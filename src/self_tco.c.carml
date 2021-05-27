@@ -365,9 +365,9 @@ def simple-type? src:int => bool = {
     # NOTE should TTAG be here?
     (one-of
         (eq? src TIDENT)
-        (eq? src TSTR)
+        (eq? src TSTRING)
         (eq? src TINT)
-        (eq? src TREAL)
+        (eq? src TFLOAT)
         (eq? src TARRAYLITERAL)
         (eq? src TCHAR)
         (eq? src TBOOL)
@@ -452,7 +452,7 @@ def copy-body src:ref[AST] self:ref[AST] finalp:bool => ref[AST] = {
                 set! (get buf 1) $ make-ident $ -> src value
                 set! bidx 2
             } else {
-                set! (get buf bidx) (get (-> src children) sidx)
+                set! (get buf bidx) src
                 set! bidx $ + bidx 1
                 set! sidx $ + sidx 1
             }

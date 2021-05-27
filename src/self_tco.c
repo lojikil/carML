@@ -245,7 +245,6 @@ copy_body(AST * src, AST * self, uint8_t finalp){
     if(srctag == TCALL) {
         if(finalp) {
             return shadow_params(src, self);
-;
         } else {
             while(bidx < srccap){
                 buf[bidx] = copy_body(src->children[sidx], self, false);
@@ -255,8 +254,6 @@ copy_body(AST * src, AST * self, uint8_t finalp){
 
 
         }
-
-;
     } else if((simple_type_p(srctag))) {
         if(finalp) {
             ret->tag = TCALL;
@@ -265,15 +262,11 @@ copy_body(AST * src, AST * self, uint8_t finalp){
             buf[0] = make_ident("return");
             buf[1] = make_ident(src->value);
             bidx = 2;
-;
         } else {
-            buf[bidx] = src->children[sidx];
+            buf[bidx] = src;
             bidx = (bidx + 1);
             sidx = (sidx + 1);
-
         }
-
-;
     } else if(srctag == TMATCH) {
         1;
     } else if(srctag == TIF) {
