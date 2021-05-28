@@ -63,7 +63,7 @@ self_tco_p(const char * name, AST * src){
 }
 AST * 
 shadow_ident(AST * src){
-    AST * ret = hmalloc(sizeof(AST * ));
+    AST * ret = hmalloc(sizeof(AST));
     ret->tag = TIDENT;
     ret->lenchildren = 0;
     ret->value = shadow_name(src->value);
@@ -71,14 +71,15 @@ shadow_ident(AST * src){
 }
 AST * 
 make_set_bang(AST * ident, AST * value){
-    AST * ret = hmalloc(sizeof(AST * ));
-    AST * setident = hmalloc(sizeof(AST * ));
+    AST * ret = hmalloc(sizeof(AST));
+    AST * setident = hmalloc(sizeof(AST));
+    setident->lenchildren = 0;
     setident->tag = TIDENT;
     setident->value = hmalloc(5 * sizeof(char));
-    stpncpy(setident->value, "set!", 5);
+    strncpy(setident->value, "set!", 5);
     ret->tag = TCALL;
     ret->lenchildren = 3;
-    ret->children = hmalloc(3 * sizeof(AST * ));
+    ret->children = (AST **)hmalloc(3 * sizeof(AST *));
     ret->children[0] = setident;
     ret->children[1] = ident;
     ret->children[2] = value;
@@ -86,7 +87,7 @@ make_set_bang(AST * ident, AST * value){
 }
 AST * 
 shadow_params(AST * src, AST * impl){
-    AST * ret = hmalloc(sizeof(AST * ));
+    AST * ret = hmalloc(sizeof(AST));
     const int clen = (src->lenchildren - 1) * 2;
     const int ilen = impl->lenchildren;
     int idx = 0;
@@ -120,7 +121,7 @@ shadow_params(AST * src, AST * impl){
 }
 char *
 shadow_name(char * name){
-    char * ret = hmalloc(3 + ((sizeof(char)) * strlen(name)));
+    char * ret = hmalloc((3 + strlen(name)) * sizeof(char));
     stpcpy(ret, name);
     strcat(ret, "_sh");
     return ret;
@@ -158,7 +159,7 @@ get_parameter_type(AST * src, int idx){
 }
 AST * 
 define_shadow_params(AST * src, AST * body){
-    AST * ret = hmalloc(sizeof(AST * ));
+    AST * ret = hmalloc(sizeof(AST));
     AST * tmp = nil;
     AST * * vbuf = (AST * *)hmalloc(sizeof(AST * ) * 64);
     int idx = 0;
@@ -169,7 +170,7 @@ define_shadow_params(AST * src, AST * body){
     ret->lenchildren = src->lenchildren;
     ret->children = hmalloc(src->lenchildren * sizeof(AST * * ));
     while(idx < src->lenchildren){
-        tmp = hmalloc(sizeof(AST * ));
+        tmp = hmalloc(sizeof(AST));
         tmp->tag = TVAR;
         tmp->lenchildren = 2;
         tmp->value = shadow_name(get_parameter_name(src, idx));
@@ -230,7 +231,7 @@ make_boolean(int original_value){
 }
 bool
 simple_type_p(int src){
-    return (src == TIDENT) || (src == TSTRING) || (src == TINT) || (src == TFLOAT) || (src == TARRAYLITERAL) || (src == TCHAR) || (src == TBOOL) || (src == THEX) || (src == TOCT) || (src == TBIN);
+    return (src == TIDENT) || (src == TSTRING) || (src == TINT) || (src == TFLOAT) || (src == TARRAYLITERAL) || (src == TCHAR) || (src == TBOOL) || (src == THEX) || (src == TOCT) || (src == TBIN) || (src == TTRUE) || (src == TFALSE);
 }
 AST * 
 copy_body(AST * src, AST * self, uint8_t finalp){
@@ -251,8 +252,6 @@ copy_body(AST * src, AST * self, uint8_t finalp){
                 bidx = (bidx + 1);
                 sidx = (sidx + 1);
             }
-
-
         }
     } else if((simple_type_p(srctag))) {
         if(finalp) {
@@ -318,7 +317,7 @@ copy_body(AST * src, AST * self, uint8_t finalp){
 AST * 
 rewrite_tco(AST * src){
     const AST * params = define_shadow_params(src->children[0], src->children[1]);
-    AST * ret = hmalloc(sizeof(AST * ));
+    AST * ret = hmalloc(sizeof(AST));
     AST * body = params->children[params->lenchildren - 1];
     ret->tag = TDEF;
     ret->lenchildren = 3;

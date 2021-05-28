@@ -21,7 +21,13 @@
 #define nul '\0'
 #define YES 1
 #define NO  0
+
+#ifdef DEBUGMEMORY
+#define hmalloc malloc
+#else
 #define hmalloc GC_MALLOC
+#endif
+
 #define cwalk(head, level) llcwalk(head, level, NO)
 #define gwalk(head, level) llgwalk(head, level, NO)
 #define indent(level) llindent(level, NO)

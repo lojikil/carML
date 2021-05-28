@@ -71,7 +71,7 @@ def self-tco? name:string src:ref[AST] => bool = {
 # create a shadowed TIDENT, so that we can use this in
 # AST generation code itself...
 def shadow-ident src:ref[AST] => ref[AST] = {
-    var ret : ref[AST] = (hmalloc $ sizeof ref[AST])
+    var ret : ref[AST] = (hmalloc $ sizeof AST)
     set! (-> ret tag) TIDENT
     set! (-> ret lenchildren) 0
     set! (-> ret value) $ shadow-name $ -> src value
@@ -79,8 +79,8 @@ def shadow-ident src:ref[AST] => ref[AST] = {
 }
 
 def make-set-bang ident:ref[AST] value:ref[AST] => ref[AST] = {
-    var ret : ref[AST] = (hmalloc $ sizeof ref[AST])
-    var setident : ref[AST] = (hmalloc $ sizeof ref[AST])
+    var ret : ref[AST] = (hmalloc $ sizeof AST)
+    var setident : ref[AST] = (hmalloc $ sizeof AST)
     set! (-> setident tag) TIDENT
     set! (-> setident value) (hmalloc $ * 5 $ sizeof char)
     stpncpy (-> setident value) "set!" 5
@@ -98,7 +98,7 @@ def make-set-bang ident:ref[AST] value:ref[AST] => ref[AST] = {
 # TBEGIN, or used as a replacement for the TCALL that was in the
 # original AST
 def shadow-params src:ref[AST] impl:ref[AST] => ref[AST] = {
-    var ret : ref[AST] = (hmalloc $ sizeof ref[AST])
+    var ret : ref[AST] = (hmalloc $ sizeof AST)
     val clen: int = (* (- (-> src lenchildren) 1) 2)
     val ilen: int = (-> impl lenchildren)
     var idx : int = 0
@@ -219,7 +219,7 @@ def define-shadow-params src:ref[AST] body:ref[AST] => ref[AST] = {
     # esp to track accessors.
     # oh... wait that's a good idea. I can write a simple
     # compiler in carML right now, much like these...
-    var ret : ref[AST] = (hmalloc $ sizeof ref[AST])
+    var ret : ref[AST] = (hmalloc $ sizeof AST)
     var tmp : ref[AST] = nil
     var vbuf : array[ref[AST]] = (make-array ref[AST] 64 nil)
     var idx : int = 0
@@ -234,7 +234,7 @@ def define-shadow-params src:ref[AST] body:ref[AST] => ref[AST] = {
     # it from a `parameter-definition` into a `var` and tweak the
     # name a little...
     while (< idx $ -> src lenchildren) do {
-        set! tmp $ hmalloc $ sizeof ref[AST]
+        set! tmp $ hmalloc $ sizeof AST
         set! (-> tmp tag) TVAR
         # so a TVAR is:
         # _value : string = name
@@ -371,6 +371,8 @@ def simple-type? src:int => bool = {
         (eq? src TARRAYLITERAL)
         (eq? src TCHAR)
         (eq? src TBOOL)
+        (eq? src TTRUE)
+        (eq? src TFALSE)
         (eq? src THEX)
         (eq? src TOCT)
         (eq? src TBIN))
@@ -512,7 +514,7 @@ def copy-body src:ref[AST] self:ref[AST] finalp:bool => ref[AST] = {
 
 def rewrite-tco src:ref[AST] => ref[AST] = {
     val params : ref[AST] = (define-shadow-params (get (-> src children) 0) (get (-> src children) 1))
-    var ret : ref[AST] = (hmalloc $ sizeof ref[AST])
+    var ret : ref[AST] = (hmalloc $ sizeof AST)
     var body: ref[AST] = (get (-> params children) $ - (-> params lenchildren) 1)
 
     # what we need to do is effectively copy the spine of the original AST
