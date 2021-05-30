@@ -93,7 +93,7 @@ char *downcase(const char *, char *, int);
 char *hstrdup(const char *);
 int next(FILE *, char *, int);
 void mung_variant_name(AST *, AST *, int, int);
-void mung_guard(AST *, AST *);
+void mung_guard(FILE *, AST *, AST *);
 AST *mung_complex_type(AST *, AST*);
 AST *mung_declare(const char **, const int **, int, int);
 ASTOffset *mung_single_type(const char **, const int **, int, int, int);
@@ -104,10 +104,10 @@ ASTEither *ASTRight(AST *);
 ASTOffset *ASTOffsetLeft(int, int, char *, int);
 ASTOffset *ASTOffsetRight(AST *, int);
 AST *linearize_complex_type(AST *);
-void llindent(int, int);
-void walk(AST *, int);
-void llcwalk(AST *, int, int);
-void llgwalk(AST *, int, int);
+void llindent(FILE *, int, int);
+void walk(FILE *, AST *, int);
+void llcwalk(FILE *, AST *, int, int);
+void llgwalk(FILE *, AST *, int, int);
 void generate_type_value(AST *, const char *); // generate a type/poly constructor
 void generate_type_ref(AST *, const char *); // generate a type/poly reference constructor
 void generate_golang_type(AST *, const char *); // generate a golang type
@@ -133,12 +133,12 @@ int
 main(int ac, char **al) {
     ASTEither *ret = nil;
     AST *tmp = nil;
-    FILE *fdin = nil;
+    FILE *fdin = nil, *fdout = nil;
     int walkflag = 0, tc_flagp = 0, c_flagp = 0, ch = 0;
     GC_INIT();
 
     if(ac > 1) {
-        while((ch = getopt(ac, al, "scgmtiVvf:h")) != -1) {
+        while((ch = getopt(ac, al, "scgmtiVvf:o:h")) != -1) {
             switch(ch) {
                 case 's':
                     walkflag = 0;
@@ -169,6 +169,12 @@ main(int ac, char **al) {
                         return 1;
                     }
                     break;
+                case 'o':
+                    if((fdout = fopen(optarg, "w")) == nil) {
+                        printf("cannot open output file \"%s\"\n", optarg);
+                        return 1;
+                    }
+                    break;
                 case '?':
                 case 'h':
                 default:
@@ -177,6 +183,7 @@ main(int ac, char **al) {
                     printf("-c turns on C output\n-g turns on Golang output\n");
                     printf("-m turns on the minicompiler\n-t turns on self-TCO\n");
                     printf("-V display version and exit\n-f the file to be compiled\n");
+                    printf("-o the output file location\n");
                     return 0;
                     break;
             }
@@ -185,6 +192,10 @@ main(int ac, char **al) {
         if(fdin == nil) {
             printf("no file specified; must use `-f` to specify a target file\n");
             return 2;
+        }
+
+        if(fdout == nil) {
+            fdout = stdout;
         }
 
         do {
@@ -200,17 +211,22 @@ main(int ac, char **al) {
                     tmp = rewrite_tco(tmp);
                 }
                 if(walkflag == 1) {
-                    cwalk(tmp, 0);
+                    cwalk(fdout, tmp, 0);
                 } else if(walkflag == 2) {
-                    gwalk(tmp, 0);
+                    gwalk(fdout, tmp, 0);
                 } else {
-                    walk(tmp, 0);
+                    walk(fdout, tmp, 0);
                 }
                 printf("\n");
             }
         } while(tmp->tag != TEOF);
         fclose(fdin);
+
+        if(fdout != stdout) {
+            fclose(fdout);
+        }
     } else {
+        fdout = stdout;
         printf("\
                ___  ___ _     \n\
                |  \\/  || |    \n\
@@ -270,11 +286,11 @@ main(int ac, char **al) {
                     }
 
                     if(walkflag == 1) {
-                        cwalk(tmp, 0);
+                        cwalk(fdout, tmp, 0);
                     } else if(walkflag == 2) {
-                        gwalk(tmp, 0);
+                        gwalk(fdout, tmp, 0);
                     } else {
-                        walk(tmp, 0);
+                        walk(fdout, tmp, 0);
                     }
 
                 }
@@ -572,11 +588,11 @@ linearize_complex_type(AST *head) {
     dprintf("here? %d\n", __LINE__);
     if(!iscomplextypeast(head->tag)){
         dprintf("here? %d\n", __LINE__);
-        dwalk(head, 0);
+        dwalk(fdout, head, 0);
         return head;
     }
     dprintf("here? %d: ", __LINE__);
-    dwalk(head, 0);
+    dwalk(fdout, head, 0);
     dprintf("\n");
 
     stack[sp] = head->children[0];
@@ -5236,67 +5252,67 @@ check_guard(AST **children, int len_children) {
 }
 
 void
-mung_guard(AST *name, AST *guard) {
+mung_guard(FILE *fdout, AST *name, AST *guard) {
     AST *mcond = guard->children[0], *mguard = guard->children[1];
 
     if(mcond->tag != TIDENT) {
-        printf("(");
+        fprintf(fdout, "(");
     }
     switch(mcond->tag) {
         case TFLOAT:
         case TINT:
         case TTAG:
-            printf("%s == %s", name->value, mcond->value);
+            fprintf(fdout, "%s == %s", name->value, mcond->value);
             break;
         case TTRUE:
             // could possibly use stdbool here as well
             // but currently just encoding directly to
             // integers
-            printf("%s == 1", name->value);
+            fprintf(fdout, "%s == 1", name->value);
             break;
         case TFALSE:
-            printf("%s == 0", name->value);
+            fprintf(fdout, "%s == 0", name->value);
             break;
         case TCHAR:
-            printf("%s == ", name->value);
+            fprintf(fdout, "%s == ", name->value);
             switch(mcond->value[0]) {
                 case '\n':
-                    printf("'\\n'");
+                    fprintf(fdout, "'\\n'");
                     break;
                 case '\r':
-                    printf("'\\r'");
+                    fprintf(fdout, "'\\r'");
                     break;
                 case '\v':
-                    printf("'\\v'");
+                    fprintf(fdout, "'\\v'");
                     break;
                 case '\t':
-                    printf("'\\t'");
+                    fprintf(fdout, "'\\t'");
                     break;
                 case '\b':
-                    printf("'\\b'");
+                    fprintf(fdout, "'\\b'");
                     break;
                 case '\0':
-                    printf("'\\0'");
+                    fprintf(fdout, "'\\0'");
                     break;
                 case '\'':
-                    printf("'\\''");
+                    fprintf(fdout, "'\\''");
                     break;
                 case '\\':
-                    printf("'\\\\'");
+                    fprintf(fdout, "'\\\\'");
                     break;
                 default:
-                    printf("'%c'", mcond->value[0]);
+                    fprintf(fdout, "'%c'", mcond->value[0]);
                     break;
             }
             break;
         case TSTRING:
-            printf("!strncmp(%s, \"%s\", %lu)", name->value, mcond->value, strlen(mcond->value));
+            fprintf(fdout, "!strncmp(%s, \"%s\", %lu)", name->value, mcond->value, strlen(mcond->value));
             break;
         case THEX:
         case TOCT:
         case TBIN:
-            printf("%s == ", name->value);
-            cwalk(mcond, 0);
+            fprintf(fdout, "%s == ", name->value);
+            cwalk(fdout, mcond, 0);
             break;
         case TARRAYLITERAL:
         case TIDENT:
@@ -5308,15 +5324,15 @@ mung_guard(AST *name, AST *guard) {
             break;
     }
     if(mcond->tag != TIDENT) {
-        printf(") && (");
+        fprintf(fdout, ") && (");
     } else {
-        printf("(");
+        fprintf(fdout, "(");
         // rewrite the name here, need to do the
         // same in the response as well...
         //mguard = rewrite_ident(name, mguard);
     }
-    cwalk(mguard, 0);
-    printf(")");
+    cwalk(fdout, mguard, 0);
+    fprintf(fdout, ")");
 }
 
 AST *
@@ -5339,443 +5355,444 @@ mung_complex_type(AST *tag, AST *array) {
 }
 
 void
-llindent(int level, int usetabsp) {
+llindent(FILE *fdout, int level, int usetabsp) {
     // should probably look to inline this
     // basically what we are replacing is the
     // inlined version of the same
     for(int idx = 0; idx < level; idx++) {
         if(usetabsp == YES) {
-            printf("\t");
+            fprintf(fdout, "\t");
         } else {
-            printf("    ");
+            fprintf(fdout, "    ");
         }
     }
 }
 
+// TODO: remove all the little loops in favor of indent
 void
-walk(AST *head, int level) {
+walk(FILE *fdout, AST *head, int level) {
     int idx = 0;
     AST *tmp = nil;
 
     for(; idx < level; idx++) {
-        printf("    ");
+        fprintf(fdout, "    ");
     }
     if(head == nil) {
-        printf("(nil)\n");
+        fprintf(fdout, "(nil)\n");
         return;
     }
     switch(head->tag) {
         case TFN:
         case TDEF:
             if(head->tag == TFN) {
-                printf("(fn ");
+                fprintf(fdout, "(fn ");
             } else {
-                printf("(define %s ", head->value);
+                fprintf(fdout, "(define %s ", head->value);
             }
             if(head->children[0] != nil) {
-                walk(head->children[0], level);
+                walk(fdout, head->children[0], level);
             }
 
             if(head->lenchildren == 3) {
                 // indent nicely
-                printf("\n");
+                fprintf(fdout, "\n");
                 for(; idx < level + 1; idx++) {
-                    printf("    ");
+                    fprintf(fdout, "    ");
                 }
 
-                printf("(returns ");
-                walk(head->children[2], 0);
-                printf(")");
+                fprintf(fdout, "(returns ");
+                walk(fdout, head->children[2], 0);
+                fprintf(fdout, ")");
             }
-            printf("\n");
-            walk(head->children[1], level + 1);
-            printf(")");
+            fprintf(fdout, "\n");
+            walk(fdout, head->children[1], level + 1);
+            fprintf(fdout, ")");
             break;
         case TUSE:
-            printf("(use %s)", head->value);
+            fprintf(fdout, "(use %s)", head->value);
             break;
         case TEXTERN:
-            printf("(extern %s ", head->value);
-            walk(head->children[0], 0);
-            printf(")");
+            fprintf(fdout, "(extern %s ", head->value);
+            walk(fdout, head->children[0], 0);
+            fprintf(fdout, ")");
             break;
         case TVAL:
         case TVAR:
             if(head->tag == TVAL) {
-                printf("(define-value %s ", head->value);
+                fprintf(fdout, "(define-value %s ", head->value);
             } else {
-                printf("(define-mutable-value %s ", head->value);
+                fprintf(fdout, "(define-mutable-value %s ", head->value);
             }
-            walk(head->children[0], 0);
+            walk(fdout, head->children[0], 0);
             if(head->lenchildren == 2) {
-                printf(" ");
-                walk(head->children[1], 0);
+                fprintf(fdout, " ");
+                walk(fdout, head->children[1], 0);
             }
-            printf(")");
+            fprintf(fdout, ")");
             break;
         case TDECLARE:
-            printf("(declare ");
-            walk(head->children[0], 0);
-            printf(" ");
-            walk(head->children[1], 0);
-            printf(")");
+            fprintf(fdout, "(declare ");
+            walk(fdout, head->children[0], 0);
+            fprintf(fdout, " ");
+            walk(fdout, head->children[1], 0);
+            fprintf(fdout, ")");
             break;
         case TLET:
         case TLETREC:
             if(head->tag == TLET) {
-                printf("(let ");
+                fprintf(fdout, "(let ");
             } else {
-                printf("(letrec ");
+                fprintf(fdout, "(letrec ");
             }
 
-            printf("%s ", head->value);
+            fprintf(fdout, "%s ", head->value);
 
-            walk(head->children[0], 0);
+            walk(fdout, head->children[0], 0);
             
             if(head->lenchildren == 3) {
                 /* if we have a type,
                  * go ahead and print it.
                  */
-                printf(" ");
-                walk(head->children[2], 0);
+                fprintf(fdout, " ");
+                walk(fdout, head->children[2], 0);
             }
 
-            printf("\n");
-            walk(head->children[1], level + 1);
+            fprintf(fdout, "\n");
+            walk(fdout, head->children[1], level + 1);
 
-            printf(")");
+            fprintf(fdout, ")");
             break;
         case TWHEN:
-            printf("(when ");
-            walk(head->children[0], 0);
-            printf("\n");
-            walk(head->children[1], level + 1);
-            printf(")");
+            fprintf(fdout, "(when ");
+            walk(fdout, head->children[0], 0);
+            fprintf(fdout, "\n");
+            walk(fdout, head->children[1], level + 1);
+            fprintf(fdout, ")");
             break;
         case TWHILE:
-            printf("(while ");
-            walk(head->children[0], 0);
-            printf("\n");
-            walk(head->children[1], level + 1);
-            printf(")");
+            fprintf(fdout, "(while ");
+            walk(fdout, head->children[0], 0);
+            fprintf(fdout, "\n");
+            walk(fdout, head->children[1], level + 1);
+            fprintf(fdout, ")");
             break;
         case TFOR:
-            printf("(for %s ", head->value);
-            walk(head->children[0], 0);
-            printf("\n");
-            walk(head->children[1], level + 1);
-            printf(")");
+            fprintf(fdout, "(for %s ", head->value);
+            walk(fdout, head->children[0], 0);
+            fprintf(fdout, "\n");
+            walk(fdout, head->children[1], level + 1);
+            fprintf(fdout, ")");
             break;
         case TPARAMLIST:
-            printf("(parameter-list ");
+            fprintf(fdout, "(parameter-list ");
             for(idx = 0;idx < head->lenchildren; idx++) {
-                walk(head->children[idx], 0); 
+                walk(fdout, head->children[idx], 0); 
                 if(idx < (head->lenchildren - 1)){
-                    printf(" ");
+                    fprintf(fdout, " ");
                 }
             }
-            printf(") ");
+            fprintf(fdout, ") ");
             break;
         case TPARAMDEF:
-            printf("(parameter-definition ");
-            walk(head->children[0], 0);
-            printf(" ");
-            walk(head->children[1], 0);
-            printf(")");
+            fprintf(fdout, "(parameter-definition ");
+            walk(fdout, head->children[0], 0);
+            fprintf(fdout, " ");
+            walk(fdout, head->children[1], 0);
+            fprintf(fdout, ")");
             break;
         case TTYPE:
         case TPOLY:
             if(head->tag == TPOLY) {
-                printf("(polymorphic-type ");
+                fprintf(fdout, "(polymorphic-type ");
             } else {
-                printf("(type ");
+                fprintf(fdout, "(type ");
             }
-            printf("%s ", head->value);
+            fprintf(fdout, "%s ", head->value);
             if(head->children[0] != nil)
             {
-                walk(head->children[0], 0);
+                walk(fdout, head->children[0], 0);
             }
-            printf("\n");
+            fprintf(fdout, "\n");
             for(int cidx = 0; cidx < head->children[1]->lenchildren; cidx++) {
-                walk(head->children[1]->children[cidx], level + 1);
+                walk(fdout, head->children[1]->children[cidx], level + 1);
                 if(cidx < (head->children[1]->lenchildren - 1)) {
-                    printf("\n");
+                    fprintf(fdout, "\n");
                 }
             }
-            printf(")\n");
+            fprintf(fdout, ")\n");
             break;
         case TTYPEDEF:
-            printf("(type-constructor ");
+            fprintf(fdout, "(type-constructor ");
             for(int cidx = 0; cidx < head->lenchildren; cidx++) {
-                walk(head->children[cidx], 0);
+                walk(fdout, head->children[cidx], 0);
                 if(cidx < (head->lenchildren - 1)) {
-                    printf(" ");
+                    fprintf(fdout, " ");
                 }
             }
-            printf(")");
+            fprintf(fdout, ")");
             break;
         case TARRAY:
-            printf("(type array)");
+            fprintf(fdout, "(type array)");
             break;
         case TDEQUET:
-            printf("(type deque)");
+            fprintf(fdout, "(type deque)");
             break;
         case TFUNCTIONT:
-            printf("(type function)");
+            fprintf(fdout, "(type function)");
             break;
         case TPROCEDURET:
-            printf("(type procedure)");
+            fprintf(fdout, "(type procedure)");
             break;
         case TTUPLET:
-            printf("(type tuple)");
+            fprintf(fdout, "(type tuple)");
             break;
         case TREF:
-            printf("(type ref)");
+            fprintf(fdout, "(type ref)");
             break;
         case TLOW:
-            printf("(type low)");
+            fprintf(fdout, "(type low)");
             break;
         case TUNION:
-            printf("(type union)");
+            fprintf(fdout, "(type union)");
             break;
         case TCOMPLEXTYPE:
-            printf("(complex-type ");
+            fprintf(fdout, "(complex-type ");
             for(;idx < head->lenchildren; idx++) {
-                walk(head->children[idx], 0); 
+                walk(fdout, head->children[idx], 0);
                 if(idx < (head->lenchildren - 1)){
-                    printf(" ");
+                    fprintf(fdout, " ");
                 }
             }
-            printf(") ");
+            fprintf(fdout, ") ");
             break;
         case TARRAYLITERAL:
-            printf("(array-literal ");
+            fprintf(fdout, "(array-literal ");
             for(int cidx = 0; cidx < head->lenchildren; cidx++) {
-                walk(head->children[cidx], 0);
+                walk(fdout, head->children[cidx], 0);
                 if(cidx < (head->lenchildren - 1)){
-                    printf(" ");
+                    fprintf(fdout, " ");
                 }
             }
-            printf(") ");
+            fprintf(fdout, ") ");
             break;
         case TCALL:
-            printf("(call ");
+            fprintf(fdout, "(call ");
             for(int i = 0; i < head->lenchildren; i++) {
-                walk(head->children[i], 0);
+                walk(fdout, head->children[i], 0);
                 if(i < (head->lenchildren - 1)) {
-                    printf(" ");
+                    fprintf(fdout, " ");
                 }
             }
-            printf(")");
+            fprintf(fdout, ")");
             break;
         case TMATCH:
             debugln;
-            printf("(match ");
-            walk(head->children[0], 0);
-            printf("\n");
+            fprintf(fdout, "(match ");
+            walk(fdout, head->children[0], 0);
+            fprintf(fdout, "\n");
             tmp = head->children[1];
             for(int cidx = 0; cidx < tmp->lenchildren; cidx += 2) {
                 if(tmp->children[cidx]->tag == TELSE) {
-                    indent(level + 1);
-                    printf("else");
+                    indent(fdout, level + 1);
+                    fprintf(fdout, "else");
                 } else {
-                    walk(tmp->children[cidx], level + 1);
+                    walk(fdout, tmp->children[cidx], level + 1);
                 }
-                printf(" => ");
-                walk(tmp->children[cidx + 1], 0);
+                fprintf(fdout, " => ");
+                walk(fdout, tmp->children[cidx + 1], 0);
                 if(cidx < (tmp->lenchildren - 2)) {
-                    printf("\n");
+                    fprintf(fdout, "\n");
                 }
             }
-            printf(")");
+            fprintf(fdout, ")");
             break;
         case TGUARD:
-            printf("(guarded-condition ");
-            walk(head->children[0], 0);
-            printf(" ");
-            walk(head->children[1], 0);
-            printf(")");
+            fprintf(fdout, "(guarded-condition ");
+            walk(fdout, head->children[0], 0);
+            fprintf(fdout, " ");
+            walk(fdout, head->children[1], 0);
+            fprintf(fdout, ")");
             break;
         case TIF:
-            printf("(if ");
-            walk(head->children[0], 0);
-            printf("\n");
-            walk(head->children[1], level + 1);
-            printf("\n");
-            walk(head->children[2], level + 1);
-            printf(")");
+            fprintf(fdout, "(if ");
+            walk(fdout, head->children[0], 0);
+            fprintf(fdout, "\n");
+            walk(fdout, head->children[1], level + 1);
+            fprintf(fdout, "\n");
+            walk(fdout, head->children[2], level + 1);
+            fprintf(fdout, ")");
             break;
         case TIDENT:
-            printf("(identifier %s)", head->value);
+            fprintf(fdout, "(identifier %s)", head->value);
             break;
         case TTAG:
-            printf("(tag %s)", head->value);
+            fprintf(fdout, "(tag %s)", head->value);
             break;
         case TBOOL:
-            printf("(bool ");
+            fprintf(fdout, "(bool ");
             if(head->value[0] == 0) {
-                printf("true)"); 
+                fprintf(fdout, "true)"); 
             } else {
-                printf("false)");
+                fprintf(fdout, "false)");
             }
             break;
         case TCHAR:
-            printf("(character #\\");
+            fprintf(fdout, "(character #\\");
             switch(head->value[0]) {
                 case '\b':
-                    printf("backspace");
+                    fprintf(fdout, "backspace");
                     break;
                 case '\n':
-                    printf("newline");
+                    fprintf(fdout, "newline");
                     break;
                 case '\r':
-                    printf("carriage");
+                    fprintf(fdout, "carriage");
                     break;
                 case '\v':
-                    printf("vtab");
+                    fprintf(fdout, "vtab");
                     break;
                 case '\t':
-                    printf("tab");
+                    fprintf(fdout, "tab");
                     break;
                 case '\0':
-                    printf("nul");
+                    fprintf(fdout, "nul");
                     break;
                 default:
-                    printf("%s", head->value);
+                    fprintf(fdout, "%s", head->value);
                     break;
             }
-            printf(")");
+            fprintf(fdout, ")");
             break;
         case TFLOAT:
-            printf("(float %s)", head->value);
+            fprintf(fdout, "(float %s)", head->value);
             break;
         case TFALSE:
         case TTRUE:
-            printf("(boolean ");
+            fprintf(fdout, "(boolean ");
             if(head->tag == TFALSE) {
-                printf("false)");
+                fprintf(fdout, "false)");
             } else {
-                printf("true)");
+                fprintf(fdout, "true)");
             }
             break;
         case THEX:
-            printf("(hex-integer %s)", head->value);
+            fprintf(fdout, "(hex-integer %s)", head->value);
             break;
         case TOCT:
-            printf("(octal-integer %s)", head->value);
+            fprintf(fdout, "(octal-integer %s)", head->value);
             break;
         case TBIN:
-            printf("(binary-integer %s)", head->value);
+            fprintf(fdout, "(binary-integer %s)", head->value);
             break;
         case TINT:
-            printf("(integer %s)", head->value);
+            fprintf(fdout, "(integer %s)", head->value);
             break;
         case TINTT:
-            printf("(type integer)");
+            fprintf(fdout, "(type integer)");
             break;
         case TFLOATT:
-            printf("(type float)");
+            fprintf(fdout, "(type float)");
             break;
         case TBOOLT:
-            printf("(type boolean)");
+            fprintf(fdout, "(type boolean)");
             break;
         case TCHART:
-            printf("(type char)");
+            fprintf(fdout, "(type char)");
             break;
         case TANY:
-            printf("(type any)");
+            fprintf(fdout, "(type any)");
             break;
         case TSTRT:
-            printf("(type string)");
+            fprintf(fdout, "(type string)");
             break;
         case TSTRING:
-            printf("(string \"%s\")", head->value);
+            fprintf(fdout, "(string \"%s\")", head->value);
             break;
         case TRECORD:
-            printf("(define-record %s\n", head->value);
+            fprintf(fdout, "(define-record %s\n", head->value);
             for(int i = 0; i < head->lenchildren; i++) {
-                walk(head->children[i], level + 1);
+                walk(fdout, head->children[i], level + 1);
                 if(i < (head->lenchildren - 1)) {
-                    printf("\n");
+                    fprintf(fdout, "\n");
                 }
             }
-            printf(")");
+            fprintf(fdout, ")");
             break;
         case TRECDEF:
-            printf("(record-member ");
-            walk(head->children[0], 0);
+            fprintf(fdout, "(record-member ");
+            walk(fdout, head->children[0], 0);
             if(head->lenchildren == 2) {
-                printf(" ");
-                walk(head->children[1], 0);
+                fprintf(fdout, " ");
+                walk(fdout, head->children[1], 0);
             }
-            printf(")");
+            fprintf(fdout, ")");
             break;
         case TMODULE:
-            printf("(module %s\n", head->children[0]->value);
-            walk(head->children[1], level + 1);
-            printf(")");
+            fprintf(fdout, "(module %s\n", head->children[0]->value);
+            walk(fdout, head->children[1], level + 1);
+            fprintf(fdout, ")");
             break;
         case TBEGIN:
-            printf("(begin\n");
+            fprintf(fdout, "(begin\n");
             for(idx = 0; idx < head->lenchildren; idx++){
-                walk(head->children[idx], level + 1);
+                walk(fdout, head->children[idx], level + 1);
                 if(idx < (head->lenchildren - 1)) {
-                    printf("\n");
+                    fprintf(fdout, "\n");
                 }
             }
-            printf(")");
+            fprintf(fdout, ")");
             break;
         case TEND:
             break;
         case TUNIT:
-            printf("()");
+            fprintf(fdout, "()");
             break;
         default:
-            printf("(tag %d)", head->tag);
+            fprintf(fdout, "(tag %d)", head->tag);
             break;
     }
     return;
 }
 
 void
-generate_type_value(AST *head, const char *name) {
+generate_type_value(FILE * fdout, AST *head, const char *name) {
     int cidx = 0;
     char buf[512] = {0}, *rtbuf = nil, rbuf[512] = {0};
     char *member = nil, membuf[512] = {0};
     // setup a nice definition...
-    printf("%s\n%s_%s(", name, name, head->children[0]->value);
+    fprintf(fdout, "%s\n%s_%s(", name, name, head->children[0]->value);
     // dump our parameters...
     for(cidx = 1; cidx < head->lenchildren; cidx++) {
         snprintf(buf, 512, "m_%d", cidx); 
         rtbuf = typespec2c(head->children[cidx], rbuf, buf, 512);
         if(cidx < (head->lenchildren - 1)) {
-            printf("%s, ", rtbuf);
+            fprintf(fdout, "%s, ", rtbuf);
         } else {
-            printf("%s", rtbuf);
+            fprintf(fdout, "%s", rtbuf);
         }
     }
-    printf(") {\n");
+    fprintf(fdout, ") {\n");
 
     // define our return value...
-    indent(1);
-    printf("%s res;\n", name);
+    indent(fdout, 1);
+    fprintf(fdout, "%s res;\n", name);
 
     // grab the constructor name...
     member = head->children[0]->value;
     member = upcase(member, membuf, 512);
 
     // tag our type
-    indent(1);
-    printf("res.tag = TAG_%s_%s;\n", name, member);
+    indent(fdout, 1);
+    fprintf(fdout, "res.tag = TAG_%s_%s;\n", name, member);
 
     // set all members...
     for(cidx = 1; cidx < head->lenchildren; cidx++) {
-        indent(1);
+        indent(fdout, 1);
         snprintf(buf, 512, "m_%d", cidx);
-        printf("res.members.%s_t.%s = %s;\n", member, buf, buf);
+        fprintf(fdout, "res.members.%s_t.%s = %s;\n", member, buf, buf);
     }
-    indent(1);
-    printf("return res;\n}\n");
+    indent(fdout, 1);
+    fprintf(fdout, "return res;\n}\n");
 }
 
 void
@@ -5834,25 +5851,25 @@ generate_golang_type(AST *head, const char *parent) {
 }
 
 void
-llcwalk(AST *head, int level, int final) {
+llcwalk(FILE *fdout, AST *head, int level, int final) {
     int idx = 0, opidx = -1, llflag = 0;
     char *tbuf = nil, buf[512] = {0}, rbuf[512] = {0}, *rtbuf = nil;
     AST *ctmp = nil, *htmp = nil;
 
     if(head->tag != TBEGIN) {
-        indent(level);
+        indent(fdout, level);
 
         // if we have a value form (i.e. a call, an ident,
         // a tag, or a literal), and we are in the final
         // position of a syntactic block, prepend it with
         // a return
         if(isvalueform(head->tag) && final) {
-            printf("return ");
+            fprintf(fdout, "return ");
         }
     }
 
     if(head == nil) {
-        printf("(nil)\n");
+        fprintf(fdout, "(nil)\n");
         return;
     }
 
@@ -5861,63 +5878,63 @@ llcwalk(AST *head, int level, int final) {
         case TDEF:
             if(head->tag == TFN) {
                 // need to lift lambdas...
-                printf("(fn ");
+                fprintf(fdout, "(fn ");
             } else {
                 if(head->lenchildren == 3) {
-                    cwalk(head->children[2], 0);
+                    cwalk(fdout, head->children[2], 0);
                 } else {
-                    printf("void");
+                    fprintf(fdout, "void");
                 }
-                printf("\n%s", head->value);
+                fprintf(fdout, "\n%s", head->value);
             }
             if(head->children[0] != nil) {
-                cwalk(head->children[0], level);
+                cwalk(fdout, head->children[0], level);
             } else {
-                printf("()");
+                fprintf(fdout, "()");
             }
 
-            printf("{\n");
+            fprintf(fdout, "{\n");
 
-            llcwalk(head->children[1], level + 1, YES);
+            llcwalk(fdout, head->children[1], level + 1, YES);
 
             if(isvalueform(head->children[1]->tag)) {
-                printf(";\n}");
+                fprintf(fdout, ";\n}");
             } else {
-                printf("}");
+                fprintf(fdout, "}");
             }
             break;
         case TVAL:
         case TVAR:
             if(head->tag == TVAL) {
-                printf("const ");
+                fprintf(fdout, "const ");
             }
 
             if(head->lenchildren == 2) {
                 if(head->children[1]->tag == TCOMPLEXTYPE) {
                     tbuf = typespec2c(head->children[1], buf, head->value, 512);
-                    printf("%s = ", tbuf);
+                    fprintf(fdout, "%s = ", tbuf);
                 } else {
-                    cwalk(head->children[1], 0);
-                    printf(" %s = ", head->value);
+                    cwalk(fdout, head->children[1], 0);
+                    fprintf(fdout, " %s = ", head->value);
                 }
             } else {
-                printf("void *");
-                printf(" %s = ", head->value);
+                fprintf(fdout, "void *");
+                fprintf(fdout, " %s = ", head->value);
             }
 
 
-            cwalk(head->children[0], 0);
+            cwalk(fdout, head->children[0], 0);
 
-            printf(";");
+            fprintf(fdout, ";");
             break;
         case TEXTERN:
-            printf("extern ");
+            fprintf(fdout, "extern ");
             if(head->children[0]->tag == TCOMPLEXTYPE) {
                 tbuf = typespec2c(head->children[0], buf, head->value, 512);
-                printf("%s;", tbuf);
+                fprintf(fdout, "%s;", tbuf);
             } else {
-                cwalk(head->children[0], 0);
-                printf(" %s;", head->value);
+                cwalk(fdout, head->children[0], 0);
+                fprintf(fdout, " %s;", head->value);
             }
             break;
         case TDECLARE:
@@ -5926,16 +5943,16 @@ llcwalk(AST *head, int level, int final) {
             // 1. type
 
             if(head->lenchildren == 1 || head->children[1] == nil) {
-                printf("void %s", head->children[0]->value);
+                fprintf(fdout, "void %s", head->children[0]->value);
             } else if(head->children[1]->tag == TCOMPLEXTYPE) {
                 tbuf = typespec2c(head->children[1], buf, head->children[0]->value, 512);
-                printf("%s", tbuf);
+                fprintf(fdout, "%s", tbuf);
             } else {
-                cwalk(head->children[1], 0);
-                printf(" %s", head->children[0]->value);
+                cwalk(fdout, head->children[1], 0);
+                fprintf(fdout, " %s", head->children[0]->value);
             }
 
-            printf(";");
+            fprintf(fdout, ";");
             break;
         case TLET:
         case TLETREC:
@@ -5943,49 +5960,49 @@ llcwalk(AST *head, int level, int final) {
             // but I think that's best meant
             // for a nanopass...
             if(head->tag == TLET) {
-                printf("(let ");
+                fprintf(fdout, "(let ");
             } else {
-                printf("(letrec ");
+                fprintf(fdout, "(letrec ");
             }
 
-            printf("%s ", head->value);
+            fprintf(fdout, "%s ", head->value);
 
-            cwalk(head->children[0], 0);
+            cwalk(fdout, head->children[0], 0);
             
             if(head->lenchildren == 3) {
                 /* if we have a type,
                  * go ahead and print it.
                  */
-                printf(" ");
-                cwalk(head->children[2], 0);
+                fprintf(fdout, " ");
+                cwalk(fdout, head->children[2], 0);
             }
 
-            printf("\n");
-            cwalk(head->children[1], level + 1);
+            fprintf(fdout, "\n");
+            cwalk(fdout, head->children[1], level + 1);
 
-            printf(")");
+            fprintf(fdout, ")");
             break;
         case TWHEN:
-            printf("if(");
-            cwalk(head->children[0], 0);
-            printf(") {\n");
+            fprintf(fdout, "if(");
+            cwalk(fdout, head->children[0], 0);
+            fprintf(fdout, ") {\n");
             // there are some ugly extra calls to
             // indent in here, because there's some
             // strange interactions between WHEN and
             // BEGIN forms. 
             if(final) {
-                llcwalk(head->children[1], level + 1, YES);
+                llcwalk(fdout, head->children[1], level + 1, YES);
                 if(isvalueform(head->children[1]->tag)) {
-                    printf(";\n");
+                    fprintf(fdout, ";\n");
                 }
             } else {
-                cwalk(head->children[1], level + 1);
+                cwalk(fdout, head->children[1], level + 1);
                 if(isvalueform(head->children[1]->tag)) {
-                    printf(";\n");
+                    fprintf(fdout, ";\n");
                 }
             }
-            indent(level);
-            printf("}\n");
+            indent(fdout, level);
+            fprintf(fdout, "}\n");
             break;
         case TMATCH:
             // there are several different strategies to
@@ -6013,13 +6030,13 @@ llcwalk(AST *head, int level, int final) {
             htmp = head->children[1];
             for(int tidx = 0; tidx < htmp->lenchildren; tidx+=2) {
                 if(tidx == 0) {
-                    printf("if(");
+                    fprintf(fdout, "if(");
                 } else if(htmp->children[tidx]->tag == TELSE) {
-                    indent(level);
-                    printf("} else ");
+                    indent(fdout, level);
+                    fprintf(fdout, "} else ");
                 } else {
-                    indent(level);
-                    printf("} else if(");
+                    indent(fdout, level);
+                    fprintf(fdout, "} else if(");
                 }
 
                 if(htmp->children[tidx]->tag != TELSE) {
@@ -6027,57 +6044,57 @@ llcwalk(AST *head, int level, int final) {
                         case TFLOAT:
                         case TINT:
                         case TTAG:
-                            printf("%s == %s", ctmp->value, htmp->children[tidx]->value);
+                            fprintf(fdout, "%s == %s", ctmp->value, htmp->children[tidx]->value);
                             break;
                         case TTRUE:
                             // could possibly use stdbool here as well
                             // but currently just encoding directly to
                             // integers
-                            printf("%s == 1", ctmp->value);
+                            fprintf(fdout, "%s == 1", ctmp->value);
                             break;
                         case TFALSE:
-                            printf("%s == 0", ctmp->value);
+                            fprintf(fdout, "%s == 0", ctmp->value);
                             break;
                         case TCHAR:
-                            printf("%s == ", ctmp->value);
+                            fprintf(fdout, "%s == ", ctmp->value);
                             switch(htmp->children[tidx]->value[0]) {
                                 case '\n':
-                                    printf("'\\n'");
+                                    fprintf(fdout, "'\\n'");
                                     break;
                                 case '\r':
-                                    printf("'\\r'");
+                                    fprintf(fdout, "'\\r'");
                                     break;
                                 case '\v':
-                                    printf("'\\v'");
+                                    fprintf(fdout, "'\\v'");
                                     break;
                                 case '\t':
-                                    printf("'\\t'");
+                                    fprintf(fdout, "'\\t'");
                                     break;
                                 case '\b':
-                                    printf("'\\b'");
+                                    fprintf(fdout, "'\\b'");
                                     break;
                                 case '\0':
-                                    printf("'\\0'");
+                                    fprintf(fdout, "'\\0'");
                                     break;
                                 case '\'':
-                                    printf("'\\''");
+                                    fprintf(fdout, "'\\''");
                                     break;
                                 case '\\':
-                                    printf("'\\\\'");
+                                    fprintf(fdout, "'\\\\'");
                                     break;
                                 default:
-                                    printf("'%c'", htmp->children[tidx]->value[0]);
+                                    fprintf(fdout, "'%c'", htmp->children[tidx]->value[0]);
                                     break;
                             }
                             break;
                         case TSTRING:
-                            printf("!strncmp(%s, \"%s\", %lu)", ctmp->value, htmp->children[tidx]->value, strlen(htmp->children[tidx]->value));
+                            fprintf(fdout, "!strncmp(%s, \"%s\", %lu)", ctmp->value, htmp->children[tidx]->value, strlen(htmp->children[tidx]->value));
                             break;
                         case THEX:
                         case TOCT:
                         case TBIN:
-                            printf("%s == ", ctmp->value);
-                            cwalk(htmp->children[tidx], 0);
+                            fprintf(fdout, "%s == ", ctmp->value);
+                            cwalk(fdout, htmp->children[tidx], 0);
                             break;
                         case TARRAYLITERAL:
                         case TIDENT:
@@ -6086,30 +6103,30 @@ llcwalk(AST *head, int level, int final) {
                             mung_variant_name(ctmp, htmp->children[tidx]->children[0], NO, NO);
                             break;
                         case TGUARD:
-                            mung_guard(ctmp, htmp->children[tidx]);
+                            mung_guard(fdout, ctmp, htmp->children[tidx]);
                             break;
                         default:
                             break;
                     }
-                    printf(") ");
+                    fprintf(fdout, ") ");
                 }
-                printf("{\n");
+                fprintf(fdout, "{\n");
                 if(final) {
-                    llcwalk(htmp->children[tidx + 1], level + 1, YES);
+                    llcwalk(fdout, htmp->children[tidx + 1], level + 1, YES);
                 } else {
-                    cwalk(htmp->children[tidx + 1], level + 1);
+                    cwalk(fdout, htmp->children[tidx + 1], level + 1);
                 }
                 // this is probably wrong for certain forms
                 // need to check this more thoroughly...
-                printf(";\n");
+                fprintf(fdout, ";\n");
             }
-            indent(level);
-            printf("}\n");
+            indent(fdout, level);
+            fprintf(fdout, "}\n");
             break;
         case TWHILE:
-            printf("while(");
-            cwalk(head->children[0], 0);
-            printf("){\n");
+            fprintf(fdout, "while(");
+            cwalk(fdout, head->children[0], 0);
+            fprintf(fdout, "){\n");
 
             // FIXME: I think this is wrong;
             // we're not detecting if this is the
@@ -6122,14 +6139,14 @@ llcwalk(AST *head, int level, int final) {
             // always wrong to reach into one and attempt
             // to determine if it's the final block...
 
-            llcwalk(head->children[1], level + 1, NO);
+            llcwalk(fdout, head->children[1], level + 1, NO);
 
             if(isvalueform(head->children[1]->tag)) {
-                printf(";\n");
+                fprintf(fdout, ";\n");
             }
 
-            indent(level);
-            printf("}\n");
+            indent(fdout, level);
+            fprintf(fdout, "}\n");
             break;
         case TFOR:
             // so:
@@ -6149,15 +6166,15 @@ llcwalk(AST *head, int level, int final) {
             // need to get the type system *actually* rolling
             break;
         case TPARAMLIST:
-            printf("(");
+            fprintf(fdout, "(");
             for(;idx < head->lenchildren; idx++) {
                 AST *dc_type = nil, *dc_name = nil;
                 if(head->children[idx]->tag == TIDENT) {
                     dc_name = head->children[idx];
-                    printf("void *%s", dc_name->value);
+                    fprintf(fdout, "void *%s", dc_name->value);
                 } else if(istypeast(head->children[idx]->tag)) {
                     tbuf = typespec2c(head->children[idx],buf, nil, 512);
-                    printf("%s", tbuf);
+                    fprintf(fdout, "%s", tbuf);
                 } else {
                     // now we've reached a TPARAMDEF
                     // so just dump whatever is returned
@@ -6166,32 +6183,32 @@ llcwalk(AST *head, int level, int final) {
                     dc_name = head->children[idx]->children[0];
                     tbuf = typespec2c(dc_type, buf, dc_name->value, 512);
                     if(tbuf != nil) {
-                        printf("%s", tbuf);
+                        fprintf(fdout, "%s", tbuf);
                     } else {
-                        printf("void *");
+                        fprintf(fdout, "void *");
                     }
                 }
 
                 if(idx < (head->lenchildren - 1)){
-                    printf(", ");
+                    fprintf(fdout, ", ");
                 }
             }
-            printf(")");
+            fprintf(fdout, ")");
             break;
         case TPARAMDEF:
-            cwalk(head->children[1], 0);
-            printf(" ");
-            cwalk(head->children[0], 0);
+            cwalk(fdout, head->children[1], 0);
+            fprintf(fdout, " ");
+            cwalk(fdout, head->children[0], 0);
             break;
         case TARRAY:
-            printf("(type array)");
+            fprintf(fdout, "(type array)");
             break;
         case TCOMPLEXTYPE:
             tbuf = typespec2c(head, buf, nil, 512); 
             if(tbuf != nil) {
-                printf("%s", tbuf);
+                fprintf(fdout, "%s", tbuf);
             } else {
-                printf("void *");
+                fprintf(fdout, "void *");
             }
             break;
         case TTYPE:
@@ -6202,22 +6219,22 @@ llcwalk(AST *head, int level, int final) {
 
             // generate our enum for the various tags for this
             // type/poly (forEach constructor thereExists |Tag|)
-            printf("enum Tags_%s {\n", tbuf);
+            fprintf(fdout, "enum Tags_%s {\n", tbuf);
             for(int cidx = 0; cidx < htmp->lenchildren; cidx++) {
-                indent(level + 1);
+                indent(fdout, level + 1);
                 // I hate this, but it works
                 rtbuf = upcase(htmp->children[cidx]->children[0]->value, rbuf, 512);
-                printf("TAG_%s_%s,\n", head->value, rtbuf);
+                fprintf(fdout, "TAG_%s_%s,\n", head->value, rtbuf);
             }
-            printf("};\n");
+            fprintf(fdout, "};\n");
 
             // generate the rough structure to hold all 
             // constructor members 
-            printf("typedef struct %s_t {\n", tbuf);
-            indent(level + 1);
-            printf("int tag;\n");
-            indent(level + 1);
-            printf("union {\n");
+            fprintf(fdout, "typedef struct %s_t {\n", tbuf);
+            indent(fdout, level + 1);
+            fprintf(fdout, "int tag;\n");
+            indent(fdout, level + 1);
+            fprintf(fdout, "union {\n");
             // first pass: 
             // - dump all constructors into a union struct.
             // - upcase the constructor name
@@ -6227,15 +6244,15 @@ llcwalk(AST *head, int level, int final) {
             // TODO: inline records
             for(int cidx = 0; cidx < htmp->lenchildren; cidx++) {
                 debugln;
-                indent(level + 2);
-                printf("struct {\n");
+                indent(fdout, level + 2);
+                fprintf(fdout, "struct {\n");
                 ctmp = htmp->children[cidx];
                 debugln;
                 for(int midx = 1; midx < ctmp->lenchildren; midx++) {
                     debugln;
                     dprintf("type tag of ctmp: %d\n", ctmp->tag);
                     dprintf("midx: %d, len: %d\n", midx, ctmp->lenchildren);
-                    indent(level + 3);
+                    indent(fdout, level + 3);
                     snprintf(buf, 512, "m_%d", midx);
                     debugln;
                     dprintf("walking children...\n");
@@ -6243,16 +6260,16 @@ llcwalk(AST *head, int level, int final) {
                     dprintf("done walking children...\n");
                     dprintf("ctmp->children[%d] == null? %s\n", midx, ctmp->children[midx] == nil ? "yes" : "no");
                     rtbuf = typespec2c(ctmp->children[midx], rbuf, buf, 512);
-                    printf("%s;\n", rtbuf);
+                    fprintf(fdout, "%s;\n", rtbuf);
                     debugln;
                 }
-                indent(level + 2);
+                indent(fdout, level + 2);
                 tbuf = upcase(ctmp->children[0]->value, buf, 512);
-                printf("} %s_t;\n", buf);
+                fprintf(fdout, "} %s_t;\n", buf);
             }
-            indent(level + 1);
-            printf("} members;\n");
-            printf("} %s;\n", head->value);
+            indent(fdout, level + 1);
+            fprintf(fdout, "} members;\n");
+            fprintf(fdout, "} %s;\n", head->value);
 
             // ok, now we have generated the structure, now we
             // need to generate the constructors.
@@ -6266,14 +6283,14 @@ llcwalk(AST *head, int level, int final) {
             }
             break;
         case TARRAYLITERAL:
-            printf("{");
+            fprintf(fdout, "{");
             for(int cidx = 0; cidx < head->lenchildren; cidx++) {
-                cwalk(head->children[cidx], 0);
+                cwalk(fdout, head->children[cidx], 0);
                 if(cidx < (head->lenchildren - 1)){
-                    printf(", ");
+                    fprintf(fdout, ", ");
                 }
             }
-            printf("}");
+            fprintf(fdout, "}");
             break;
         case TCALL:
             // do the lookup of idents here, and if we have
@@ -6293,22 +6310,22 @@ llcwalk(AST *head, int level, int final) {
                 // going to be a pain in the rear to fix?
                 if(!strncmp(head->children[0]->value, "return", 6)) {
                     if(!final) {
-                        printf("return ");
+                        fprintf(fdout, "return ");
                     }
-                    cwalk(head->children[1], 0);
+                    cwalk(fdout, head->children[1], 0);
                 } else if(!strncmp(head->children[0]->value, "make-struct", 11) ||
                           !strncmp(head->children[0]->value, "make-record", 11)) {
-                    printf("{ ");
+                    fprintf(fdout, "{ ");
                     // NOTE (lojikil) make-struct now accepts the name of the
                     // struct, just like make-array does, but we don't need
                     // it in C, only in Golang
                     for(int cidx = 2; cidx < head->lenchildren; cidx++) {
-                        cwalk(head->children[cidx], 0);
+                        cwalk(fdout, head->children[cidx], 0);
                         if(cidx < (head->lenchildren - 1)) {
-                            printf(", ");
+                            fprintf(fdout, ", ");
                         }
                     }
-                    printf("}");
+                    fprintf(fdout, "}");
                 } else if(!strncmp(head->children[0]->value, "make-deque", 10)) {
 
                 } else if(!strncmp(head->children[0]->value, "make-string", 11)) {
@@ -6318,63 +6335,63 @@ llcwalk(AST *head, int level, int final) {
                     // eventually, we need to actually detect what is going on,
                     // and use the correct allocator. What I did here was to
                     // basically assume that the user typed `heap-allocate`
-                    printf("(");
-                    cwalk(head->children[1], 0);
-                    printf("*)hmalloc(sizeof(");
-                    cwalk(head->children[1], 0);
-                    printf(") * %s)", head->children[2]->value);
+                    fprintf(fdout, "(");
+                    cwalk(fdout, head->children[1], 0);
+                    fprintf(fdout, "*)hmalloc(sizeof(");
+                    cwalk(fdout, head->children[1], 0);
+                    fprintf(fdout, ") * %s)", head->children[2]->value);
                 } else if(!strncmp(head->children[0]->value, "make", 4)) {
 
                 } else if(!strncmp(head->children[0]->value, "stack-allocate", 14)) {
 
                 } else if(!strncmp(head->children[0]->value, "heap-allocate", 13)) {
-                    printf("(%s *)hmalloc(sizeof(%s) * %s)", head->children[1]->value, head->children[1]->value, head->children[2]->value);
+                    fprintf(fdout, "(%s *)hmalloc(sizeof(%s) * %s)", head->children[1]->value, head->children[1]->value, head->children[2]->value);
                 } else if(!strncmp(head->children[0]->value, "region-allocate", 15)) {
 
                 } else if(!strncmp(head->children[0]->value, "not", 3)) {
-                    printf("!");
-                    cwalk(head->children[1], 0);
+                    fprintf(fdout, "!");
+                    cwalk(fdout, head->children[1], 0);
                 } else if(!strncmp(head->children[0]->value, "every", 5)) {
                     for(int ctidx = 1; ctidx < head->lenchildren; ctidx++) {
-                        printf("(");
-                        cwalk(head->children[ctidx], 0);
-                        printf(")");
+                        fprintf(fdout, "(");
+                        cwalk(fdout, head->children[ctidx], 0);
+                        fprintf(fdout, ")");
                         if(ctidx < (head->lenchildren - 1)) {
-                            printf(" && ");
+                            fprintf(fdout, " && ");
                         }
                     }
                 } else if(!strncmp(head->children[0]->value, "one-of", 6)) {
                     for(int ctidx = 1; ctidx < head->lenchildren; ctidx++) {
-                        printf("(");
-                        cwalk(head->children[ctidx], 0);
-                        printf(")");
+                        fprintf(fdout, "(");
+                        cwalk(fdout, head->children[ctidx], 0);
+                        fprintf(fdout, ")");
                         if(ctidx < (head->lenchildren - 1)) {
-                            printf(" || ");
+                            fprintf(fdout, " || ");
                         }
                     }
                 } else if(!strncmp(head->children[0]->value, "none-of", 7)) {
                     for(int ctidx = 1; ctidx < head->lenchildren; ctidx++) {
-                        printf("!(");
-                        cwalk(head->children[ctidx], 0);
-                        printf(")");
+                        fprintf(fdout, "!(");
+                        cwalk(fdout, head->children[ctidx], 0);
+                        fprintf(fdout, ")");
                         if(ctidx < (head->lenchildren - 1)) {
-                            printf(" && ");
+                            fprintf(fdout, " && ");
                         }
                     }
                 } else {
                     if(!strncmp(head->children[0]->value, ".", 2)) {
-                        cwalk(head->children[1], 0);
-                        printf("%s", coperators[opidx]);
-                        cwalk(head->children[2], 0);
+                        cwalk(fdout, head->children[1], 0);
+                        fprintf(fdout, "%s", coperators[opidx]);
+                        cwalk(fdout, head->children[2], 0);
                     } else if(!strncmp(head->children[0]->value, "->", 2)) {
-                        cwalk(head->children[1], 0);
-                        printf("%s", coperators[opidx]);
-                        cwalk(head->children[2], 0);
+                        cwalk(fdout, head->children[1], 0);
+                        fprintf(fdout, "%s", coperators[opidx]);
+                        cwalk(fdout, head->children[2], 0);
                     } else if(!strncmp(head->children[0]->value, "get", 3)) {
-                        cwalk(head->children[1], 0);
-                        printf("[");
-                        cwalk(head->children[2], 0);
-                        printf("]");
+                        cwalk(fdout, head->children[1], 0);
+                        fprintf(fdout, "[");
+                        cwalk(fdout, head->children[2], 0);
+                        fprintf(fdout, "]");
                     } else {
                         // NOTE the simplest way to handle this is just to wrap all
                         // expressions in `()`, but we can also make it a little more
@@ -6384,79 +6401,79 @@ llcwalk(AST *head, int level, int final) {
                         // sees a little nicer
                         llflag = (head->children[1]->tag == TCALL && !isprimitiveaccessor(head->children[1]->children[0]->value));
                         if(llflag){
-                            printf("(");
+                            fprintf(fdout, "(");
                         }
-                        cwalk(head->children[1], 0);
+                        cwalk(fdout, head->children[1], 0);
                         if(llflag){
-                            printf(")");
+                            fprintf(fdout, ")");
                         }
-                        printf(" %s ", coperators[opidx]);
+                        fprintf(fdout, " %s ", coperators[opidx]);
                         llflag = (head->children[2]->tag == TCALL
                                   && !isprimitiveaccessor(head->children[2]->children[0]->value)
                                   && (iscoperator(head->children[2]->children[0]->value) > 0));
                         if(llflag){
-                            printf("(");
+                            fprintf(fdout, "(");
                         }
-                        cwalk(head->children[2], 0);
+                        cwalk(fdout, head->children[2], 0);
                         if(llflag){
-                            printf(")");
+                            fprintf(fdout, ")");
                         }
                     }
                 }
             } else if(head->lenchildren == 1) {
-                printf("%s()", head->children[0]->value);
+                fprintf(fdout, "%s()", head->children[0]->value);
             } else {
-                printf("%s(", head->children[0]->value);
+                fprintf(fdout, "%s(", head->children[0]->value);
                 for(int i = 1; i < head->lenchildren; i++) {
-                    cwalk(head->children[i], 0);
+                    cwalk(fdout, head->children[i], 0);
                     if(i < (head->lenchildren - 1)) {
-                        printf(", ");
+                        fprintf(fdout, ", ");
                     }
                 }
-                printf(")");
+                fprintf(fdout, ")");
             }
             break;
         case TIF:
-            printf("if(");
-            cwalk(head->children[0], 0);
-            printf(") {\n");
+            fprintf(fdout, "if(");
+            cwalk(fdout, head->children[0], 0);
+            fprintf(fdout, ") {\n");
 
             if(final) {
-                llcwalk(head->children[1], level + 1, YES);
+                llcwalk(fdout, head->children[1], level + 1, YES);
             } else {
-                cwalk(head->children[1], level + 1);
-                printf(";");
+                cwalk(fdout, head->children[1], level + 1);
+                fprintf(fdout, ";");
             }
 
             if(isvalueform(head->children[1]->tag)) {
-                printf(";\n");
+                fprintf(fdout, ";\n");
             } else {
-                printf("\n");
+                fprintf(fdout, "\n");
             }
 
-            indent(level);
+            indent(fdout, level);
 
-            printf("} else {\n");
+            fprintf(fdout, "} else {\n");
 
             if(final) {
-                llcwalk(head->children[2], level + 1, YES);
+                llcwalk(fdout, head->children[2], level + 1, YES);
             } else {
-                cwalk(head->children[2], level + 1);
+                cwalk(fdout, head->children[2], level + 1);
             }
 
             if(isvalueform(head->children[2]->tag)) {
-                printf(";\n");
+                fprintf(fdout, ";\n");
             } else {
-                printf("\n");
+                fprintf(fdout, "\n");
             }
 
-            indent(level);
+            indent(fdout, level);
 
-            printf("}\n");
+            fprintf(fdout, "}\n");
             break;
         case TIDENT:
         case TTAG:
-            printf("%s", head->value);
+            fprintf(fdout, "%s", head->value);
             break;
         case TBOOL:
             /* really, would love to introduce a higher-level
@@ -6464,100 +6481,100 @@ llcwalk(AST *head, int level, int final) {
              * for the initial go-around in C...
              */
             if(head->value[0] == 0) {
-                printf("1"); 
+                fprintf(fdout, "1"); 
             } else {
-                printf("0");
+                fprintf(fdout, "0");
             }
             break;
         case TCHAR:
             switch(head->value[0]) {
                 case '\n':
-                    printf("'\\n'");
+                    fprintf(fdout, "'\\n'");
                     break;
                 case '\r':
-                    printf("'\\r'");
+                    fprintf(fdout, "'\\r'");
                     break;
                 case '\t':
-                    printf("'\\t'");
+                    fprintf(fdout, "'\\t'");
                     break;
                 case '\v':
-                    printf("'\\v'");
+                    fprintf(fdout, "'\\v'");
                     break;
                 case '\0':
-                    printf("'\\0'");
+                    fprintf(fdout, "'\\0'");
                     break;
                 case '\'':
-                    printf("'\\''");
+                    fprintf(fdout, "'\\''");
                     break;
                 default:
-                    printf("'%c'", head->value[0]);
+                    fprintf(fdout, "'%c'", head->value[0]);
                     break;
             }
             break;
         case TFLOAT:
-            printf("%sf", head->value);
+            fprintf(fdout, "%sf", head->value);
             break;
         case TFALSE:
         case TTRUE:
             if(head->tag == TFALSE) {
-                printf("false");
+                fprintf(fdout, "false");
             } else {
-                printf("true");
+                fprintf(fdout, "true");
             }
             break;
         case THEX:
-            printf("0x%s", head->value);
+            fprintf(fdout, "0x%s", head->value);
             break;
         case TOCT:
-            printf("0%s", head->value);
+            fprintf(fdout, "0%s", head->value);
             break;
         case TBIN:
-            printf("%lu", strtol(head->value, NULL, 2));
+            fprintf(fdout, "%lu", strtol(head->value, NULL, 2));
             break;
         case TINT:
-            printf("%s", head->value);
+            fprintf(fdout, "%s", head->value);
             break;
         case TINTT:
-            printf("int");
+            fprintf(fdout, "int");
             break;
         case TFLOATT:
-            printf("float");
+            fprintf(fdout, "float");
             break;
         case TBOOLT:
-            printf("bool");
+            fprintf(fdout, "bool");
             break;
         case TCHART:
-            printf("char");
+            fprintf(fdout, "char");
             break;
         case TSTRT:
             /* make a fat version of this?
              * or just track the length every
              * where?
              */
-            printf("char *");
+            fprintf(fdout, "char *");
             break;
         case TSTRING:
-            printf("\"%s\"", head->value);
+            fprintf(fdout, "\"%s\"", head->value);
             break;
         case TRECORD:
-            printf("typedef struct %s %s;\nstruct %s {\n", head->value, head->value, head->value);
+            fprintf(fdout, "typedef struct %s %s;\nstruct %s {\n", head->value, head->value, head->value);
             for(int i = 0; i < head->lenchildren; i++) {
-                cwalk(head->children[i], level + 1);
+                cwalk(fdout, head->children[i], level + 1);
                 if(i < (head->lenchildren - 1)) {
-                    printf("\n");
+                    fprintf(fdout, "\n");
                 }
             }
-            printf("\n};");
+            fprintf(fdout, "\n};");
             break;
         case TRECDEF:
             if(head->lenchildren == 2) {
-                cwalk(head->children[1], 0);
+                cwalk(fdout, head->children[1], 0);
             } else {
-                printf("void *");
+                fprintf(fdout, "void *");
             }
-            printf(" ");
-            cwalk(head->children[0], 0);
-            printf(";");
+            fprintf(fdout, " ");
+            cwalk(fdout, head->children[0], 0);
+            fprintf(fdout, ";");
             break;
         case TBEGIN:
             // TODO: this code is super ugly & can be cleaned up
@@ -6576,15 +6593,15 @@ llcwalk(AST *head, int level, int final) {
             // all rats nests of if's
             for(idx = 0; idx < head->lenchildren; idx++) {
                 if(idx == (head->lenchildren - 1) && final) {
-                    llcwalk(head->children[idx], level, YES);
+                    llcwalk(fdout, head->children[idx], level, YES);
                 } else {
-                    llcwalk(head->children[idx], level, NO);
+                    llcwalk(fdout, head->children[idx], level, NO);
                 }
 
                 if(issyntacticform(head->children[idx]->tag)) {
-                    printf("\n");
+                    fprintf(fdout, "\n");
                 } else {
-                    printf(";\n");
+                    fprintf(fdout, ";\n");
                 }
             }
             break;
@@ -6592,35 +6609,35 @@ llcwalk(AST *head, int level, int final) {
         case TEND:
             break;
         case TUNIT:
-            printf("void");
+            fprintf(fdout, "void");
             break;
         default:
-            printf("(tag %d)", head->tag);
+            fprintf(fdout, "(tag %d)", head->tag);
             break;
     }
     return;
 }
 
 void
-llgwalk(AST *head, int level, int final) {
+llgwalk(FILE *, AST *head, int level, int final) {
     int idx = 0, opidx = -1, guard_check = NO, llflag = 0;
     char *tbuf = nil, buf[512] = {0};
     AST *ctmp = nil, *htmp = nil;
 
     if(head->tag != TBEGIN) {
-        gindent(level);
+        gindent(fdout, level);
 
         // if we have a value form (i.e. a call, an ident,
         // a tag, or a literal), and we are in the final
         // position of a syntactic block, prepend it with
         // a return
         if(isvalueform(head->tag) && final) {
-            printf("return ");
+            fprintf(fdout, "return ");
         }
     }
 
     if(head == nil) {
-        printf("(nil)\n");
+        fprintf(fdout, "(nil)\n");
         return;
     }
 
@@ -6628,34 +6645,34 @@ llgwalk(AST *head, int level, int final) {
         case TFN:
         case TDEF:
             // print the declaration
-            printf("func ");
+            fprintf(fdout, "func ");
 
             // if we have a `def`, print the name
             if(head->tag == TDEF) {
-                printf("%s", head->value);
+                fprintf(fdout, "%s", head->value);
             }
 
             // walk the parameter list, print () if none
             if(head->children[0] != nil) {
-                gwalk(head->children[0], level);
+                gwalk(fdout, head->children[0], level);
             } else {
-                printf("()");
+                fprintf(fdout, "()");
             }
 
-            printf(" ");
+            fprintf(fdout, " ");
 
             // generate the return type
             if(head->lenchildren == 3) {
-                gwalk(head->children[2], 0);
+                gwalk(fdout, head->children[2], 0);
             }
-            printf(" {\n");
+            fprintf(fdout, " {\n");
 
-            llgwalk(head->children[1], level + 1, YES);
+            llgwalk(fdout, head->children[1], level + 1, YES);
 
             if(isvalueform(head->children[1]->tag)) {
-                printf("\n}");
+                fprintf(fdout, "\n}");
             } else {
-                printf("}");
+                fprintf(fdout, "}");
             }
             break;
         case TVAL:
@@ -6665,27 +6682,27 @@ llgwalk(AST *head, int level, int final) {
             // forms subsequently need to be checked at the
             // compiler level, not at the transpiled level
             if(isprimitivevalue(head->children[0]->tag)) {
-                printf("const %s = ", head->value);
+                fprintf(fdout, "const %s = ", head->value);
             } else {
-                printf("%s := ", head->value);
+                fprintf(fdout, "%s := ", head->value);
             }
-            gwalk(head->children[0], 0);
+            gwalk(fdout, head->children[0], 0);
             break;
         case TVAR:
             if(head->lenchildren == 2) {
                 if(head->children[1]->tag == TCOMPLEXTYPE) {
                     tbuf = typespec2g(head->children[1], buf, head->value, 512);
-                    printf("var %s = ", tbuf);
+                    fprintf(fdout, "var %s = ", tbuf);
                 } else {
-                    printf("var %s ", head->value);
-                    gwalk(head->children[1], 0);
-                    printf(" = ");
+                    fprintf(fdout, "var %s ", head->value);
+                    gwalk(fdout, head->children[1], 0);
+                    fprintf(fdout, " = ");
                 }
             } else {
-                printf(" %s := ", head->value);
+                fprintf(fdout, " %s := ", head->value);
             }
 
-            gwalk(head->children[0], 0);
+            gwalk(fdout, head->children[0], 0);
 
             break;
         case TEXTERN:
@@ -6694,10 +6711,10 @@ llgwalk(AST *head, int level, int final) {
             // *but* we can use this to declare a variable type
             // without assigning it a value...
             if(istypeast(head->children[1]->tag) && !islambdatypeast(head->children[1]->tag)) {
-                printf("var ");
-                llgwalk(head->children[0], 0, NO);
-                printf(" ");
-                llgwalk(head->children[1], 0, NO);
+                fprintf(fdout, "var ");
+                llgwalk(fdout, head->children[0], 0, NO);
+                fprintf(fdout, " ");
+                llgwalk(fdout, head->children[1], 0, NO);
             }
             break;
         case TLET:
@@ -6706,49 +6723,49 @@ llgwalk(AST *head, int level, int final) {
             // but I think that's best meant
             // for a nanopass...
             if(head->tag == TLET) {
-                printf("(let ");
+                fprintf(fdout, "(let ");
             } else {
-                printf("(letrec ");
+                fprintf(fdout, "(letrec ");
             }
 
-            printf("%s ", head->value);
+            fprintf(fdout, "%s ", head->value);
 
-            gwalk(head->children[0], 0);
+            gwalk(fdout, head->children[0], 0);
             
             if(head->lenchildren == 3) {
                 /* if we have a type,
                  * go ahead and print it.
                  */
-                printf(" ");
-                gwalk(head->children[2], 0);
+                fprintf(fdout, " ");
+                gwalk(fdout, head->children[2], 0);
             }
 
-            printf("\n");
-            gwalk(head->children[1], level + 1);
+            fprintf(fdout, "\n");
+            gwalk(fdout, head->children[1], level + 1);
 
-            printf(")");
+            fprintf(fdout, ")");
             break;
         case TWHEN:
-            printf("if ");
-            gwalk(head->children[0], 0);
-            printf(" {\n");
+            fprintf(fdout, "if ");
+            gwalk(fdout, head->children[0], 0);
+            fprintf(fdout, " {\n");
             // there are some ugly extra calls to
             // gindent in here, because there's some
             // strange interactions between WHEN and
             // BEGIN forms. 
             if(final) {
-                llgwalk(head->children[1], level + 1, YES);
+                llgwalk(fdout, head->children[1], level + 1, YES);
                 if(isvalueform(head->children[1]->tag)) {
-                    printf("\n");
+                    fprintf(fdout, "\n");
                 }
             } else {
-                gwalk(head->children[1], level + 1);
+                gwalk(fdout, head->children[1], level + 1);
                 if(isvalueform(head->children[1]->tag)) {
-                    printf("\n");
+                    fprintf(fdout, "\n");
                 }
             }
-            gindent(level);
-            printf("}\n");
+            gindent(fdout, level);
+            fprintf(fdout, "}\n");
             break;
         case TMATCH:
             // there are several different strategies to
@@ -6765,12 +6782,12 @@ llgwalk(AST *head, int level, int final) {
                 // with this in Go, need to explore that more...
                 ctmp = (AST *)hmalloc(sizeof(AST));
                 ctmp->tag = TIDENT;
-                snprintf(&buf[0], 512, "l%d", rand());
+                snfprintf(fdout, &buf[0], 512, "l%d", rand());
                 ctmp->value = hstrdup(buf);
-                printf("%s := ", ctmp->value);
-                gwalk(head->children[0], 0);
-                printf("\n");
-                gindent(level);
+                fprintf(fdout, "%s := ", ctmp->value);
+                gwalk(fdout, head->children[0], 0);
+                fprintf(fdout, "\n");
+                gindent(fdout, level);
             }
 
             // TODO need to:
@@ -6781,17 +6798,17 @@ llgwalk(AST *head, int level, int final) {
             // for now, just roll with it
             htmp = head->children[1];
             if(htmp->children[0]->tag == TCALL) {
-                printf("switch %s := %s.(type) {\n", ctmp->value, ctmp->value);
+                fprintf(fdout, "switch %s := %s.(type) {\n", ctmp->value, ctmp->value);
             } else if(check_guard(htmp->children, htmp->lenchildren) == YES) {
-                printf("switch {\n");
+                fprintf(fdout, "switch {\n");
                 guard_check = YES;
             } else {
-                printf("switch %s {\n", ctmp->value);
+                fprintf(fdout, "switch %s {\n", ctmp->value);
             }
             for(int tidx = 0; tidx < htmp->lenchildren; tidx+=2) {
                 if(htmp->children[tidx]->tag != TELSE) {
-                    gindent(level + 1);
-                    printf("case ");
+                    gindent(fdout, level + 1);
+                    fprintf(fdout, "case ");
                     switch(htmp->children[tidx]->tag) {
                         case TFLOAT:
                         case TINT:
@@ -6800,58 +6817,58 @@ llgwalk(AST *head, int level, int final) {
                         case TTRUE:
                         case TFALSE:
                             if(guard_check == YES) {
-                                printf("%s == ", ctmp->value);
+                                fprintf(fdout, "%s == ", ctmp->value);
                             }
-                            printf("%s", htmp->children[tidx]->value);
+                            fprintf(fdout, "%s", htmp->children[tidx]->value);
                             break;
                         case TCHAR:
-                            //printf("'%s'", htmp->children[tidx]->value);
+                            //fprintf(fdout, "'%s'", htmp->children[tidx]->value);
                             if(guard_check == YES) {
-                                printf("%s == ", ctmp->value);
+                                fprintf(fdout, "%s == ", ctmp->value);
                             }
                             switch(htmp->children[tidx]->value[0]) {
                                 case '\n':
-                                    printf("'\\n'");
+                                    fprintf(fdout, "'\\n'");
                                     break;
                                 case '\r':
-                                    printf("'\\r'");
+                                    fprintf(fdout, "'\\r'");
                                     break;
                                 case '\t':
-                                    printf("'\\t'");
+                                    fprintf(fdout, "'\\t'");
                                     break;
                                 case '\v':
-                                    printf("'\\v'");
+                                    fprintf(fdout, "'\\v'");
                                     break;
                                 case '\0':
-                                    printf("'\\u0000'");
+                                    fprintf(fdout, "'\\u0000'");
                                     break;
                                 case '\b':
-                                    printf("'\\b'");
+                                    fprintf(fdout, "'\\b'");
                                     break;
                                 case '\'':
-                                    printf("'\\\''");
+                                    fprintf(fdout, "'\\\''");
                                     break;
                                 case '\\':
-                                    printf("'\\\\'");
+                                    fprintf(fdout, "'\\\\'");
                                     break;
                                 default:
-                                    printf("'%c'", htmp->children[tidx]->value[0]);
+                                    fprintf(fdout, "'%c'", htmp->children[tidx]->value[0]);
                                     break;
                             }
                             break;
                         case TSTRING:
                             if(guard_check == YES) {
-                                printf("%s == ", ctmp->value);
+                                fprintf(fdout, "%s == ", ctmp->value);
                             }
-                            printf("\"%s\"", htmp->children[tidx]->value);
+                            fprintf(fdout, "\"%s\"", htmp->children[tidx]->value);
                             break;
                         case THEX:
                         case TOCT:
                         case TBIN:
                             if(guard_check == YES) {
-                                printf("%s == ", ctmp->value);
+                                fprintf(fdout, "%s == ", ctmp->value);
                             }
-                            gwalk(htmp->children[tidx], 0);
+                            gwalk(fdout, htmp->children[tidx], 0);
                             break;
                         case TARRAYLITERAL:
                             break;
@@ -6859,39 +6876,39 @@ llgwalk(AST *head, int level, int final) {
                             mung_variant_name(ctmp, htmp->children[tidx]->children[0], NO, YES);
                             break;
                         case TGUARD:
-                            mung_guard(ctmp, htmp->children[tidx]);
+                            mung_guard(fdout, ctmp, htmp->children[tidx]);
                             break;
                         default:
                             break;
                     }
-                    printf(":\n");
+                    fprintf(fdout, ":\n");
                 } else {
-                    gindent(level + 1);
-                    printf("default:\n");
+                    gindent(fdout, level + 1);
+                    fprintf(fdout, "default:\n");
                 }
                 if(final) {
-                    llgwalk(htmp->children[tidx + 1], level + 2, YES);
+                    llgwalk(fdout, htmp->children[tidx + 1], level + 2, YES);
                 } else {
-                    gwalk(htmp->children[tidx + 1], level + 2);
+                    gwalk(fdout, htmp->children[tidx + 1], level + 2);
                 }
-                printf("\n");
+                fprintf(fdout, "\n");
             }
-            gindent(level);
-            printf("}\n");
+            gindent(fdout, level);
+            fprintf(fdout, "}\n");
             break;
         case TWHILE:
-            printf("for ");
-            gwalk(head->children[0], 0);
-            printf(" {\n");
+            fprintf(fdout, "for ");
+            gwalk(fdout, head->children[0], 0);
+            fprintf(fdout, " {\n");
 
-            gwalk(head->children[1], level + 1);
+            gwalk(fdout, head->children[1], level + 1);
 
             if(isvalueform(head->children[1]->tag)) {
-                printf(";\n");
+                fprintf(fdout, ";\n");
             }
 
-            gindent(level);
-            printf("}\n");
+            gindent(fdout, level);
+            fprintf(fdout, "}\n");
             break;
         case TFOR:
             // so:
@@ -6911,15 +6928,15 @@ llgwalk(AST *head, int level, int final) {
             // need to get the type system *actually* rolling
             break;
         case TPARAMLIST:
-            printf("(");
+            fprintf(fdout, "(");
             for(;idx < head->lenchildren; idx++) {
                 AST *dc_type = nil, *dc_name = nil;
                 if(head->children[idx]->tag == TIDENT) {
                     dc_name = head->children[idx];
-                    printf("%s interface{}", dc_name->value);
+                    fprintf(fdout, "%s interface{}", dc_name->value);
                 } else if(istypeast(head->children[idx]->tag)) {
                     tbuf = typespec2g(head->children[idx],buf, nil, 512);
-                    printf("%s", tbuf);
+                    fprintf(fdout, "%s", tbuf);
                     tbuf[0] = nul;
                 } else {
                     // now we've reached a TPARAMDEF
@@ -6929,33 +6946,33 @@ llgwalk(AST *head, int level, int final) {
                     dc_name = head->children[idx]->children[0];
                     tbuf = typespec2g(dc_type, buf, dc_name->value, 512);
                     if(tbuf != nil) {
-                        printf("%s", tbuf);
+                        fprintf(fdout, "%s", tbuf);
                     } else {
-                        printf("interface {}");
+                        fprintf(fdout, "interface {}");
                     }
                     tbuf[0] = nul;
                 }
 
                 if(idx < (head->lenchildren - 1)){
-                    printf(", ");
+                    fprintf(fdout, ", ");
                 }
             }
-            printf(")");
+            fprintf(fdout, ")");
             break;
         case TPARAMDEF:
-            gwalk(head->children[1], 0);
-            printf(" ");
-            gwalk(head->children[0], 0);
+            gwalk(fdout, head->children[1], 0);
+            fprintf(fdout, " ");
+            gwalk(fdout, head->children[0], 0);
             break;
         case TARRAY:
-            printf("(type array)");
+            fprintf(fdout, "(type array)");
             break;
         case TCOMPLEXTYPE:
             tbuf = typespec2g(head, buf, nil, 512);
             if(tbuf != nil) {
-                printf("%s", tbuf);
+                fprintf(fdout, "%s", tbuf);
             } else {
-                printf("interface{}");
+                fprintf(fdout, "interface{}");
             }
             break;
         case TTYPE:
@@ -6964,9 +6981,9 @@ llgwalk(AST *head, int level, int final) {
             // 2. Generate a struct per constructor
             // 3. Generate a `isFoo`-style function for each struct to be of the interface type
             // 4. Add any helper methods
-            printf("type %s interface {\n", head->value);
-            gindent(level + 1);
-            printf("is%s()\n}\n", head->value);
+            fprintf(fdout, "type %s interface {\n", head->value);
+            gindent(fdout, level + 1);
+            fprintf(fdout, "is%s()\n}\n", head->value);
             for(int cidx = 0; cidx < head->children[1]->lenchildren; cidx++) {
                 generate_golang_type(head->children[1]->children[cidx], head->value);
             }
@@ -6977,14 +6994,14 @@ llgwalk(AST *head, int level, int final) {
             // or the like, I think
             break;
         case TARRAYLITERAL:
-            printf("{");
+            fprintf(fdout, "{");
             for(int cidx = 0; cidx < head->lenchildren; cidx++) {
-                gwalk(head->children[cidx], 0);
+                gwalk(fdout, head->children[cidx], 0);
                 if(cidx < (head->lenchildren - 1)){
-                    printf(", ");
+                    fprintf(fdout, ", ");
                 }
             }
-            printf("}");
+            fprintf(fdout, "}");
             break;
         case TCALL:
             // do the lookup of idents here, and if we have
@@ -7004,157 +7021,157 @@ llgwalk(AST *head, int level, int final) {
                 // going to be a pain in the rear to fix?
                 if(!strncmp(head->children[0]->value, "return", 6)) {
                     if(!final) {
-                        printf("return ");
+                        fprintf(fdout, "return ");
                     }
-                    gwalk(head->children[1], 0);
+                    gwalk(fdout, head->children[1], 0);
                 } else if(!strncmp(head->children[0]->value, "make-struct", 11) ||
                           !strncmp(head->children[0]->value, "make-record", 11)) {
                     // NOTE (lojikil) in Go we need to print the name of the struct
                     // when allocating it here...
                     mung_variant_name(nil, head->children[1], NO, YES);
-                    printf("{ ");
+                    fprintf(fdout, "{ ");
                     for(int cidx = 2; cidx < head->lenchildren; cidx++) {
-                        gwalk(head->children[cidx], 0);
+                        gwalk(fdout, head->children[cidx], 0);
                         if(cidx < (head->lenchildren - 1)) {
-                            printf(", ");
+                            fprintf(fdout, ", ");
                         }
                     }
-                    printf("}");
+                    fprintf(fdout, "}");
                 } else if(!strncmp(head->children[0]->value, "make-deque", 10)) {
 
                 } else if(!strncmp(head->children[0]->value, "make-string", 11)) {
-                    printf("string(");
-                    gwalk(head->children[1], 0);
-                    printf(")");
+                    fprintf(fdout, "string(");
+                    gwalk(fdout, head->children[1], 0);
+                    fprintf(fdout, ")");
                 } else if(!strncmp(head->children[0]->value, "make-array", 10)) {
                     // TODO: this is a hack, to get carML lifted into itself
                     // eventually, we need to actually detect what is going on,
                     // and use the correct allocator. What I did here was to
                     // basically assume that the user typed `heap-allocate`
-                    printf("make([]");
-                    gwalk(head->children[1], 0);
-                    printf(", ");
-                    gwalk(head->children[2], 0);
-                    printf(")");
+                    fprintf(fdout, "make([]");
+                    gwalk(fdout, head->children[1], 0);
+                    fprintf(fdout, ", ");
+                    gwalk(fdout, head->children[2], 0);
+                    fprintf(fdout, ")");
                 } else if(!strncmp(head->children[0]->value, "make", 4)) {
 
                 } else if(!strncmp(head->children[0]->value, "stack-allocate", 14)) {
                 } else if(!strncmp(head->children[0]->value, "heap-allocate", 13)) {
                 } else if(!strncmp(head->children[0]->value, "region-allocate", 15)) {
                 } else if(!strncmp(head->children[0]->value, "not", 3)) {
-                    printf("!");
-                    gwalk(head->children[1], 0);
+                    fprintf(fdout, "!");
+                    gwalk(fdout, head->children[1], 0);
                 } else if(!strncmp(head->children[0]->value, "every", 5)) {
                     for(int ctidx = 1; ctidx < head->lenchildren; ctidx++) {
-                        printf("(");
-                        gwalk(head->children[ctidx], 0);
-                        printf(")");
+                        fprintf(fdout, "(");
+                        gwalk(fdout, head->children[ctidx], 0);
+                        fprintf(fdout, ")");
                         if(ctidx < (head->lenchildren - 1)) {
-                            printf(" && ");
+                            fprintf(fdout, " && ");
                         }
                     }
                 } else if(!strncmp(head->children[0]->value, "one-of", 6)) {
                     for(int ctidx = 1; ctidx < head->lenchildren; ctidx++) {
-                        printf("(");
-                        gwalk(head->children[ctidx], 0);
-                        printf(")");
+                        fprintf(fdout, "(");
+                        gwalk(fdout, head->children[ctidx], 0);
+                        fprintf(fdout, ")");
                         if(ctidx < (head->lenchildren - 1)) {
-                            printf(" || ");
+                            fprintf(fdout, " || ");
                         }
                     }
                 } else if(!strncmp(head->children[0]->value, "none-of", 7)) {
                     for(int ctidx = 1; ctidx < head->lenchildren; ctidx++) {
-                        printf("!(");
-                        gwalk(head->children[ctidx], 0);
-                        printf(")");
+                        fprintf(fdout, "!(");
+                        gwalk(fdout, head->children[ctidx], 0);
+                        fprintf(fdout, ")");
                         if(ctidx < (head->lenchildren - 1)) {
-                            printf(" && ");
+                            fprintf(fdout, " && ");
                         }
                     }
                 } else {
                     if(!strncmp(head->children[0]->value, ".", 2)) {
-                        gwalk(head->children[1], 0);
-                        printf("%s", coperators[opidx]);
-                        gwalk(head->children[2], 0);
+                        gwalk(fdout, head->children[1], 0);
+                        fprintf(fdout, "%s", coperators[opidx]);
+                        gwalk(fdout, head->children[2], 0);
                     } else if(!strncmp(head->children[0]->value, "->", 2)) {
-                        gwalk(head->children[1], 0);
-                        printf("%s", coperators[opidx]);
-                        gwalk(head->children[2], 0);
+                        gwalk(fdout, head->children[1], 0);
+                        fprintf(fdout, "%s", coperators[opidx]);
+                        gwalk(fdout, head->children[2], 0);
                     } else if(!strncmp(head->children[0]->value, "get", 3)) {
-                        gwalk(head->children[1], 0);
-                        printf("[");
-                        gwalk(head->children[2], 0);
-                        printf("]");
+                        gwalk(fdout, head->children[1], 0);
+                        fprintf(fdout, "[");
+                        gwalk(fdout, head->children[2], 0);
+                        fprintf(fdout, "]");
                     } else {
                         llflag = (head->children[1]->tag == TCALL
                                   && !isprimitiveaccessor(head->children[1]->children[0]->value));
                         if(llflag){
-                            printf("(");
+                            fprintf(fdout, "(");
                         }
-                        gwalk(head->children[1], 0);
+                        gwalk(fdout, head->children[1], 0);
                         if(llflag){
-                            printf(")");
+                            fprintf(fdout, ")");
                         }
-                        printf(" %s ", coperators[opidx]);
+                        fprintf(fdout, " %s ", coperators[opidx]);
                         llflag = (head->children[2]->tag == TCALL
                                   && !isprimitiveaccessor(head->children[2]->children[0]->value)
                                   && (iscoperator(head->children[2]->children[0]->value) > 0));
                         if(llflag){
-                            printf("(");
+                            fprintf(fdout, "(");
                         }
-                        gwalk(head->children[2], 0);
+                        gwalk(fdout, head->children[2], 0);
                         if(llflag){
-                            printf(")");
+                            fprintf(fdout, ")");
                         }
                     }
                 }
             } else if(head->lenchildren == 1) {
-                printf("%s()", head->children[0]->value);
+                fprintf(fdout, "%s()", head->children[0]->value);
             } else {
-                printf("%s(", head->children[0]->value);
+                fprintf(fdout, "%s(", head->children[0]->value);
                 for(int i = 1; i < head->lenchildren; i++) {
-                    gwalk(head->children[i], 0);
+                    gwalk(fdout, head->children[i], 0);
                     if(i < (head->lenchildren - 1)) {
-                        printf(", ");
+                        fprintf(fdout, ", ");
                     }
                 }
-                printf(")");
+                fprintf(fdout, ")");
             }
             break;
         case TIF:
-            printf("if ");
-            gwalk(head->children[0], 0);
-            printf(" {\n");
+            fprintf(fdout, "if ");
+            gwalk(fdout, head->children[0], 0);
+            fprintf(fdout, " {\n");
 
             if(final) {
-                llgwalk(head->children[1], level + 1, YES);
+                llgwalk(fdout, head->children[1], level + 1, YES);
             } else {
-                gwalk(head->children[1], level + 1);
+                gwalk(fdout, head->children[1], level + 1);
             }
 
-            printf("\n");
-            gindent(level);
-            printf("} else {\n");
+            fprintf(fdout, "\n");
+            gindent(fdout, level);
+            fprintf(fdout, "} else {\n");
 
             if(final) {
-                llgwalk(head->children[2], level + 1, YES);
+                llgwalk(fdout, head->children[2], level + 1, YES);
             } else {
-                gwalk(head->children[2], level + 1);
+                gwalk(fdout, head->children[2], level + 1);
             }
 
-            printf("\n");
-            gindent(level);
-            printf("}\n");
+            fprintf(fdout, "\n");
+            gindent(fdout, level);
+            fprintf(fdout, "}\n");
             break;
         case TIDENT:
-            printf("%s", head->value);
+            fprintf(fdout, "%s", head->value);
             break;
         case TTAG:
             tbuf = typespec2g(head, buf, nil, 512);
             if(tbuf != nil) {
-                printf("%s", tbuf);
+                fprintf(fdout, "%s", tbuf);
             } else {
-                printf("interface{}");
+                fprintf(fdout, "interface{}");
             }
             break;
         case TBOOL:
@@ -7163,124 +7180,124 @@ llgwalk(AST *head, int level, int final) {
              * for the initial go-around in C...
              */
             if(head->value[0] == 0) {
-                printf("true"); 
+                fprintf(fdout, "true"); 
             } else {
-                printf("false");
+                fprintf(fdout, "false");
             }
             break;
         case TCHAR:
             switch(head->value[0]) {
                 case '\n':
-                    printf("'\\n'");
+                    fprintf(fdout, "'\\n'");
                     break;
                 case '\r':
-                    printf("'\\r'");
+                    fprintf(fdout, "'\\r'");
                     break;
                 case '\t':
-                    printf("'\\t'");
+                    fprintf(fdout, "'\\t'");
                     break;
                 case '\v':
-                    printf("'\\v'");
+                    fprintf(fdout, "'\\v'");
                     break;
                 case '\b':
-                    printf("'\\b'");
+                    fprintf(fdout, "'\\b'");
                     break;
                 case '\0':
-                    printf("'\\u0000'");
+                    fprintf(fdout, "'\\u0000'");
                     break;
                 case '\'':
-                    printf("'\\\''");
+                    fprintf(fdout, "'\\\''");
                     break;
                 case '\\':
-                    printf("'\\\\'");
+                    fprintf(fdout, "'\\\\'");
                     break;
                 default:
-                    printf("'%c'", head->value[0]);
+                    fprintf(fdout, "'%c'", head->value[0]);
                     break;
             }
             break;
         case TFLOAT:
-            printf("%sf", head->value);
+            fprintf(fdout, "%sf", head->value);
             break;
         case TFALSE:
         case TTRUE:
             if(head->tag == TFALSE) {
-                printf("false");
+                fprintf(fdout, "false");
             } else {
-                printf("true");
+                fprintf(fdout, "true");
             }
             break;
         case THEX:
-            printf("0x%s", head->value);
+            fprintf(fdout, "0x%s", head->value);
             break;
         case TOCT:
-            printf("0%s", head->value);
+            fprintf(fdout, "0%s", head->value);
             break;
         case TBIN:
-            printf("%lu", strtol(head->value, NULL, 2));
+            fprintf(fdout, "%lu", strtol(head->value, NULL, 2));
             break;
         case TINT:
-            printf("%s", head->value);
+            fprintf(fdout, "%s", head->value);
             break;
         case TINTT:
-            printf("int");
+            fprintf(fdout, "int");
             break;
         case TFLOATT:
-            printf("float");
+            fprintf(fdout, "float");
             break;
         case TBOOLT:
-            printf("bool");
+            fprintf(fdout, "bool");
             break;
         case TCHART:
-            printf("byte");
+            fprintf(fdout, "byte");
             break;
         case TSTRT:
             /* make a fat version of this?
              * or just track the length every
              * where?
              */
-            printf("string");
+            fprintf(fdout, "string");
             break;
         case TSTRING:
-            printf("\"%s\"", head->value);
+            fprintf(fdout, "\"%s\"", head->value);
             break;
         case TRECORD:
-            printf("type %s struct {\n", head->value);
+            fprintf(fdout, "type %s struct {\n", head->value);
             for(int i = 0; i < head->lenchildren; i++) {
-                gwalk(head->children[i], level + 1);
+                gwalk(fdout, head->children[i], level + 1);
                 if(i < (head->lenchildren - 1)) {
-                    printf("\n");
+                    fprintf(fdout, "\n");
                 }
             }
-            printf("\n}");
+            fprintf(fdout, "\n}");
             break;
         case TRECDEF:
-            gwalk(head->children[0], 0);
-            printf(" ");
+            gwalk(fdout, head->children[0], 0);
+            fprintf(fdout, " ");
             if(head->lenchildren == 2) {
-                gwalk(head->children[1], 0);
+                gwalk(fdout, head->children[1], 0);
             } else {
-                printf("interface{}");
+                fprintf(fdout, "interface{}");
             }
             break;
         case TBEGIN:
             for(idx = 0; idx < head->lenchildren; idx++) {
                 if(idx == (head->lenchildren - 1) && final) {
-                    llgwalk(head->children[idx], level, YES);
+                    llgwalk(fdout, head->children[idx], level, YES);
                 } else {
-                    llgwalk(head->children[idx], level, NO);
+                    llgwalk(fdout, head->children[idx], level, NO);
                 }
-                printf("\n");
+                fprintf(fdout, "\n");
             }
             break;
         case TSEMI:
         case TEND:
             break;
         case TUNIT:
-            printf("interface {}");
+            fprintf(fdout, "interface {}");
             break;
         default:
-            printf("(tag %d)", head->tag);
+            fprintf(fdout, "(tag %d)", head->tag);
             break;
     }
     return;

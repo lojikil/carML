@@ -9,12 +9,12 @@
 
 #ifdef DEBUG
 #define debugln printf("dying here on line %d?\n", __LINE__);
-#define dprintf(...) printf(__VA_ARGS__)
-#define dwalk(x, y) walk(x, y)
+#define dprintf(x, ...) fprintf(x, __VA_ARGS__)
+#define dwalk(x, y, z) walk(x, y, z)
 #else
 #define debugln
-#define dprintf(...)
-#define dwalk(x, y) 
+#define dprintf(x, ...)
+#define dwalk(x, y, z) 
 #endif
 
 #define nil NULL
@@ -28,10 +28,10 @@
 #define hmalloc GC_MALLOC
 #endif
 
-#define cwalk(head, level) llcwalk(head, level, NO)
-#define gwalk(head, level) llgwalk(head, level, NO)
-#define indent(level) llindent(level, NO)
-#define gindent(level) llindent(level, YES)
+#define cwalk(fd, head, level) llcwalk(fd, head, level, NO)
+#define gwalk(fd, head, level) llgwalk(fd, head, level, NO)
+#define indent(fd, level) llindent(fd, level, NO)
+#define gindent(fd, level) llindent(fd, level, YES)
 
 /* Lexical analysis states.
  * basically, the tokenizer is a 

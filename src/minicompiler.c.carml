@@ -168,7 +168,7 @@ def ident-defined? src:ref[AST] env:ref[EnvFrame] => bool = {
 # should start with a simple type checker, to make sure we're
 # roughly not violating type guarantees
 def type-check src:ref[AST] env:ref[EnvFrame] => bool = {
-
+    false
 }
 
 # make sure that a set (`set!` or `:=`) isn't breaking const guarantees
