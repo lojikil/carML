@@ -11,10 +11,12 @@
 #define debugln printf("dying here on line %d?\n", __LINE__);
 #define dprintf(x, ...) fprintf(x, __VA_ARGS__)
 #define dwalk(x, y, z) walk(x, y, z)
+#define pwalk(x, y) walk(stderr, x, y)
 #else
 #define debugln
 #define dprintf(x, ...)
 #define dwalk(x, y, z) 
+#define pwalk(x, y)
 #endif
 
 #define nil NULL

@@ -10,12 +10,6 @@
 #include <carmlc.h>
 #include <stdbool.h>
 
-#ifdef DEBUG 
-#define dwalk(x, y) walk(x, y)
-#else
-#define dwalk(x, y)
-#endif
-
 extern char *hstrdup(const char *);
 
 // NOTE: this code is generated from

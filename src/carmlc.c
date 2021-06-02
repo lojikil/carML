@@ -108,9 +108,9 @@ void llindent(FILE *, int, int);
 void walk(FILE *, AST *, int);
 void llcwalk(FILE *, AST *, int, int);
 void llgwalk(FILE *, AST *, int, int);
-void generate_type_value(AST *, const char *); // generate a type/poly constructor
-void generate_type_ref(AST *, const char *); // generate a type/poly reference constructor
-void generate_golang_type(AST *, const char *); // generate a golang type
+void generate_type_value(FILE *, AST *, const char *); // generate a type/poly constructor
+void generate_type_ref(FILE *, AST *, const char *); // generate a type/poly reference constructor
+void generate_golang_type(FILE *, AST *, const char *); // generate a golang type
 int compile(FILE *, FILE *);
 int iswhite(int);
 int isident(int);
@@ -603,7 +603,7 @@ linearize_complex_type(AST *head) {
             flatten_target = head->children[cidx + 1];
 
             dprintf("here? %d: ", __LINE__);
-            dwalk(flatten_target, 0);
+            dwalk(fdout, flatten_target, 0);
             dprintf("\n");
 
             tmp = (AST *)hmalloc(sizeof(AST));
@@ -613,12 +613,12 @@ linearize_complex_type(AST *head) {
             tmp->children[0] = head->children[cidx];
             for(int midx = 1; midx <= flatten_target->lenchildren; midx++) {
                 dprintf("here? %d: ", __LINE__);
-                dwalk(flatten_target->children[midx - 1], 0);
+                dwalk(fdout, flatten_target->children[midx - 1], 0);
                 dprintf("\n");
                 tmp->children[midx] = flatten_target->children[midx - 1];
             }
             dprintf("here? %d: ", __LINE__);
-            dwalk(tmp, 0);
+            dwalk(fdout, tmp, 0);
             dprintf("here? %d\n", __LINE__);
 
             tmp = linearize_complex_type(tmp);
@@ -660,15 +660,7 @@ findtype(AST *head) {
         hare = turtle->children[0];
     }
 
-    dprintf("speclen: %d\n", speclen);
-    dwalk(head, 0);
-    dprintf("\n");
-    debugln;
     while(!breakflag) {
-        debugln;
-        dprintf("current hare: ");
-        dwalk(hare, 0);
-        dprintf("\n");
         switch(hare->tag) {
             case TTAG:
                 // really should be Tag *...
@@ -728,25 +720,19 @@ findtype(AST *head) {
         // set an Option[string] and have that matched
         // here... 
         if(pushf) {
-            dprintf("typeval: %s\n", typeval);
             stack[sp] = hstrdup(typeval);
             sp += 1;
         }
-        debugln;
         // keep the length of the resulting
         // string updated each time, and add
         // one to the length for either a space
         // in between members or a NUL at the
         // end
-        debugln;
         reslen += strlen(typeval) + 1;
-        debugln;
 
         if(typeidx >= speclen) {
-            dprintf("here on 716? typeidx: %d, speclen: %d\n", typeidx, speclen);
             break;
         } else if(breakflag) {
-            debugln;
             break;
         } else {
             typeidx++;
@@ -754,21 +740,12 @@ findtype(AST *head) {
         }
     }
 
-    debugln;
-
     typeval = (char *)hmalloc(sizeof(char) * reslen);
 
-    debugln;
-
     for(sp--; sp >= 0; sp--) {
-        debugln;
         strncat(typeval, stack[sp], reslen);
-        debugln;
         strncat(typeval, " ", reslen);
-        debugln;
     }
-
-    debugln;
 
     return typeval;
 }
@@ -915,14 +892,6 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
          * to some degree, but for now...
          */
         tmp = typespec;
-        dprintf("what does typespec look like here: ");
-        dwalk(tmp, 0);
-        dprintf("\n");
-
-        dprintf("result? %s\n", findtype(typespec));
-
-        dprintf("here on %d, len: %d\n", __LINE__, typespec->lenchildren);
-
         typeval = findtype(typespec);
 
         snprintf(&dst[strstart], (len - strstart), "%s", typeval);
@@ -4509,9 +4478,6 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 }
 
                 head->children[0] = tmp;
-                debugln;
-                dwalk(tmp, 0);
-                dprintf("\n");
                 flag = 0;
                 idx = 0;
             } else {
@@ -4542,12 +4508,6 @@ llreadexpression(FILE *fdin, uint8_t nltreatment) {
                 if(sometmp->tag == ASTLEFT) {
                     return sometmp;
                 }
-                debugln; 
-                dwalk(sometmp->right, 0);
-                dprintf("\n");
-                dprintf("tag == TEND? %s\n", sometmp->right->tag == TEND ? "yes" : "no");
-                dprintf("typestate == %d\n", typestate);
-                dprintf("collapse == %d\n", typestate);
                 switch(typestate) {
                     case -1:
                         if(sometmp->right->tag == TTAG) {
@@ -5796,58 +5756,58 @@ generate_type_value(FILE * fdout, AST *head, const char *name) {
 }
 
 void
-generate_type_ref(AST *head, const char *name) {
+generate_type_ref(FILE *fdout, AST *head, const char *name) {
     int cidx = 0;
     char buf[512] = {0}, *rtbuf = nil, rbuf[512] = {0};
     char *member = nil, membuf[512] = {0};
     // setup a nice definition...
-    printf("%s *\n%s_%s_ref(", name, name, head->children[0]->value);
+    fprintf(fdout, "%s *\n%s_%s_ref(", name, name, head->children[0]->value);
     // dump our parameters...
     for(cidx = 1; cidx < head->lenchildren; cidx++) {
         snprintf(buf, 512, "m_%d", cidx); 
         rtbuf = typespec2c(head->children[cidx], rbuf, buf, 512);
         if(cidx < (head->lenchildren - 1)) {
-            printf("%s, ", rtbuf);
+            fprintf(fdout, "%s, ", rtbuf);
         } else {
-            printf("%s", rtbuf);
+            fprintf(fdout, "%s", rtbuf);
         }
     }
-    printf(") {\n");
+    fprintf(fdout, ") {\n");
     // define our return value...
-    indent(1);
-    printf("%s *res = (%s *)malloc(sizeof(%s));\n", name, name, name);
+    indent(fdout, 1);
+    fprintf(fdout, "%s *res = (%s *)malloc(sizeof(%s));\n", name, name, name);
 
     // grab the constructor name...
     member = head->children[0]->value;
     member = upcase(member, membuf, 512);
 
     // tag our type
-    indent(1);
-    printf("res->tag = TAG_%s_%s;\n", name, member);
+    indent(fdout, 1);
+    fprintf(fdout, "res->tag = TAG_%s_%s;\n", name, member);
 
     // set all members...
     for(cidx = 1; cidx < head->lenchildren; cidx++) {
-        indent(1);
+        indent(fdout, 1);
         snprintf(buf, 512, "m_%d", cidx);
-        printf("res->members.%s_t.%s = %s;\n", member, buf, buf);
+        fprintf(fdout, "res->members.%s_t.%s = %s;\n", member, buf, buf);
     }
-    indent(1);
-    printf("return res;\n}\n");
+    indent(fdout, 1);
+    fprintf(fdout, "return res;\n}\n");
 }
 
 void
-generate_golang_type(AST *head, const char *parent) {
+generate_golang_type(FILE *fdout, AST *head, const char *parent) {
     AST *ttmp = head->children[0];
     int cidx = 1;
-    printf("type %s_%s struct {\n", parent, ttmp->value);
+    fprintf(fdout, "type %s_%s struct {\n", parent, ttmp->value);
     for(; cidx < head->lenchildren; cidx++) {
-        gindent(1);
-        printf("m_%d ", cidx);
-        gwalk(head->children[cidx], 0);
-        printf("\n");
+        gindent(fdout, 1);
+        fprintf(fdout, "m_%d ", cidx);
+        gwalk(fdout, head->children[cidx], 0);
+        fprintf(fdout, "\n");
     }
-    printf("}\n");
-    printf("func (%s_%s) is%s() {}\n", parent, ttmp->value, parent);
+    fprintf(fdout, "}\n");
+    fprintf(fdout, "func (%s_%s) is%s() {}\n", parent, ttmp->value, parent);
 }
 
 void
@@ -6256,7 +6216,7 @@ llcwalk(FILE *fdout, AST *head, int level, int final) {
                     snprintf(buf, 512, "m_%d", midx);
                     debugln;
                     dprintf("walking children...\n");
-                    dwalk(ctmp->children[midx], level);
+                    pwalk(ctmp->children[midx], level);
                     dprintf("done walking children...\n");
                     dprintf("ctmp->children[%d] == null? %s\n", midx, ctmp->children[midx] == nil ? "yes" : "no");
                     rtbuf = typespec2c(ctmp->children[midx], rbuf, buf, 512);
@@ -6278,8 +6238,8 @@ llcwalk(FILE *fdout, AST *head, int level, int final) {
             // - one pass with references
 
             for(int cidx = 0; cidx < htmp->lenchildren; cidx++) {
-                generate_type_value(htmp->children[cidx], head->value);
-                generate_type_ref(htmp->children[cidx], head->value);
+                generate_type_value(fdout, htmp->children[cidx], head->value);
+                generate_type_ref(fdout, htmp->children[cidx], head->value);
             }
             break;
         case TARRAYLITERAL:
@@ -6619,7 +6579,7 @@ llcwalk(FILE *fdout, AST *head, int level, int final) {
 }
 
 void
-llgwalk(FILE *, AST *head, int level, int final) {
+llgwalk(FILE *fdout, AST *head, int level, int final) {
     int idx = 0, opidx = -1, guard_check = NO, llflag = 0;
     char *tbuf = nil, buf[512] = {0};
     AST *ctmp = nil, *htmp = nil;
@@ -6782,7 +6742,7 @@ llgwalk(FILE *, AST *head, int level, int final) {
                 // with this in Go, need to explore that more...
                 ctmp = (AST *)hmalloc(sizeof(AST));
                 ctmp->tag = TIDENT;
-                snfprintf(fdout, &buf[0], 512, "l%d", rand());
+                snprintf(&buf[0], 512, "l%d", rand());
                 ctmp->value = hstrdup(buf);
                 fprintf(fdout, "%s := ", ctmp->value);
                 gwalk(fdout, head->children[0], 0);
@@ -6985,7 +6945,7 @@ llgwalk(FILE *, AST *head, int level, int final) {
             gindent(fdout, level + 1);
             fprintf(fdout, "is%s()\n}\n", head->value);
             for(int cidx = 0; cidx < head->children[1]->lenchildren; cidx++) {
-                generate_golang_type(head->children[1]->children[cidx], head->value);
+                generate_golang_type(fdout, head->children[1]->children[cidx], head->value);
             }
             break;
         case TPOLY:
