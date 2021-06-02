@@ -1165,8 +1165,12 @@ next(FILE *fdin, char *buf, int buflen) {
                 if(cur == '\\') {
                     cur = fgetc(fdin);
                     switch(cur) {
+                        case 'a':
+                            buf[idx++] = '\a';
+                            break;
                         case 'b':
                             buf[idx++] = '\b';
+                            break;
                         case 'n':
                             buf[idx++] = '\n';
                             break;
@@ -5599,6 +5603,9 @@ walk(FILE *fdout, AST *head, int level) {
         case TCHAR:
             fprintf(fdout, "(character #\\");
             switch(head->value[0]) {
+                case '\a':
+                    fprintf(fdout, "bell");
+                    break;
                 case '\b':
                     fprintf(fdout, "backspace");
                     break;
@@ -6030,6 +6037,9 @@ llcwalk(FILE *fdout, AST *head, int level, int final) {
                                 case '\t':
                                     fprintf(fdout, "'\\t'");
                                     break;
+                                case '\a':
+                                    fprintf(fdout, "'\\a'");
+                                    break;
                                 case '\b':
                                     fprintf(fdout, "'\\b'");
                                     break;
@@ -6460,6 +6470,12 @@ llcwalk(FILE *fdout, AST *head, int level, int final) {
                 case '\v':
                     fprintf(fdout, "'\\v'");
                     break;
+                case '\a':
+                    fprintf(fdout, "'\\a'");
+                    break;
+                case '\b':
+                    fprintf(fdout, "'\\b'");
+                    break;
                 case '\0':
                     fprintf(fdout, "'\\0'");
                     break;
@@ -6801,6 +6817,9 @@ llgwalk(FILE *fdout, AST *head, int level, int final) {
                                     break;
                                 case '\0':
                                     fprintf(fdout, "'\\u0000'");
+                                    break;
+                                case '\a':
+                                    fprintf(fdout, "'\\a'");
                                     break;
                                 case '\b':
                                     fprintf(fdout, "'\\b'");
@@ -7158,6 +7177,9 @@ llgwalk(FILE *fdout, AST *head, int level, int final) {
                     break;
                 case '\v':
                     fprintf(fdout, "'\\v'");
+                    break;
+                case '\a':
+                    fprintf(fdout, "'\\a'");
                     break;
                 case '\b':
                     fprintf(fdout, "'\\b'");
