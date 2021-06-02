@@ -829,6 +829,7 @@ typespec2c(AST *typespec, char *dst, char *name, int len) {
         if(name != nil) {
             strstart = strnlen(dst, 512);
             if(islambdatypeast(typespec->children[0]->tag)) {
+                // XXX this is incorrect for non-function parameter cases
                 snprintf(&dst[strstart], 512 - strstart, "void (*%s)(void)", name); 
             } else {
                 snprintf(&dst[strstart], 512 - strstart, "%s", name);

@@ -1,4 +1,4 @@
-def unix.open path : string mode : string => int {
+def unix.open path : string mode : string => int = {
 
 }
 

@@ -1,45 +1,45 @@
 # cannonical loop example
 def arrayIota arr f = begin
-    def arrayIota' arr fun idx = begin
+    def arrayIotaPrime arr fun idx = begin
         if (< idx (array-length arr)) then {
             set-array-index! arr (fun idx) idx
-            arrayIota' arr fun (add idx 1)
+            arrayIotaPrime arr fun (add idx 1)
         } else ()
     end
-    arrayIota' arr f 0
+    arrayIotaPrime arr f 0
 end
 
 # same as the above, but here we
 # use the closure in arrayIota' to
 # capture variables, instead of
 # explicitly passing them in
-declare arrayIota0 array[Num] function[Num => Num] => ()
+declare arrayIota0 : procedure[array[Num] function[Num => Num]]
 def arrayIota0 arr fun = begin
-    def arrayIota' idx = begin
+    def arrayIotaPrime idx = begin
         if (< idx (array-length arr)) then {
             set-array-index! arr (fun idx) idx;
-            arrayIota' (add idx 1);
+            arrayIotaPrime (add idx 1);
         } else ()
     end
-    arrayIota' 0;
+    arrayIotaPrime 0;
 end
 
 # same as the above, but using `foreachIndex`
-@arrayIota1 array[Num] function[Num => Num] => ()
+@arrayIota1: procedure[array[Num] function[Num => Num]]
 def arrayIota1 arr fun = {
     foreachIndex fn x = (set-array-index! arr (fun x) x) arr
 }
 
 # same as the above, but without the `{}` block
-@arrayIota2 array[Num] function[Num => Num] => ()
+@arrayIota2: procedure[array[Num] function[Num => Num]]
 def arrayIota2 arr fun = (foreachIndex fn x = (set-array-index! arr (fun x) x) arr)
 
 # eventually, `def` forms should work
 # like `begin` forms
 def foo x = (add x 1)
  
-val f = (array 10)
+val f = (make-array 10)
 
-arrayIota f foo;
+(arrayIota f foo)
 
-println f;
+(println f)
