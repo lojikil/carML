@@ -50,6 +50,9 @@ record EnvFrame {
     curmod : int
     lenmods: int
     mods: array[ref[AST]]
+    curextern : int
+    lenexterns: int
+    externs: array[ref[AST]]
     parent: ref[EnvFrame]
 }
 
@@ -122,6 +125,13 @@ def add-member! src:ref[AST] dst:ref[EnvFrame] => bool = {
             }
             set! (get (-> dst decs) (-> dst curdec)) src
             set! (-> dst curdec) $ + 1 $ -> dst curdec
+        }
+        TEXTERN => {
+            when (eq? (-> dst curextern) (-> dst lenexterns)) do {
+                return false
+            }
+            set! (get (-> dst externs) (-> dst curextern)) src
+            set! (-> dst curextern) $ + 1 $ -> dst curextern
         }
         else => (return false)
     end
