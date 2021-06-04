@@ -192,6 +192,39 @@ def const-check src:ref[AST] env:ref[EnvFrame] => bool = {
     end
 }
 
+def is-defined? src:ref[AST] env:ref[EnvFrame] => bool = {
+    # this would be so much nicer as a ADT/Discriminated Union
+    when (eq? src NULL) do {
+        return true
+    }
+    # this is such a hack...
+    match src->tag with
+        # do we actually need to break each of these out?
+        # the only things we need to *really* check are:
+        #
+        # . are all members defined?
+        #
+        # any other property should be checked by better
+        # suited functions...
+        TCALL => {
+
+        }
+        TMATCH => {
+
+        }
+        TBEGIN => {
+
+        }
+        TWHILE => {
+
+        }
+        TIF => {
+        }
+        TWHEN => {
+        }
+    end
+}
+
 # a miniature compiler; basically just collects things together
 # and stores them, but makes sure we have resolved all references
 #
