@@ -1,0 +1,69 @@
+#@(#) a simple trie implementation, for strings
+#@(#) similar to what I did in Digamma, but just
+#@(#) testing, really useful mostly for what I'm
+#@(#) doing with the compiler in carML
+
+record Trie {
+    key:char
+    data:int # we'll use -1 as a "no data"
+    # this is a good point: how do we tell
+    # C that we want a static array here rather
+    # than a pointer to a pointer? I believe the
+    # C compiler treats them similarly, but we
+    # may want it to be different...
+    children:array[ref[Trie]]
+}
+
+def partial_key_p key:string src:ref[Trie] => int = {
+
+}
+
+def has_key_p key:string src:ref[Trie] => bool = {
+
+}
+
+def lookup key:string src:ref[Trie] => ref[IntOption] = {
+
+}
+
+def insert key:string value:int offset:int src:ref[Trie] => bool = {
+    when (>= offset (strlen key)) do {
+        
+    }
+}
+
+def get_keys src:ref[Trie] => array[string] = {
+
+}
+
+def delete key:string src:ref[Trie] => bool = {
+
+}
+
+def make_trie => ref[Trie] = {
+    # it would be really nice to just do
+    # `+(make Trie ...)+` here
+    # and then rely on the compiler to know
+    # we want a ref (or use something like
+    # `+view+` to make a reference...)
+    val ret:ref[Trie] = (hmalloc $ sizeof Trie)
+    set! (-> ret key) 0
+    set! (-> ret data) -1
+    set! (-> ret children) (hmalloc $ * 26 $ sizeof ref[Trie])
+    ret
+}
+
+def main => int = {
+    var root:ref[Trie] = (make_trie)
+    insert "foo" 10 root
+    insert "bar" 11 root
+    insert "baz" 12 root
+    val keys:array[string] = (get_keys root)
+    printf "partial key \"ba\"? %d\n" $ partial_key "ba" root
+    printf "keys:\n"
+    while (< idx 3) do {
+        printf "key: %s\n" $ get keys idx
+        set! idx $ + idx 1
+    }
+    0
+}
