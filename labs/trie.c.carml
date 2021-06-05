@@ -27,9 +27,12 @@ def lookup key:string src:ref[Trie] => ref[IntOption] = {
 }
 
 def insert key:string value:int offset:int src:ref[Trie] => bool = {
+    val subkey:char = ' '
     when (>= offset (strlen key)) do {
-        
+        set! (-> src data) value 
+        return true
     }
+
 }
 
 def get_keys src:ref[Trie] => array[string] = {
