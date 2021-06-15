@@ -61,17 +61,19 @@ def add-member! src:ref[AST] dst:ref[EnvFrame] => bool = {
             when (eq? (-> dst curmod) (-> dst lenmods)) do {
                 return false
             }
-            set! (get (-> dst mods) (-> dst curmod)) src
+            set! (get (-> dst module_vals) (-> dst curmod)) src
+            set! (get (-> dst module_names) (-> dst curmod)) (-> src value)
             set! (-> dst curmod) $ + 1 $ -> dst curmod
         }
         else => {
             # we also need to handle the case when the length is
             # at capacity, and need to update that...
-            when (eq? (-> dst curmod) (-> dst lenmods)) do {
+            when (eq? (-> dst curobj) (-> dst lenmods)) do {
                 return false
             }
-            set! (get (-> dst mods) (-> dst curmod)) src
-            set! (-> dst curmod) $ + 1 $ -> dst curmod
+            set! (get (-> dst object_vals) (-> dst curobj)) src
+            set! (get (-> dst object_names) (-> dst curobj)) (-> src value)
+            set! (-> dst curobj) $ + 1 $ -> dst curobj
         }
     end
     true

@@ -5350,21 +5350,18 @@ walk(FILE *fdout, AST *head, int level) {
         case TFN:
         case TDEF:
             if(head->tag == TFN) {
-                fprintf(fdout, "(fn ");
+                fprintf(fdout, "(fn \n");
             } else {
-                fprintf(fdout, "(define %s ", head->value);
+                fprintf(fdout, "(define %s \n", head->value);
             }
             if(head->children[0] != nil) {
-                walk(fdout, head->children[0], level);
+                walk(fdout, head->children[0], level+1);
             }
 
             if(head->lenchildren == 3) {
                 // indent nicely
                 fprintf(fdout, "\n");
-                for(; idx < level + 1; idx++) {
-                    fprintf(fdout, "    ");
-                }
-
+                indent(fdout, level + 1);
                 fprintf(fdout, "(returns ");
                 walk(fdout, head->children[2], 0);
                 fprintf(fdout, ")");
