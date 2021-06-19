@@ -1,0 +1,8 @@
+#@(#) a base library for carML collections, meant to mimic what
+#@(#) we see in systems like SRFI-1 and SRFI-13/14. It's called
+#@(#) "old" because it is not module based, as the replacement
+#@(#) should be. So why not just write that first? Because I
+#@(#) have yet to define how modules are reified to the various
+#@(#) languages I support as output from carML
+
+
