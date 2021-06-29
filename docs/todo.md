@@ -27,8 +27,9 @@ A quick list of the current `TODO`s.
 ## Modules
 
 1. Atop SML/OCaml style modules, look into Mythryl's `API` types
-1. OCaml/SML-style Modules, and their application to higher-kinded types
-1. Figure out why this is breaking parameter lists:
+1. **WONT** OCaml/SML-style Modules, and their application to higher-kinded types
+   1. will actually use something more akin to F#'s modules
+1. **DONE** Figure out why this is breaking parameter lists:
 
 ```
 >>> module Foo {
