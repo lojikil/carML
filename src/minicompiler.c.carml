@@ -34,6 +34,7 @@ record EnvFrame {
     object_vals:array[ref[AST]]
     module_names:array[string]
     module_vals:array[ref[AST]]
+    parent:EnvFrame
 }
 
 # add an environment frame to the spaghetti stack
@@ -68,6 +69,9 @@ def add-member! src:ref[AST] dst:ref[EnvFrame] => bool = {
         else => {
             # we also need to handle the case when the length is
             # at capacity, and need to update that...
+            # NOTE we should check here if this is *actually* and object we care
+            # about... or we can just rely on the compiler to handle that, which
+            # isn't a terrible idea either...
             when (eq? (-> dst curobj) (-> dst lenmods)) do {
                 return false
             }
@@ -79,8 +83,22 @@ def add-member! src:ref[AST] dst:ref[EnvFrame] => bool = {
     true
 }
 
+def foreach-module src:ref[EnvFrame] idx:int = {
+
+}
+
+def foreach-other src:ref[EnvFrame] idx:int = {
+
+}
+
 def dump-frame src:ref[EnvFrame] = {
     when (eq? src NULL) do (return)
 
-    
+    foreach-module src 0
+    foreach-other src 0
+    dump-frame (-> src parent)
+}
+
+def mini-compiler src:ref[AST] env:ref[EnvFrame] = {
+
 }
