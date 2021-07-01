@@ -5821,6 +5821,12 @@ llcwalk(FILE *fdout, AST *head, int level, int final) {
     char *tbuf = nil, buf[512] = {0}, rbuf[512] = {0}, *rtbuf = nil;
     AST *ctmp = nil, *htmp = nil;
 
+    // NOTE: currently here because we die when a return
+    // type is missing (aka is void/unit)
+    if(head == nil) {
+        return;
+    }
+
     if(head->tag != TBEGIN) {
         indent(fdout, level);
 
@@ -6280,7 +6286,9 @@ llcwalk(FILE *fdout, AST *head, int level, int final) {
                     if(!final) {
                         fprintf(fdout, "return ");
                     }
-                    cwalk(fdout, head->children[1], 0);
+                    if(head->lenchildren == 2) {
+                        cwalk(fdout, head->children[1], 0);
+                    }
                 } else if(!strncmp(head->children[0]->value, "make-struct", 11) ||
                           !strncmp(head->children[0]->value, "make-record", 11)) {
                     fprintf(fdout, "{ ");

@@ -72,7 +72,7 @@ def add-member! src:ref[AST] dst:ref[EnvFrame] => bool = {
             # NOTE we should check here if this is *actually* and object we care
             # about... or we can just rely on the compiler to handle that, which
             # isn't a terrible idea either...
-            when (eq? (-> dst curobj) (-> dst lenmods)) do {
+            when (eq? (-> dst curobj) (-> dst lenobjs)) do {
                 return false
             }
             set! (get (-> dst object_vals) (-> dst curobj)) src
@@ -83,12 +83,19 @@ def add-member! src:ref[AST] dst:ref[EnvFrame] => bool = {
     true
 }
 
+# XXX Need to fix the carML/C compiler here, it dies when a return type is unit
 def foreach-module src:ref[EnvFrame] idx:int = {
-
+    when (< idx (-> src lenmods)) do {
+        (walk (get (-> src module_vals) idx) 0)
+        (foreach-module src (+ idx 1))
+    }
 }
 
 def foreach-other src:ref[EnvFrame] idx:int = {
-
+    when (< idx (-> src lenobjs)) do {
+        (walk (get (-> src object_vals) idx) 0)
+        (foreach-other src (+ idx 1))
+    }
 }
 
 def dump-frame src:ref[EnvFrame] = {
