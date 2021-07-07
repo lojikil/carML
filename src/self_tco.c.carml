@@ -470,6 +470,28 @@ def copy-body src:ref[AST] self:ref[AST] finalp:bool => ref[AST] = {
         }
         TWHEN => {
             # `when` is obviously the same as `if`, just with one less arm
+            # NOTE I just realized, until we have loop motion, we need to add
+            # an `else` arm to the `if` we generate, because we end up with
+            # infinite loops:
+            # `def foo x:int = { when (< x 10) do { (foo $ - x 1) } }`
+            # this becomes
+            # [source, c]
+            # ----
+            # void
+            # foo(int x){
+            #     int x_sh = x;
+            #     while(true){
+            #         if(x < 10) {
+            #             x_sh = (x - 1);
+            #             x = x_sh;
+            #         }
+            #     }
+            # }
+            # ----
+            #
+            # which obviously does not not terminate
+            # so we need to convert `when` to `if` and add a `break` in the
+            # `else` arm
             set! (get buf 0) (copy-body (get (-> src children) 0) self false)
             set! (get buf 1) (copy-body (get (-> src children) 1) self finalp)
             set! bidx 2
