@@ -5852,7 +5852,11 @@ llcwalk(FILE *fdout, AST *head, int level, int final) {
                 fprintf(fdout, "(fn ");
             } else {
                 if(head->lenchildren == 3) {
-                    cwalk(fdout, head->children[2], 0);
+                    if(head->children[2] == nil) {
+                        fprintf(fdout, "void");
+                    } else {
+                        cwalk(fdout, head->children[2], 0);
+                    }
                 } else {
                     fprintf(fdout, "void");
                 }
@@ -6645,7 +6649,9 @@ llgwalk(FILE *fdout, AST *head, int level, int final) {
 
             // generate the return type
             if(head->lenchildren == 3) {
-                gwalk(fdout, head->children[2], 0);
+                if(head->children[2] != nil) {
+                    gwalk(fdout, head->children[2], 0);
+                }
             }
             fprintf(fdout, " {\n");
 
