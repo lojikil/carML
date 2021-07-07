@@ -390,6 +390,7 @@ def copy-body src:ref[AST] self:ref[AST] finalp:bool => ref[AST] = {
     #    1. if not a tail call and is a value form, change to a `return`
     #    1. if a tail call, change into a shadow
     var ret : ref[AST] = (hmalloc $ sizeof AST)
+    var tmp : ref[AST] = NULL
     var buf : array[ref[AST]] = (make-array ref[AST] 128 nil)
 
     # our source & buffer indices
@@ -492,9 +493,18 @@ def copy-body src:ref[AST] self:ref[AST] finalp:bool => ref[AST] = {
             # which obviously does not not terminate
             # so we need to convert `when` to `if` and add a `break` in the
             # `else` arm
+            set! (-> ret tag) TIF
+            set! (-> ret lenchildren) 3
+            set! (-> ret children) $ hmalloc $ * 2 $ sizeof ref[AST]
             set! (get buf 0) (copy-body (get (-> src children) 0) self false)
             set! (get buf 1) (copy-body (get (-> src children) 1) self finalp)
-            set! bidx 2
+            # generate a new `else` arm, turning this into a `return` call
+            set! tmp $ hmalloc $ sizeof AST
+            set! (-> tmp tag) TCALL
+            set! (-> tmp lenchildren) 1
+            set! (-> tmp children) $ hmalloc $ sizeof ref[AST]
+            set! (get (-> tmp children) 0) $ make-ident "return"
+            set! bidx 3
         }
         TBEGIN => {
             # we need to iterate over all members of the `begin` form, and if
