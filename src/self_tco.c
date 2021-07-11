@@ -49,12 +49,14 @@ self_tco_p(const char * name, AST * src){
             }
 
         }
+
         return false;
     } else {
         return false;
     }
 
 }
+
 AST * 
 shadow_ident(AST * src){
     AST * ret = hmalloc(sizeof(AST));
@@ -63,6 +65,7 @@ shadow_ident(AST * src){
     ret->value = shadow_name(src->value);
     return ret;
 }
+
 AST * 
 make_set_bang(AST * ident, AST * value){
     AST * ret = hmalloc(sizeof(AST));
@@ -70,15 +73,16 @@ make_set_bang(AST * ident, AST * value){
     setident->lenchildren = 0;
     setident->tag = TIDENT;
     setident->value = hmalloc(5 * sizeof(char));
-    strncpy(setident->value, "set!", 5);
+    stpncpy(setident->value, "set!", 5);
     ret->tag = TCALL;
     ret->lenchildren = 3;
-    ret->children = (AST **)hmalloc(3 * sizeof(AST *));
+    ret->children = hmalloc(3 * sizeof(AST * ));
     ret->children[0] = setident;
     ret->children[1] = ident;
     ret->children[2] = value;
     return ret;
 }
+
 AST * 
 shadow_params(AST * src, AST * impl){
     AST * ret = hmalloc(sizeof(AST));
@@ -113,13 +117,15 @@ shadow_params(AST * src, AST * impl){
 
     return ret;
 }
+
 char *
 shadow_name(char * name){
-    char * ret = hmalloc((3 + strlen(name)) * sizeof(char));
+    char * ret = hmalloc((sizeof(char) * (3 + strlen(name))));
     stpcpy(ret, name);
     strcat(ret, "_sh");
     return ret;
 }
+
 char *
 get_parameter_name(AST * src, int idx){
     const AST * ret = nil;
@@ -131,6 +137,7 @@ get_parameter_name(AST * src, int idx){
 
     return "";
 }
+
 AST * 
 get_parameter_ident(AST * src, int idx){
     const AST * ret = nil;
@@ -141,6 +148,7 @@ get_parameter_ident(AST * src, int idx){
 
     return nil;
 }
+
 AST * 
 get_parameter_type(AST * src, int idx){
     const AST * ret = nil;
@@ -151,6 +159,7 @@ get_parameter_type(AST * src, int idx){
 
     return nil;
 }
+
 AST * 
 define_shadow_params(AST * src, AST * body){
     AST * ret = hmalloc(sizeof(AST));
@@ -202,6 +211,7 @@ define_shadow_params(AST * src, AST * body){
     ret->children[length] = tmp;
     return ret;
 }
+
 AST * 
 make_ident(char * src){
     AST * ret = hmalloc(sizeof(AST));
@@ -210,6 +220,7 @@ make_ident(char * src){
     ret->value = hstrdup(src);
     return ret;
 }
+
 AST * 
 make_boolean(int original_value){
     AST * ret = hmalloc(sizeof(AST));
@@ -223,13 +234,16 @@ make_boolean(int original_value){
 
     return ret;
 }
+
 bool
 simple_type_p(int src){
-    return (src == TIDENT) || (src == TSTRING) || (src == TINT) || (src == TFLOAT) || (src == TARRAYLITERAL) || (src == TCHAR) || (src == TBOOL) || (src == THEX) || (src == TOCT) || (src == TBIN) || (src == TTRUE) || (src == TFALSE);
+    return (src == TIDENT) || (src == TSTRING) || (src == TINT) || (src == TFLOAT) || (src == TARRAYLITERAL) || (src == TCHAR) || (src == TBOOL) || (src == TTRUE) || (src == TFALSE) || (src == THEX) || (src == TOCT) || (src == TBIN);
 }
+
 AST * 
 copy_body(AST * src, AST * self, uint8_t finalp){
     AST * ret = hmalloc(sizeof(AST));
+    AST * tmp = NULL;
     AST * * buf = (AST * *)hmalloc(sizeof(AST * ) * 128);
     int sidx = 0;
     int bidx = 0;
@@ -267,35 +281,36 @@ copy_body(AST * src, AST * self, uint8_t finalp){
         buf[1] = copy_body(src->children[1], self, finalp);
         buf[2] = copy_body(src->children[2], self, finalp);
         bidx = 3;
-;
     } else if(srctag == TWHEN) {
+        ret->tag = TIF;
+        ret->lenchildren = 3;
+        ret->children = hmalloc(2 * sizeof(AST * ));
         buf[0] = copy_body(src->children[0], self, false);
         buf[1] = copy_body(src->children[1], self, finalp);
-        bidx = 2;
-;
+        tmp = hmalloc(sizeof(AST));
+        tmp->tag = TCALL;
+        tmp->lenchildren = 1;
+        tmp->children = hmalloc(sizeof(AST * ));
+        tmp->children[0] = make_ident("return");
+        buf[2] = tmp;
+        bidx = 3;
     } else if(srctag == TBEGIN) {
         while(bidx < srccap){
             if((finalp) && (bidx == (srccap - 1))) {
                 buf[bidx] = copy_body(src->children[sidx], self, finalp);
-;
             } else {
                 buf[bidx] = copy_body(src->children[sidx], self, false);
-
             }
 
             bidx = (bidx + 1);
             sidx = (sidx + 1);
         }
-
-;
     } else {
         while(bidx < srccap){
             buf[bidx] = copy_body(src->children[sidx], self, false);
             bidx = (bidx + 1);
             sidx = (sidx + 1);
         }
-
-;
     }
 
     sidx = 0;
@@ -308,6 +323,7 @@ copy_body(AST * src, AST * self, uint8_t finalp){
 
     return ret;
 }
+
 AST * 
 rewrite_tco(AST * src){
     const AST * params = define_shadow_params(src->children[0], src->children[1]);

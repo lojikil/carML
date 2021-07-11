@@ -81,6 +81,7 @@ def shadow-ident src:ref[AST] => ref[AST] = {
 def make-set-bang ident:ref[AST] value:ref[AST] => ref[AST] = {
     var ret : ref[AST] = (hmalloc $ sizeof AST)
     var setident : ref[AST] = (hmalloc $ sizeof AST)
+    set! (-> setident lenchildren) 0
     set! (-> setident tag) TIDENT
     set! (-> setident value) (hmalloc $ * 5 $ sizeof char)
     stpncpy (-> setident value) "set!" 5
@@ -168,7 +169,7 @@ def shadow-params src:ref[AST] impl:ref[AST] => ref[AST] = {
 # - https://ocaml.janestreet.com/ocaml-core/flambda_manual/
 #
 def shadow-name name:string => string = {
-    var ret : array[char] = (hmalloc $ + 3 $ * (sizeof char) (strlen name))
+    var ret : array[char] = (hmalloc $ * (sizeof char) $ + 3 (strlen name))
     stpcpy ret name
     strcat ret "_sh"
     ret
@@ -504,6 +505,7 @@ def copy-body src:ref[AST] self:ref[AST] finalp:bool => ref[AST] = {
             set! (-> tmp lenchildren) 1
             set! (-> tmp children) $ hmalloc $ sizeof ref[AST]
             set! (get (-> tmp children) 0) $ make-ident "return"
+            set! (get buf 2) tmp
             set! bidx 3
         }
         TBEGIN => {
