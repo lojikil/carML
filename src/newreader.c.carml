@@ -13,8 +13,8 @@ def new_reader fin:ref[FILE] => ref[ASTEither] = {
     var ltype:int = 0
     set! ltype (next fdin buffer 512)
     match ltype with
-        TVAR => (ASTRight $ read_var_val fdin TVAR)
-        TVAL => (ASTRight $ read_var_val fdin TVAL)
+        TVAR => (read_var_val fdin TVAR)
+        TVAL => (read_var_val fdin TVAL)
         TIDENT => (ASTRight $ make_ident buffer)
         TINT => (ASTRight $ make_int buffer)
         TFLOAT => (ASTRight $ make_float buffer)
@@ -36,13 +36,31 @@ def new_reader fin:ref[FILE] => ref[ASTEither] = {
 # file, buffer, location, &c. It would also help with
 # errors, as the monad could contain current offset and
 # what not
-def read_var_val fdin:ref[FILE] tag:int => ref[AST] = {
+def read_var_val fdin:ref[FILE] tag:int => ref[ASTEither] = {
     var ident:ref[AST] = (make_null)
     var vtype:ref[AST] = (make_null)
     var value:ref[AST] = (make_null)
+    var tmp:ref[AST] = (make_null)
+    var tmptag:int = 0
     set! ident (new_reader fdin)
     when (<> (-> ident tag) TIDENT) do {
         return $ ASTLeft 0 0 "var *must* be followed by an IDENT"
     }
-    
+
+    # actually, we need to check if we get an ASTLeft here and
+    # respond accordingly...
+    set! tmp (new_reader fdin)
+    set! tmptag (-> tmp tag)
+    match (-> tmp tag) with
+        TCOLON => {
+            set! tmp (new_reader fdin)
+            match (-> tmp tag) with
+                TARRAYLITERAL => ()
+                TEQ => ()
+                else => (ASTLeft 0 0 "kkkk
+            end
+        }
+        TEQ => ()
+        else => (ASTLeft 0 0 "var's ident *must* be followed by a COLON or an EQUALS SIGN")
+    end
 }
