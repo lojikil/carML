@@ -1,0 +1,48 @@
+@new_reader: function[ref[FILE] ref[AST]]
+@read_var_val: function[ref[FILE] ref[AST]]
+@read_def: function[ref[FILE] ref[AST]]
+@make_ident: function[array[char] ref[AST]]
+@make_int: function[array[char] ref[AST]]
+@make_float: function[array[char] ref[AST]]
+@make_string: function[array[char] ref[AST]]
+@make_eof: function[ref[AST]]
+@make_colon: function[ref[AST]]
+
+def new_reader fin:ref[FILE] => ref[ASTEither] = {
+    var buffer:array[char] = (make-array char 512)
+    var ltype:int = 0
+    set! ltype (next fdin buffer 512)
+    match ltype with 
+        TVAR => (read_var_val fdin TVAR)
+        TVAL => (read_var_val fdin TVAL)
+        TIDENT => (ASTRight (make_ident buffer))
+        TINT => (ASTRight (make_int buffer))
+        TFLOAT => (ASTRight (make_float buffer))
+        TSTRING => (ASTRight (make_string buffer))
+        TEOF => (ASTRight (make_eof))
+        TCOLON => (ASTRight (make_colon))
+        TINTT => (ASTRight $ make_type TINTT)
+        TFLOATT => (ASTRight $ make_type TFLOATT)
+        TSTRT => (ASTRight $ make_type TSTRT)
+        TBOOLT => (ASTRight $ make_type TBOOLT)
+        TCHART => (ASTRight $ make_type TCHART)
+        else => (ASTLeft 0 0 "something failed")
+    end
+}
+
+# it would be interesting to do this sort of parsing
+# with a monadic state and |> or the like, I think.
+# Something like a LexState monad that has the current
+# file, buffer, location, &c. It would also help with
+# errors, as the monad could contain current offset and
+# what not
+def read_var_val fdin:ref[FILE] tag:int => ref[AST] = {
+    var ident:ref[AST] = (make_null)
+    var vtype:ref[AST] = (make_null)
+    var value:ref[AST] = (make_null)
+    set! ident (new_reader fdin)
+    when (<> (-> ident tag) TIDENT) do {
+        return $ ASTLeft 0 0 "var *must* be followed by an IDENT"
+    }
+    
+}

@@ -8,7 +8,8 @@ use labs/mini-sexpression
 type CarML {
     # I wonder if we can use another type
     # here for these...
-    Def string array[CarML] CarML
+    # name types-array [(parameter-ident type)] returnType body
+    Def string array[CarML] array[tuple[string CarML]] CarML CarML
     Fn array[CarML] CarML
     ParamDef string CarML
     Declare string CarML
