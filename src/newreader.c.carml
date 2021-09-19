@@ -41,6 +41,7 @@ def read_var_val fdin:ref[FILE] tag:int => ref[ASTEither] = {
     var vtype:ref[AST] = (make_null)
     var value:ref[AST] = (make_null)
     var tmp:ref[AST] = (make_null)
+    var eithertmp:ref[ASTEither] = nil # yes, I hate it too...
     var tmptag:int = 0
     set! ident (new_reader fdin)
     when (<> (-> ident tag) TIDENT) do {
@@ -49,7 +50,8 @@ def read_var_val fdin:ref[FILE] tag:int => ref[ASTEither] = {
 
     # actually, we need to check if we get an ASTLeft here and
     # respond accordingly...
-    set! tmp (new_reader fdin)
+    set! eithertmp (new_reader fdin)
+    if (eq? (-> eithertmp tag) ASTLEFT) then (return eithertmp) else (set! tmp (-> eithertmp right))
     set! tmptag (-> tmp tag)
     match (-> tmp tag) with
         TCOLON => {
@@ -57,7 +59,7 @@ def read_var_val fdin:ref[FILE] tag:int => ref[ASTEither] = {
             match (-> tmp tag) with
                 TARRAYLITERAL => ()
                 TEQ => ()
-                else => (ASTLeft 0 0 "kkkk
+                else => (retrun $ ASTLeft 0 0 "Tags as a type *must* be followed by an array literal or an equal")
             end
         }
         TEQ => ()
