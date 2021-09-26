@@ -11,6 +11,7 @@
 def new_reader fin:ref[FILE] => ref[ASTEither] = {
     var buffer:array[char] = (make-array char 512)
     var ltype:int = 0
+    var tmp:ref[AST] = nil
     set! ltype (next fdin buffer 512)
     match ltype with
         TVAR => (read_var_val fdin TVAR)
@@ -29,9 +30,30 @@ def new_reader fin:ref[FILE] => ref[ASTEither] = {
         TARRAY => {
             # we need to read in one more element, which should be
             # a TARRAYLITERAL
+            # NOTE I had a good idea: we can make these more
+            # functional and more stateful by having a set of
+            # smaller functions, like `read_colon` and `read_array_literal`
+            # that handle the unwrapping and what not, but also handle
+            # errors
+            set! sometmp (new_reader fin)
+            when (eq? (-> sometmp tag) ASTLEFT) do (return sometmp)
+            set! tmp (-> sometmp right)
+            set! tag (-> tmp tag)
+            match tag with
+                TARRAYLITERAL => (ASTRight $ make_complex_type TARRAY tmp)
+                else => (ASTLeft 0 0 "Array as a type *must* be followed be an array-literal of types")
+            end
         }
         TDEQUE => {
             # same as the above, read once more, and get the vecdeque type
+            set! sometmp (new_reader fin)
+            when (eq? (-> sometmp tag) ASTLEFT) do (return sometmp)
+            set! tmp (-> sometmp right)
+            set! tag (-> tmp tag)
+            match tag with
+                TARRAYLITERAL => (ASTRight $ make_complex_type TARRAY tmp)
+                else => (ASTLeft 0 0 "Array as a type *must* be followed be an array-literal of types")
+            end
         }
         else => (ASTLeft 0 0 "something failed")
     end
@@ -74,7 +96,7 @@ def read_var_val fdin:ref[FILE] tag:int => ref[ASTEither] = {
                 _ given (istypeast $ -> tmp tag) => {
 
                 }
-                else => (retrun $ ASTLeft 0 0 "type definition must be followed by a type")
+                else => (return $ ASTLeft 0 0 "type definition must be followed by a type")
             end
         }
         TEQ => ()
