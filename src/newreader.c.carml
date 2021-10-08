@@ -1,5 +1,6 @@
 @new_reader: function[ref[FILE] ref[AST]]
 @read_var_val: function[ref[FILE] ref[AST]]
+@read_array_literal: function[ref[FILE] ref[AST]]
 @read_def: function[ref[FILE] ref[AST]]
 @make_ident: function[array[char] ref[AST]]
 @make_int: function[array[char] ref[AST]]
@@ -7,6 +8,8 @@
 @make_string: function[array[char] ref[AST]]
 @make_eof: function[ref[AST]]
 @make_colon: function[ref[AST]]
+@make_type: function[int ref[AST]]
+@make_complex_type: function[array[ref[AST]] ref[AST]]
 
 def new_reader fin:ref[FILE] => ref[ASTEither] = {
     var buffer:array[char] = (make-array char 512)
