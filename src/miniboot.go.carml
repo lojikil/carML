@@ -1,0 +1,14 @@
+#@(#) a miniature boot system for Golang
+#@(#) basically, we want to target the Golang
+#@(#) ecosystem, and use that as a launching
+#@(#) off point for the rest of CarML
+#@(#) Why Golang? Because the RTS for Golang is
+#@(#) already decent enough, and I don't want to
+#@(#) spend more time in the C RTS really. I feel
+#@(#) as if I'm spending more time fighting previous
+#@(#) choices (like being agnostic to requiring a type)
+#@(#) that I have since changed than I am working on
+#@(#) things that are interesting to me. Since the
+#@(#) Golang output is already decent enough, we can
+#@(#) start here for producing decent system, and
+#@(#) then boot C and the like again from *that*
