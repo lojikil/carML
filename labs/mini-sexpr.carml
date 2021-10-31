@@ -320,8 +320,11 @@ def read_list src:string start:int => SExpression = {
             (SExpression.String _ _) => (set! offset $ + (. tmp m_2) $ len $ . tmp m_1)
             (SExpression.Int _ _) => (set! offset $ + (. tmp m_2) $ len $ . tmp m_1)
             (SExpression.Float _ _) => (set! offset $ + (. tmp m_2) $ len $ . tmp m_1)
-            # I don't think I can read bools based on this...
-            (SExpression.Bool _ _) => (set! offset $ + (. tmp m_2) $ len $ . tmp m_1)
+            (SExpression.Bool _ _) => if (. tmp m_1) then {
+                (set! offset $ + (. tmp m_2) 4)
+            } else {
+                (set! offset $ + (. tmp m_2) 5)
+            }
             (SExpression.Char _ _) => (set! offset $ + (. tmp m_2) $ len $ . tmp m_1)
             (SExpression.EndList _) => (set! offset $ + (. tmp m_1) 1)
             else => (return tmp)
