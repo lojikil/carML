@@ -12,3 +12,5 @@
 #@(#) Golang output is already decent enough, we can
 #@(#) start here for producing decent system, and
 #@(#) then boot C and the like again from *that*
+
+

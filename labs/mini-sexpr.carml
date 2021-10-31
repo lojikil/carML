@@ -396,7 +396,7 @@ def sexpression_read src:string start:int => SExpression = {
     # 1. making a `make-tuple` and allowing `,` in CALL
     val tok:Token = (next src start)
     match (. tok lexeme_type) with
-        1 => (read_list src $ + start 1)
+        1 => (read_list src start)
         2 => (make-struct SExpression.EndList $ + (. tok lexeme_offset) 1)
         #'[' => (read_array fh)
         #']' => (make-struct SExpression.EndArray)
