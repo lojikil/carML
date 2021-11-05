@@ -425,7 +425,7 @@ func sexpression_read(src string, start int) SExpression  {
 	l282475249 := tok.lexeme_type
 	switch l282475249 {
 		case 1:
-			return read_list(src, start)
+			return read_list(src, tok.lexeme_offset)
 		case 2:
 			return SExpression_EndList{ tok.lexeme_offset + 1}
 		case 5:
@@ -530,6 +530,18 @@ func sexpression2string(src SExpression ) string {
 
 }
 
+func roundtrip(src string) {
+    fmt.Printf("src:\n%s\n", src)
+    g := sexpression_read(src, 0)
+    fmt.Printf("g: %V\n", g)
+    h := read_list(src, 0)
+    fmt.Printf("h: %V\n", h)
+    f := sexpression2string(g)
+    fmt.Printf("f: %v\n", f)
+    d := sexpression2string(h)
+    fmt.Printf("d: %v\n", d)
+}
+
 func main() {
     src := `(define main 
 
@@ -538,9 +550,7 @@ func main() {
         (call (identifier printf) (string "this is a test\n"))
         (call (identifier printf) (string "test test test\n"))
         (integer 0)))`
-    fmt.Printf("src: %s\n", src)
-    g := sexpression_read(src, 0)
-    fmt.Printf("g: %v\n", g)
-    f := sexpression2string(g)
-    fmt.Printf("f: %v\n", f)
+    src1 := `(define main (returns (type integer)) (begin (integer 0)))`
+    roundtrip(src)
+    roundtrip(src1)
 }
