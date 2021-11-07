@@ -1,5 +1,16 @@
 package main
 
+/*
+ * this is the result of two files being smooshed together, plus some
+ * custom Golang:
+ *
+ * . labs/mini-sexpression.carml, for reading in carML/C SExpression output
+ * . labs/mini-walk.carml, for actually executing code
+ *
+ * Currently, it actually is just an interpreter for carML itself, but that
+ * should change eventually
+ */
+
 import (
     "fmt"
 )
