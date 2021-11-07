@@ -84,7 +84,12 @@ def mueval src:SExpression env:SExpression => SExpression = {
                 # . actually convert them to the correct SExpression type here
                 #
                 # TODO: decide on the above
-                else => src
+                # could be a series of guard clauses like:
+                # `(SExpression.Atom _ _) given (eq? (. m_1 hd) "integer") => {`
+                # but for now let's just return the remaining portion
+                else => {
+                    rest src
+                }
             end
         }
         # TODO (lojikil): should these just be
@@ -120,4 +125,27 @@ def muapply src:SExpression env:SExpression => SExpression = {
     # why `rest (rest src)`? because remember, our calls
     # come in like: `(call (identifier "+") (integer "10) (integer "20"))`
     set! lst $ map mueval $ rest $ rest src
+    set! hd $ mueval $ hd $ rest src
+
+    # let's make a calculator first
+    match hd with
+        "+" => {
+        }
+        "-" => {
+        }
+        "*" => {
+        }
+        "/" => {
+        }
+        "<" => {
+        }
+        "<=" => {
+        }
+        ">" => {
+        }
+        ">=" => {
+        }
+        "<>" => {
+        }
+    end
 }
