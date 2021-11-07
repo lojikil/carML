@@ -138,7 +138,7 @@ main(int ac, char **al) {
     GC_INIT();
 
     if(ac > 1) {
-        while((ch = getopt(ac, al, "scgmtiVvf:o:h")) != -1) {
+        while((ch = getopt(ac, al, "scgmtiVvef:o:h")) != -1) {
             switch(ch) {
                 case 's':
                     walkflag = 0;
@@ -154,6 +154,9 @@ main(int ac, char **al) {
                     break;
                 case 't':
                     tc_flagp = 1;
+                    break;
+                case 'e':
+                    fdin = stdin;
                     break;
                 case 'i':
                     // eventually this should be for dumping interfaces from
@@ -183,7 +186,7 @@ main(int ac, char **al) {
                     printf("-c turns on C output\n-g turns on Golang output\n");
                     printf("-m turns on the minicompiler\n-t turns on self-TCO\n");
                     printf("-V display version and exit\n-f the file to be compiled\n");
-                    printf("-o the output file location\n");
+                    printf("-o the output file location\n-e read an expression from stdin\n");
                     return 0;
                     break;
             }
