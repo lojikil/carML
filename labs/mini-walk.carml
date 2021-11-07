@@ -1,0 +1,50 @@
+#@(#) a simple walker, testing out our SExpression reader
+#@(#) me: I'm tired of building a Lisp/Scheme interpreter, I want to build an ML
+#@(#) also me: [build meta circular interpreter for ML IR that uses SExprs]
+
+# just use alists for the env
+def muwalk src:SExpression env:SExpression => SExpression = {
+    match src with
+        # NOTE (lojikil)
+        # one of the first things I need to fix
+        # in any new compiler going forward is
+        # actualy binding things...
+        (SExpression.List _ _) => {
+            # here, we must unpack what the first member is, and
+            # if it is something we can eval, we do so, otherwise
+            # we just apply it
+            var hd:SExpression = (get (. m_1 src) 0)
+            match hd with
+                (SExpression.Atom _ _) given (eq? (. m_1 hd) "define") => {
+                    # add the body with that atom to the env
+                }
+                (SExpression.Atom _ _) given (eq? (. m_1 hd) "define-value") => {
+                    # add the body with that atom to the env
+                }
+                (SExpression.Atom _ _) given (eq? (. m_1 hd) "define-mutable-value") => {
+                    # add the body with that atom to the env
+                }
+                (SExpression.Atom _ _) given (eq? (. m_1 hd) "if") => {
+                    # eval the condition and either the THEN or ELSE clause
+                }
+                (SExpression.Atom _ _) given (eq? (. m_1 hd) "call") => {
+                    muapply src env
+                }
+            end
+        }
+        # TODO (lojikil): should these just be
+        # a guard clause that detects simple types?
+        # yes, yes they should, not even with a guard clause really 
+        else => src
+    end
+}
+
+def muapply src:SExpression env:SExpression => SExpression = {
+    # here we have basically two tasks:
+    #
+    # . iterate over the list that was passed to us, calling mueval for each
+    # . looking up the hd of the list, and making sure it is something we can handle
+    #
+    # standard McCarthy-style really
+
+}

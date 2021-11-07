@@ -422,7 +422,7 @@ def sexpression2char src:string => string = {
         '\b' => "#\\backspace"
         '\a' => "#\\bell"
         '\0' => "#\\nul"
-        else => (String.Join "#\\" src)
+        else => (String.Concat "#\\" src)
     end
 }
 
