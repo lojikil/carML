@@ -4,6 +4,30 @@
 
 # just use alists for the env
 def muwalk src:SExpression env:SExpression => SExpression = {
+
+}
+
+def assoc src:SExpression dst:SExpression => SExpression = {
+
+}
+
+def mem_assoc needle:SExpression src:SExpression => SExpression = {
+
+}
+
+def cons hd:SExpression dst:SExpression => SExpression = {
+
+}
+
+def first hd:SExpression => SExpression = {
+
+}
+
+def rest hd:SExpression => SExpression = {
+
+}
+
+def mueval src:SExpression env:SExpression => SExpression = {
     match src with
         # NOTE (lojikil)
         # one of the first things I need to fix
