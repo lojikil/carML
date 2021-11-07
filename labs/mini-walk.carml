@@ -7,23 +7,33 @@ def muwalk src:SExpression env:SExpression => SExpression = {
 
 }
 
+# ('a, list(('a, 'b))) => 'b
 def assoc src:SExpression dst:SExpression => SExpression = {
 
 }
 
+# ('a, list(('a, 'b))) => bool 
 def mem_assoc needle:SExpression src:SExpression => SExpression = {
 
 }
 
+# ('a, list('a)) => list('a)
 def cons hd:SExpression dst:SExpression => SExpression = {
 
 }
 
+# list('a) => 'a
 def first hd:SExpression => SExpression = {
 
 }
 
+# list('a) => list('a)
 def rest hd:SExpression => SExpression = {
+
+}
+
+# (('a => 'a), list('a), list(('a, 'b))) => list('a)
+def map f:function[SExpression SExpression] l:SExpression e:SExpression => SExpression = {
 
 }
 
@@ -32,7 +42,19 @@ def mueval src:SExpression env:SExpression => SExpression = {
         # NOTE (lojikil)
         # one of the first things I need to fix
         # in any new compiler going forward is
-        # actualy binding things...
+        # actualy binding things... and being able to match
+        # nicely. Look at the pattern below:
+        #
+        # `(SExpression.Atom _ _) given (eq? (. m_1 hd) "define")`
+        #
+        # I need to fix things such that we can easily say:
+        #
+        # `SExpression.Atom "define" _) => ...`
+        #
+        # for one, it's much clearer what we intend, and for the other
+        # it's more correct
+        #
+
         (SExpression.List _ _) => {
             # here, we must unpack what the first member is, and
             # if it is something we can eval, we do so, otherwise
@@ -54,6 +76,15 @@ def mueval src:SExpression env:SExpression => SExpression = {
                 (SExpression.Atom _ _) given (eq? (. m_1 hd) "call") => {
                     muapply src env
                 }
+                # there are several things that will come in as a SExpression.List, but
+                # aren't something we need to iterate over, like `(integer "10")`
+                # we have two options here:
+                #
+                # . just punt this back to `muapply` to handle
+                # . actually convert them to the correct SExpression type here
+                #
+                # TODO: decide on the above
+                else => src
             end
         }
         # TODO (lojikil): should these just be
@@ -70,5 +101,23 @@ def muapply src:SExpression env:SExpression => SExpression = {
     # . looking up the hd of the list, and making sure it is something we can handle
     #
     # standard McCarthy-style really
+    var lst:SExpression = (SExpression.Null)
+    var hd:SExpression = (SExpression.Null)
 
+    # so the nice thing about the language we're working with here is
+    # that even tho we have first class functions and what not, they
+    # are *always* behind a call or the like, so we don't need to *ever*
+    # eval the head of the list, we can just:
+    #
+    # . check that we have a list
+    # . map mueval over the body of the list
+    # . return the function application, if we know it
+
+    when (<> (. hd tag) SEXPRESSION_LIST) do {
+        return src
+    }
+
+    # why `rest (rest src)`? because remember, our calls
+    # come in like: `(call (identifier "+") (integer "10) (integer "20"))`
+    set! lst $ map mueval $ rest $ rest src
 }
