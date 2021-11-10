@@ -24,7 +24,12 @@ def cons hd:SExpression dst:SExpression => SExpression = {
 
 # list('a) => 'a
 def first hd:SExpression => SExpression = {
-
+    match hd with
+        (SExpression.List _ _) => {
+            get (. hd m_1) 0
+        }
+        else => (make-struct SExpression.Error "first can only be applied to lists" 0)
+    end
 }
 
 # list('a) => list('a)
@@ -35,6 +40,24 @@ def rest hd:SExpression => SExpression = {
 # (('a => 'a), list('a), list(('a, 'b))) => list('a)
 def map f:function[SExpression SExpression] l:SExpression e:SExpression => SExpression = {
 
+}
+
+def mapeval l:SExpression e:SExpression => SExpression = {
+    var res:array[SExpression] = (make-array SExpression (length (. l m_1)) SExpression.Null)
+    var idx:int = 0
+    while (<> idx $ length $ . l m_1) do {
+        set! (get res idx) (mueval (get l idx) e)
+        set! idx $ + idx 1
+    }
+    make-struct SExpression.List res 0
+}
+
+def sexpression_boxint x:int => SExpression = {
+    (make-struct SExpression.Int x 0)
+}
+
+def sexpression_boxbool b:bool => SExpression = {
+    (make-struct SExpression.Bool b 0)
 }
 
 def mueval src:SExpression env:SExpression => SExpression = {
@@ -61,19 +84,21 @@ def mueval src:SExpression env:SExpression => SExpression = {
             # we just apply it
             var hd:SExpression = (get (. m_1 src) 0)
             match hd with
-                (SExpression.Atom _ _) given (eq? (. m_1 hd) "define") => {
+                # I had confused the direction of `.` with the accessor methods
+                # I wish carML already supported...
+                (SExpression.Atom _ _) given (eq? (. hd m_1) "define") => {
                     # add the body with that atom to the env
                 }
-                (SExpression.Atom _ _) given (eq? (. m_1 hd) "define-value") => {
+                (SExpression.Atom _ _) given (eq? (. hd m_1) "define-value") => {
                     # add the body with that atom to the env
                 }
-                (SExpression.Atom _ _) given (eq? (. m_1 hd) "define-mutable-value") => {
+                (SExpression.Atom _ _) given (eq? (. hd m_1) "define-mutable-value") => {
                     # add the body with that atom to the env
                 }
-                (SExpression.Atom _ _) given (eq? (. m_1 hd) "if") => {
+                (SExpression.Atom _ _) given (eq? (. hd m_1) "if") => {
                     # eval the condition and either the THEN or ELSE clause
                 }
-                (SExpression.Atom _ _) given (eq? (. m_1 hd) "call") => {
+                (SExpression.Atom _ _) given (eq? (. hd m_1) "call") => {
                     muapply src env
                 }
                 # there are several things that will come in as a SExpression.List, but
@@ -106,8 +131,8 @@ def muapply src:SExpression env:SExpression => SExpression = {
     # . looking up the hd of the list, and making sure it is something we can handle
     #
     # standard McCarthy-style really
-    var lst:SExpression = (SExpression.Null)
-    var hd:SExpression = (SExpression.Null)
+    var lst:SExpression = (make-struct SExpression.Null)
+    var hd:SExpression = (make-struct SExpression.Null)
 
     # so the nice thing about the language we're working with here is
     # that even tho we have first class functions and what not, they
@@ -130,22 +155,60 @@ def muapply src:SExpression env:SExpression => SExpression = {
     # let's make a calculator first
     match hd with
         "+" => {
+            (sexpression_boxint
+                (+
+                    (. (first lst) m_1)
+                    (. (first (rest lst)) m_1)))
         }
         "-" => {
+            (sexpression_boxint
+                (-
+                    (. (first lst) m_1)
+                    (. (first (rest lst)) m_1)))
         }
         "*" => {
+            (sexpression_boxint
+                (*
+                    (. (first lst) m_1)
+                    (. (first (rest lst)) m_1)))
         }
         "/" => {
+            (sexpression_boxint
+                (/
+                    (. (first lst) m_1)
+                    (. (first (rest lst)) m_1)))
         }
         "<" => {
+            (sexpression_boxbool
+                (<
+                    (. (first lst) m_1)
+                    (. (first (rest lst)) m_1)))
+
         }
         "<=" => {
+            (sexpression_boxbool
+                (<=
+                    (. (first lst) m_1)
+                    (. (first (rest lst)) m_1)))
+
         }
         ">" => {
+            (sexpression_boxbool
+                (>
+                    (. (first lst) m_1)
+                    (. (first (rest lst)) m_1)))
         }
         ">=" => {
+            (sexpression_boxbool
+                (>=
+                    (. (first lst) m_1)
+                    (. (first (rest lst)) m_1)))
         }
         "<>" => {
+            (sexpression_boxbool
+                (<>
+                    (. (first lst) m_1)
+                    (. (first (rest lst)) m_1)))
         }
     end
 }
