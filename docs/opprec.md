@@ -12,3 +12,10 @@ had [an interesting comment](https://lobste.rs/s/jol24u/better_operator_preceden
 This maps what I've been thinking about (no operator precedence, just use brackets) but does make it much nicer to have arithmetic pipelines: the example
 above would just become `(1 + 2 + 3)`. I'd still have to implement *some* form of Shunting Yard for this, but I should do that anyway (and move away
 from the current approach, which is just to insert some `call` forms when we see a `$`). This would also help sort out what to do with `$` vs `|>`.
+
+Thinking about it further tho, this also would be solved by moving to the Scheme-style multi-arity for basic lambdas...
+
+- `($ foo bar baz)` => `(foo (bar baz))`
+- `(* 1 2 3)` => `(* 1 (* 2 3))`
+
+Esp because I *enjoy* Polish notation
