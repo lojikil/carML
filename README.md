@@ -10,8 +10,15 @@ with [Digamma](http://lojikil.com/p/digamma/). It's meant to be:
 - without requiring too much mental cost from the programmer
 - "secure"
 - implemented and understood quickly
-- borrowing ideas from ReasonML, Scala, BitC, OCaml, F#, Digamma, Yeti, and PowerLogo
+- borrowing ideas from ReasonML, Scala, BitC, OCaml, F#, Digamma, Yeti, PowerLogo, & Project Verona
     - I've been doing a *lot* of work in ReasonML of late for work, so definitely has become a strong muse
+    - ReasonML: types, general style, Modules
+    - F#: Simpler Module style, exploration of advanced types (like FStar and Fomega give)
+    - Scala: type syntax, general style
+    - Digamma: focus on C output, focus on Unix integration, production readiness
+    - Yeti: simplicity & minimalism
+    - PowerLogo: little barrier to entry, no ceiling, and practical focus
+    - Project Verona: [this comment on operator precedence in Verona got me thinking](https://lobste.rs/s/jol24u/better_operator_precedence#c_bwd4ij)
 
 
 This is at least the 3rd time (and probably 5th) time that I've attempted such a thing, so don't mind me at all. This *is* the first time
