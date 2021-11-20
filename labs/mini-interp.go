@@ -13,6 +13,8 @@ package main
 
 import (
     "fmt"
+    "reflect"
+    "strconv"
 )
 
 type SExpression interface {
@@ -553,6 +555,235 @@ func roundtrip(src string) {
     fmt.Printf("d: %v\n", d)
 }
 
+func muwalk(src SExpression , env SExpression ) SExpression  {
+    return SExpression_Nil {};
+}
+func sexpression_eqp(s0 SExpression , s1 SExpression ) bool {
+	var idx int = 0
+	var llen int = 0
+	if reflect.TypeOf(s0) != reflect.TypeOf(s1) {
+		return false
+	}
+
+	switch s0 := s0.(type) {
+		case SExpression_Nil:
+			return true
+		case SExpression_EndFile:
+			return true
+		case SExpression_EndList:
+			return true
+		case SExpression_EndArray:
+			return true
+		case SExpression_Atom:
+			return s0.m_1 == s1.(SExpression_Atom).m_1
+		case SExpression_Int:
+			return s0.m_1 == s1.(SExpression_Int).m_1
+		case SExpression_Float:
+			return s0.m_1 == s1.(SExpression_Float).m_1
+		case SExpression_Char:
+			return s0.m_1 == s1.(SExpression_Char).m_1
+		case SExpression_Bool:
+			return s0.m_1 == s1.(SExpression_Bool).m_1
+		case SExpression_Error:
+			return s0.m_1 == s1.(SExpression_Error).m_1
+		case SExpression_String:
+			return s0.m_1 == s1.(SExpression_String).m_1
+		case SExpression_List:
+			llen = len(s0.m_1)
+			for idx < llen {
+				if sexpression_eqp(s0.m_1[idx], s1.(SExpression_List).m_1[idx]) {
+					idx = (idx + 1)
+
+				} else {
+					return false
+
+				}
+
+			}
+
+			return true
+
+	}
+    return false
+}
+func assoc(src SExpression , dst SExpression ) SExpression  {
+	var idx int = 0
+	var llen int = len(dst.(SExpression_List).m_1)
+	for idx < llen {
+		if sexpression_eqp(first(dst.(SExpression_List).m_1[idx]), src) {
+			return first(rest(dst.(SExpression_List).m_1[idx]))
+		}
+
+		idx = (idx + 1)
+	}
+
+	return SExpression_Nil{ }
+}
+func mem_assoc(needle SExpression , src SExpression ) SExpression  {
+	var idx int = 0
+	var llen int = len(needle.(SExpression_List).m_1)
+	for idx < llen {
+		if sexpression_eqp(first(needle.(SExpression_List).m_1[idx]), src) {
+			return sexpression_boxbool(true)
+		}
+
+		idx = (idx + 1)
+	}
+
+	return sexpression_boxbool(false)
+}
+func cons(hd SExpression , dst SExpression ) SExpression  {
+    return SExpression_Nil{ }
+}
+func first(hd SExpression ) SExpression  {
+	switch hd := hd.(type) {
+		case SExpression_List:
+			return hd.m_1[0]
+
+		default:
+			return SExpression_Error{ "first can only be applied to lists", 0}
+	}
+
+}
+func rest(l SExpression ) SExpression  {
+	var res []SExpression  = make([]SExpression, (len(l.(SExpression_List).m_1)) - 1)
+	var idx int = 1
+	var llen int = len(l.(SExpression_List).m_1)
+    fmt.Printf("idx: %d, llen: %d\n", idx, llen)
+	for idx < llen {
+        fmt.Printf("idx: %d, llen: %d\n", idx, llen)
+		res[idx - 1] = l.(SExpression_List).m_1[idx]
+        fmt.Printf("res[%d] = %v\n", idx - 1, res[idx - 1])
+		idx = (idx + 1)
+	}
+
+	return SExpression_List{ res, 0}
+}
+
+func mapfn(f func (SExpression) SExpression, l SExpression , e SExpression ) SExpression  {
+    return SExpression_Nil { }
+}
+
+func mapeval(l SExpression , e SExpression ) SExpression  {
+	var res []SExpression  = make([]SExpression, len(l.(SExpression_List).m_1))
+	var idx int = 0
+	for idx != len(l.(SExpression_List).m_1) {
+		res[idx] = mueval(l.(SExpression_List).m_1[idx], e)
+		idx = (idx + 1)
+	}
+
+	return SExpression_List{ res, 0}
+}
+func sexpression_boxint(x int64) SExpression  {
+	return SExpression_Int{ string(x), 0}
+}
+func sexpression_boxbool(b bool) SExpression  {
+	return SExpression_Bool{ b, 0}
+}
+func mueval(src SExpression , env SExpression ) SExpression  {
+	switch src := src.(type) {
+		case SExpression_List:
+			var hd SExpression = src.m_1[0]
+			switch hd.(type) {
+                case SExpression_Atom:
+                    switch hd.(SExpression_Atom).m_1 {
+                        case "define":
+
+                        case "define-value":
+
+                        case "define-mutable-value":
+
+                        case "if":
+
+                        case "call":
+                            return muapply(src, env)
+
+                        default:
+                            return first(rest(src))
+                    }
+                default:
+                    return src
+
+			}
+
+
+		default:
+			return src
+	}
+    return src
+}
+func muapply(src SExpression , env SExpression ) SExpression  {
+	var lst SExpression = SExpression_Null{ }
+	var hd SExpression = SExpression_Null{ }
+    var tmp0 SExpression = SExpression_Null { }
+    var tmp1 SExpression = SExpression_Null { }
+
+    switch src.(type) {
+        case SExpression_List:
+            src = src.(SExpression_List)
+        default:
+            return src
+    }
+
+	lst = mapeval(rest(src), env)
+	hd = first(lst)
+    fmt.Printf("src: %v\n", src)
+    fmt.Printf("lst: %v\n", lst)
+    fmt.Printf("hd: %v\n", hd)
+	switch hd.(SExpression_String).m_1 {
+		case "+":
+            tmp0 = first(lst)
+            tmp1 = first(rest(lst))
+            switch tmp0.(type) {
+                case SExpression_Int:
+                    switch tmp1.(type) {
+                        case SExpression_Int:
+                            n, err := strconv.ParseInt(tmp0.(SExpression_Int).m_1, 10, 64)
+                            if err != nil {
+                                return SExpression_Error{"integer parse error", 0}
+                            }
+                            m, err := strconv.ParseInt(tmp1.(SExpression_Int).m_1, 10, 64)
+                            if err != nil {
+                                return SExpression_Error{"integer parse error", 0}
+                            }
+                            return sexpression_boxint(n + m)
+                        //case SExpression_Float:
+                        default:
+                            return SExpression_Error{"mismatched types", 0}
+                    }
+                case SExpression_Float:
+                    return SExpression_Error{"mismatched types", 0}
+                default:
+                    return SExpression_Error{"mismatched types", 0}
+            }
+        /*
+		case "-":
+			return sexpression_boxint(first(lst).m_1 - first(rest(lst)).m_1)
+
+		case "*":
+			return sexpression_boxint(first(lst).m_1 * first(rest(lst)).m_1)
+
+		case "/":
+			return sexpression_boxint(first(lst).m_1 / first(rest(lst)).m_1)
+		case "<":
+			return sexpression_boxbool(first(lst).m_1 < first(rest(lst)).m_1)
+
+		case "<=":
+			return sexpression_boxbool(first(lst).m_1 <= first(rest(lst)).m_1)
+
+		case ">":
+			return sexpression_boxbool(first(lst).m_1 > first(rest(lst)).m_1)
+
+		case ">=":
+			return sexpression_boxbool(first(lst).m_1 >= first(rest(lst)).m_1)
+
+		case "<>":
+			return sexpression_boxbool(first(lst).m_1 != first(rest(lst)).m_1)
+        */
+	}
+    return SExpression_Null { }
+}
+
 func main() {
     src := `(define main 
 
@@ -562,6 +793,10 @@ func main() {
         (call (identifier printf) (string "test test test\n"))
         (integer 0)))`
     src1 := `(define main (returns (type integer)) (begin (integer 0)))`
+    src2 := `(call "+" (integer 10) (call "+" (integer 20) (integer 3)))`
     roundtrip(src)
     roundtrip(src1)
+    roundtrip(src2)
+    v := sexpression_read(src2, 0)
+    fmt.Printf("%v\n", mueval(v, SExpression_Null { }))
 }

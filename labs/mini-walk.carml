@@ -164,7 +164,7 @@ def mueval src:SExpression env:SExpression => SExpression = {
             # here, we must unpack what the first member is, and
             # if it is something we can eval, we do so, otherwise
             # we just apply it
-            var hd:SExpression = (get (. m_1 src) 0)
+            var hd:SExpression = (get (. src m_1) 0)
             match hd with
                 # I had confused the direction of `.` with the accessor methods
                 # I wish carML already supported...
