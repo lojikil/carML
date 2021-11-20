@@ -675,7 +675,7 @@ func mapeval(l SExpression , e SExpression ) SExpression  {
 	return SExpression_List{ res, 0}
 }
 func sexpression_boxint(x int64) SExpression  {
-	return SExpression_Int{ string(x), 0}
+	return SExpression_Int{ strconv.FormatInt(x, 10), 0}
 }
 func sexpression_boxbool(b bool) SExpression  {
 	return SExpression_Bool{ b, 0}
@@ -696,7 +696,9 @@ func mueval(src SExpression , env SExpression ) SExpression  {
                         case "if":
 
                         case "call":
-                            return muapply(src, env)
+                            tmp := muapply(src, env)
+                            fmt.Printf("tmp: %v\n", tmp)
+                            return tmp
 
                         default:
                             return first(rest(src))
@@ -730,32 +732,42 @@ func muapply(src SExpression , env SExpression ) SExpression  {
     fmt.Printf("src: %v\n", src)
     fmt.Printf("lst: %v\n", lst)
     fmt.Printf("hd: %v\n", hd)
+    fmt.Println("here on 735?")
 	switch hd.(SExpression_String).m_1 {
-		case "+":
-            tmp0 = first(lst)
-            tmp1 = first(rest(lst))
+		case "\"+\"":
+            fmt.Println("here on 737")
+            tmp0 = first(rest(lst))
+            tmp1 = first(rest(rest(lst)))
+            fmt.Printf("tmp0: %T%v\n", tmp0, tmp0)
+            fmt.Printf("tmp1: %T%v\n", tmp1, tmp1)
             switch tmp0.(type) {
                 case SExpression_Int:
+                    fmt.Println("here on 741")
                     switch tmp1.(type) {
                         case SExpression_Int:
+                            fmt.Println("here on 743")
                             n, err := strconv.ParseInt(tmp0.(SExpression_Int).m_1, 10, 64)
                             if err != nil {
-                                return SExpression_Error{"integer parse error", 0}
+                                return SExpression_Error{"integer parse error 0", 0}
                             }
                             m, err := strconv.ParseInt(tmp1.(SExpression_Int).m_1, 10, 64)
                             if err != nil {
-                                return SExpression_Error{"integer parse error", 0}
+                                return SExpression_Error{"integer parse error 1", 0}
                             }
+                            fmt.Printf("here: %d\n", n + m)
                             return sexpression_boxint(n + m)
                         //case SExpression_Float:
                         default:
-                            return SExpression_Error{"mismatched types", 0}
+                            return SExpression_Error{"mismatched types 0", 0}
                     }
                 case SExpression_Float:
-                    return SExpression_Error{"mismatched types", 0}
+                    return SExpression_Error{"mismatched types 1", 0}
                 default:
-                    return SExpression_Error{"mismatched types", 0}
+                    return SExpression_Error{"mismatched types 2", 0}
             }
+        default:
+            fmt.Printf("weird, but hd.m_1 is %v\n", hd.(SExpression_String).m_1)
+            fmt.Printf("weird, but hd.m_1 is %v\n", hd.(SExpression_String).m_1 == "+")
         /*
 		case "-":
 			return sexpression_boxint(first(lst).m_1 - first(rest(lst)).m_1)
