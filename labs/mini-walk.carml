@@ -29,12 +29,42 @@ def muwalk src:SExpression env:SExpression => SExpression = {
 # walker, but it's not terrible here either
 def sexpression_eqp s0:SExpression s1:SExpression => bool = {
     var idx:int = 0
-    var len:int = 0
+    var llen:int = 0
+
+    # NOTE these are all wrong; I ended up decomposing them
+    # correctly in mini-interp, but I need that sort of introspection
+    # in carML as well; generally, other languages force you to
+    # match on it, and I wonder if I'm just overthinking the
+    # shortcut case here. In Go, I ended up doing:
+    #
+    # [source,go]
+    # ----
+    # if reflect.TypeOf(s0) != reflect.TypeOf(s1) {
+    #     return false
+    # }
+    # ----
+    #
+    # which isn't _terrible_, but it would be nice if we could
+    # do that in a simpler way. I really do think I may be overthinking
+    # the issue here
 
     when (<> (. s0 tag) (. s1 tag)) do {
         return false
     }
 
+    # Also, I need to use these types better
+    # when deconstructing an ADT<=>Interface; for example,
+    # in mini-interp, there are a LOT of places I had to add
+    # a type cast, because the compiler isn't smart enough to
+    # use those
+    #
+    # Interestingly, Haskell as a module, `Data.Data`, which
+    # exposes a `toConstr` which can be used for that:
+    #
+    # `toConstr (BoolValue True) == toConstr (BoolValue False)`
+    #
+    # https://hackage.haskell.org/package/base-4.6.0.1/docs/Data-Data.html
+    # https://stackoverflow.com/questions/10112733/haskell-simple-constructor-comparison-function
     match s0 with
         (SExpression.Nil) => true
         (SExpression.EndFile) => true
@@ -48,8 +78,8 @@ def sexpression_eqp s0:SExpression s1:SExpression => bool = {
         (SExpression.Error _ _) => (eq? (. s0 m_1) (. s1 m_1))
         (SExpression.String _ _) => (eq? (. s0 m_1) (. s1 m_1))
         (SExpression.List _ _) => {
-            set! len $ length $ . s0 m_1
-            while (< idx len) do {
+            set! llen $ length $ . s0 m_1
+            while (< idx llen) do {
                 if (sexpression_eqp (get (. s0 m_1) idx) (get (. s1 m_1) idx)) then {
                     set! idx $ + idx 1
                 } else {
@@ -64,8 +94,11 @@ def sexpression_eqp s0:SExpression s1:SExpression => bool = {
 # ('a, list(('a, 'b))) => 'b
 def assoc src:SExpression dst:SExpression => SExpression = {
     var idx:int = 0
-    var len:int = (length (. dst m_1))
-    while (< idx len) do {
+    # same as the above really; we need to check that we
+    # actually have an SExpression.List here before
+    # operating, and then cast it
+    var llen:int = (length (. dst m_1))
+    while (< idx llen) do {
         when (sexpression_eqp (first (get (. dst m_1) idx)) src) do {
             return $ first $ rest $ get (. dst m_1) idx
         }
@@ -78,8 +111,8 @@ def assoc src:SExpression dst:SExpression => SExpression = {
 # ('a, list(('a, 'b))) => bool 
 def mem_assoc needle:SExpression src:SExpression => SExpression = {
     var idx:int = 0
-    var len:int = (length (. dst m_1))
-    while (< idx len) do {
+    var llen:int = (length (. dst m_1))
+    while (< idx llen) do {
         when (sexpression_eqp (first (get (. dst m_1) idx)) src) do {
             return $ sexpression_boxbool true
         }
@@ -110,10 +143,10 @@ def rest l:SExpression => SExpression = {
     # that's one thing I need to implement right away, is the basic
     # array/deque/string primitives
     var res:array[SExpression] = (make-array SExpression (- (length (. l m_1)) 1) SExpression.Null)
-    var idx:int = 0
-    var len:int = (length (. l m_1))
-    while (< idx len) do {
-        set! (get res idx) (get (. l m_1) (+ idx 1))
+    var idx:int = 1
+    var llen:int = (length (. l m_1))
+    while (< idx llen) do {
+        set! (get res (- idx 1)) (get (. l m_1) idx)
         set! idx $ + idx 1
     }
     make-struct SExpression.List res 0
@@ -167,7 +200,21 @@ def mueval src:SExpression env:SExpression => SExpression = {
             var hd:SExpression = (get (. src m_1) 0)
             match hd with
                 # I had confused the direction of `.` with the accessor methods
-                # I wish carML already supported...
+                # I wish carML already supported accessors...
+                # Additionally, I ended up doing an inner match on the head
+                # value in Go, because it required fewer casts, ala:
+                #
+                # [source]
+                # ----
+                # match hd with
+                # (SExpression_Atom _ _) => match (. hd m_1) with
+                #   "define" => ...
+                #   end
+                # end
+                # ----
+                #
+                # because now there was just one type cast, `hd.(SExpression_Atom).m_1`
+                # instead of many. Not really a big deal if we correctly generate code
                 (SExpression.Atom _ _) given (eq? (. hd m_1) "define") => {
                     # add the body with that atom to the env
                 }
@@ -233,9 +280,12 @@ def muapply src:SExpression env:SExpression => SExpression = {
     # come in like: `(call (identifier "+") (integer "10) (integer "20"))`
     # TODO: should make fused versions of these...
     set! lst $ mapeval (rest src) env
-    set! hd $ first $ rest lst
+    set! hd $ first lst
 
     # let's make a calculator first
+    # so... in the Go code I wrote, I ended up having
+    # to do a LOT of type dispatch with the below, because
+    # we can't just assume they are actually SExpression_Int, for example
     match hd with
         "+" => {
             (sexpression_boxint
