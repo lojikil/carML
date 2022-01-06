@@ -282,7 +282,7 @@ def muapply src:SExpression env:SExpression => SExpression = {
     #
     # basically the C version is equivalent to `of-constructor`
     # and the Golang version just adds `.Name()`
-    when (<> (tag-of-constructor src) "SExpression_List")) do {
+    when (<> (tag-of-constructor src) "SExpression_List") do {
         return src
     }
 
