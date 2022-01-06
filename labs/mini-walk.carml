@@ -275,6 +275,9 @@ def muapply src:SExpression env:SExpression => SExpression = {
     # . map mueval over the body of the list
     # . return the function application, if we know it
 
+    # ok, here we need to generate:
+    # . Golang: reflect.TypeOf(src).Name() == "SExpression_List"
+    # . C: src.tag == SEXPRESSION_LIST
     when (<> (. src tag) SEXPRESSION_LIST) do {
         return src
     }
