@@ -276,9 +276,13 @@ def muapply src:SExpression env:SExpression => SExpression = {
     # . return the function application, if we know it
 
     # ok, here we need to generate:
+    #
     # . Golang: reflect.TypeOf(src).Name() == "SExpression_List"
     # . C: src.tag == SEXPRESSION_LIST
-    when (<> (. src tag) SEXPRESSION_LIST) do {
+    #
+    # basically the C version is equivalent to `of-constructor`
+    # and the Golang version just adds `.Name()`
+    when (<> (tag-of-constructor src) "SExpression_List")) do {
         return src
     }
 

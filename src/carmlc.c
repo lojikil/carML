@@ -73,6 +73,7 @@ const char *coperators[] = {
     // allows a user to get some information
     // about what constructor was used in an ADT
     "of-constructor", "of-constructor",
+    "tag-of-constructor", "tag-of-constructor",
     // logical connectives
     "every", "every", // every logical case must pass
     "one-of", "one-of", // any logical case must pass
@@ -542,6 +543,8 @@ isprimitiveaccessor(const char *potential) {
     } else if(!strncmp(potential, "->", 2)) {
         return YES;
     } else if(!strncmp(potential, "of-constructor", 14)) {
+        return YES;
+    } else if(!strncmp(potential, "of-constructor", 17)) {
         return YES;
     } else {
         return NO;
@@ -6366,7 +6369,8 @@ llcwalk(FILE *fdout, AST *head, int level, int final) {
                             fprintf(fdout, " && ");
                         }
                     }
-                } else if(!strncmp(head->children[0]->value, "of-constructor", 14)) {
+                } else if((!strncmp(head->children[0]->value, "of-constructor", 14) ||
+                           !strncmp(head->children[0]->value, "tag-of-constructor", 17))) {
                     // need to support reference & value versions here...
                     fprintf(fdout, "%s->tag",head->children[1]->value);
                 } else {
@@ -7092,6 +7096,8 @@ llgwalk(FILE *fdout, AST *head, int level, int final) {
                     }
                 } else if(!strncmp(head->children[0]->value, "of-constructor", 14)) {
                     fprintf(fdout, "reflect.TypeOf(%s)", head->children[1]->value);
+                } else if(!strncmp(head->children[0]->value, "tag-of-constructor", 17)) {
+                    fprintf(fdout, "reflect.TypeOf(%s).Name()", head->children[1]->value);
                 } else {
                     if(!strncmp(head->children[0]->value, ".", 2)) {
                         gwalk(fdout, head->children[1], 0);
