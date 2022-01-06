@@ -48,7 +48,11 @@ def sexpression_eqp s0:SExpression s1:SExpression => bool = {
     # do that in a simpler way. I really do think I may be overthinking
     # the issue here
 
-    when (<> (. s0 tag) (. s1 tag)) do {
+    when (<> (of-constructor s0) (of-constructor s1)) do {
+        # Let's use that here, and note that it isn't defined
+        # what the result might be, so it's only useful for comparing
+        # constructors... probably need a `constructor-of-int` and
+        # `constructor-of-string` to support the various variations here
         return false
     }
 
@@ -109,17 +113,16 @@ def assoc src:SExpression dst:SExpression => SExpression = {
 }
 
 # ('a, list(('a, 'b))) => bool 
-def mem_assoc needle:SExpression src:SExpression => SExpression = {
+def mem_assoc needle:SExpression src:SExpression => bool = {
     var idx:int = 0
     var llen:int = (length (. dst m_1))
     while (< idx llen) do {
         when (sexpression_eqp (first (get (. dst m_1) idx)) src) do {
-            return $ sexpression_boxbool true
+            return true
         }
         set! idx $ + idx 1
     }
-    # delineating Nil from Null is interesting...
-    sexpression_boxbool false
+    false
 }
 
 # ('a, list('a)) => list('a)
